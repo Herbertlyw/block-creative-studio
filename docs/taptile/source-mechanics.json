@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "videoRoot": "D:\\0824-AE(AI大模型)\\8.25换牌面叉乘结果去水印版（只放视频）",
+  "sharedMedia": { "width": 1080, "height": 1920, "fps": 30, "codec": "h264", "pixelFormat": "yuv420p" },
+  "sources": [
+    { "id": "archive01", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "layer-unlock", "no-gravity"] },
+    { "id": "archive02", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "layer-unlock", "no-gravity"] },
+    { "id": "archive03", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["bottom-tray", "split-stack", "no-gravity"] },
+    { "id": "archive04", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "collect-goal", "tile-backs", "no-gravity"] },
+    { "id": "fb_competitor", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "praise", "no-gravity"] },
+    { "id": "latest_competitor", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "collect-goal", "coin-counter", "multiplier-tile", "coin-blocker", "no-gravity"] },
+    { "id": "tpt760", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "dense-stack", "boosters", "no-gravity"] },
+    { "id": "tpt811", "family": "tray-match-3", "trayCapacity": 7, "matchSize": 3, "confidence": "high", "features": ["top-tray", "reserve-rows", "blocked-click-warning", "six-of-seven-warning", "boosters", "no-gravity"] },
+    { "id": "tpt971", "family": "direct-set-clear", "trayCapacity": 0, "matchSize": 3, "confidence": "high", "features": ["tap-one-clears-face-set", "fixed-holes", "no-gravity"] },
+    { "id": "chain_clear", "family": "manual-in-place-match", "trayCapacity": 0, "matchSize": 3, "confidence": "medium-high", "features": ["flat-grid", "in-place-selection", "fixed-holes", "no-gravity"] },
+    { "id": "big_flower", "family": "direct-set-clear-ornamental", "trayCapacity": 0, "matchSize": 3, "confidence": "medium", "features": ["no-fixed-tile-body", "same-flower-gather", "not-tile-face-only"] }
+  ],
+  "unresolved": [
+    "full-tray failure is inferred because no complete loss sample is present",
+    "coin and multiplier formulas are not fully observable",
+    "praise and combo thresholds are presentation-only until calibrated",
+    "chain_clear wrong-selection behavior needs a longer clean gameplay sample"
+  ]
+}
+

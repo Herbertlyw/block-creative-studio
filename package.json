@@ -16,6 +16,7 @@
     "check:imports": "node scripts/check-imports.mjs",
     "check:json": "node scripts/check-json.mjs",
     "check:syntax": "tsc -p tsconfig.app.json --noEmit --noCheck --pretty false && tsc -p tsconfig.node.json --noEmit --noCheck --pretty false",
+    "analyze:taptile-videos": "node scripts/analyze-taptile-videos.mjs",
     "check": "npm run check:source && npm run check:core"
   },
   "dependencies": {

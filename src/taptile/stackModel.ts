@@ -1,8 +1,16 @@
+import {
+  snapAuthoringCoordinateToExportPixel,
+  TAPTILE_AUTHORING_STAGE,
+  TAPTILE_EXPORT_STAGE,
+} from './pixelGeometry';
+
 export const STACK_STAGE = {
-  width: 430,
-  height: 764,
+  width: TAPTILE_AUTHORING_STAGE.width,
+  height: TAPTILE_AUTHORING_STAGE.height,
   tileSize: 68,
 } as const;
+
+export const STACK_EXPORT_STAGE = TAPTILE_EXPORT_STAGE;
 
 export type StackTemplateId = 'hourglass' | 't-shape' | 'terraces' | 'free';
 export type TileMaterialId = 'porcelain' | 'ice' | 'jelly' | 'paper';
@@ -81,8 +89,8 @@ function templateTile(
 ): StackTile {
   return {
     id: `${template}-${index + 1}`,
-    x,
-    y,
+    x: snapAuthoringCoordinateToExportPixel(x),
+    y: snapAuthoringCoordinateToExportPixel(y),
     layer,
     rotation: 0,
     scale: 1,
@@ -196,8 +204,8 @@ export function normalizeTile(tile: StackTile): StackTile {
   const normalizedLayer = Number.isFinite(tile.layer) ? Math.round(tile.layer) : 0;
   return {
     ...tile,
-    x: clamp(tile.x, 18, STACK_STAGE.width - 18),
-    y: clamp(tile.y, 142, STACK_STAGE.height - 26),
+    x: snapAuthoringCoordinateToExportPixel(clamp(tile.x, 18, STACK_STAGE.width - 18)),
+    y: snapAuthoringCoordinateToExportPixel(clamp(tile.y, 142, STACK_STAGE.height - 26)),
     layer: Math.max(0, normalizedLayer),
     rotation: clamp(tile.rotation, -45, 45),
     scale: clamp(tile.scale, 0.55, 1.65),

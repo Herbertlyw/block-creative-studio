@@ -9,3 +9,4 @@ coverage/
 *.zip
 *.bundle
 artifacts/design-qa/
+artifacts/taptile-video-analysis/

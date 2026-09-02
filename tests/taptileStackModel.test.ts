@@ -30,7 +30,7 @@ describe('TapTile stack model', () => {
       locked: false,
     });
     expect(tile.x).toBeGreaterThanOrEqual(18);
-    expect(tile.y).toBeLessThanOrEqual(738);
+    expect(tile.y).toBeLessThanOrEqual(742);
     expect(tile.layer).toBe(99);
     expect(tile.rotation).toBe(45);
     expect(tile.scale).toBe(1.65);

@@ -101,8 +101,8 @@ $taskMarqueeDrag = Invoke-PageExpression -Expression @'
   const stage = document.querySelector('.tpt-phone-stage');
   const rect = stage.getBoundingClientRect();
   const point = (x, y) => ({
-    x: rect.left + (x / 430) * rect.width,
-    y: rect.top + (y / 764) * rect.height,
+    x: rect.left + (x / 432) * rect.width,
+    y: rect.top + (y / 768) * rect.height,
   });
   return JSON.stringify({ start: point(80, 180), end: point(320, 330) });
 })()

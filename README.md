@@ -101,3 +101,7 @@ schemas           工程码 JSON Schema
 - 导出当前为无声 MP4；音频事件轨仍未接入。
 - 当前只保证桌面 Chrome；移动浏览器、Safari 和 Firefox 不在本阶段承诺范围。
 - Blender/AE 接口保留，但 DCC 资产导入推迟到 2D 闭环通过视觉验收之后。
+
+## TapTile 堆叠与玩法支线
+
+当前 fork 同时包含 TapTile 手工堆叠编辑器，以及从 143 条无水印成片审计出的纯 TypeScript 玩法基础层。入口与证据边界见 [`docs/taptile/README.md`](docs/taptile/README.md)。
