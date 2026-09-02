@@ -5,8 +5,9 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const output = resolve(root, '.core-dist');
+const tsc = resolve(root, 'node_modules', 'typescript', 'bin', 'tsc');
 rmSync(output, { recursive: true, force: true });
-execFileSync('tsc', ['-p', 'tsconfig.core.json', '--pretty', 'false'], {
+execFileSync(process.execPath, [tsc, '-p', 'tsconfig.core.json', '--pretty', 'false'], {
   cwd: root,
   stdio: 'inherit',
 });

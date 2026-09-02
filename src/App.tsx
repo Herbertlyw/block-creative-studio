@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AssetPanel } from './components/AssetPanel';
 import { InspectorPanel } from './components/InspectorPanel';
 import { StatusBar } from './components/StatusBar';
@@ -7,8 +8,9 @@ import { useStudioModel } from './state/useStudioModel';
 import { ThreeViewport } from './renderer/ThreeViewport';
 import { Reference2DViewport } from './reference2d/Reference2DViewport';
 import type { GridCell } from './domain/types';
+import { TapTileStackStudio } from './taptile/TapTileStackStudio';
 
-export default function App() {
+function BlockCreativeWorkspace({ onOpenTapTile }: { onOpenTapTile(): void }) {
   const studio = useStudioModel();
   const displaySnapshot =
     (studio.mode === 'replay' || studio.mode === 'render') && studio.presentationFrame
@@ -22,6 +24,25 @@ export default function App() {
 
   return (
     <div className="studio-app">
+      <button
+        type="button"
+        onClick={onOpenTapTile}
+        style={{
+          position: 'fixed',
+          zIndex: 9999,
+          right: 18,
+          top: 72,
+          border: '1px solid rgba(255,255,255,.18)',
+          borderRadius: 10,
+          padding: '9px 13px',
+          color: 'white',
+          background: '#5963e9',
+          boxShadow: '0 8px 24px rgba(0,0,0,.3)',
+          cursor: 'pointer',
+        }}
+      >
+        打开 TapTile 堆叠编辑器
+      </button>
       <Toolbar
         projectName={studio.project.name}
         mode={studio.mode}
@@ -153,4 +174,22 @@ export default function App() {
       <StatusBar mode={studio.mode} snapshot={displaySnapshot} />
     </div>
   );
+}
+
+export default function App() {
+  const [workspace, setWorkspace] = useState<'taptile' | 'block'>(() =>
+    window.location.hash === '#block' ? 'block' : 'taptile',
+  );
+
+  if (workspace === 'block') {
+    return <BlockCreativeWorkspace onOpenTapTile={() => {
+      window.location.hash = 'taptile';
+      setWorkspace('taptile');
+    }} />;
+  }
+
+  return <TapTileStackStudio onOpenBlockStudio={() => {
+    window.location.hash = 'block';
+    setWorkspace('block');
+  }} />;
 }

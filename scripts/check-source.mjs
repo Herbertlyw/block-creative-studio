@@ -18,10 +18,12 @@ const sourceFiles = sourceRoots
   .flatMap((directory) => walk(resolve(root, directory)))
   .filter((path) => ['.ts', '.tsx'].includes(extname(path)));
 sourceFiles.push(resolve(root, 'vite.config.ts'));
+const tsc = resolve(root, 'node_modules', 'typescript', 'bin', 'tsc');
 
 const syntax = spawnSync(
-  'tsc',
+  process.execPath,
   [
+    tsc,
     '--noEmit',
     '--noCheck',
     '--jsx',

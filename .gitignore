@@ -8,3 +8,4 @@ coverage/
 .core-dist/
 *.zip
 *.bundle
+artifacts/design-qa/
