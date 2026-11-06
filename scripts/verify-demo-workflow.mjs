@@ -106,6 +106,12 @@ try {
   assert.match(variant.project.direction.production.audio.bgm.assetId, /work-audio-/);
   await show('参考视频观察记录');
   await page.getByLabel('选择参考视频', { exact: true }).setInputFiles(synthetic.video);
+  await page.getByLabel('观察内容', { exact: true }).fill('尚未添加的观察笔记');
+  await page.getByRole('button', { name: '返回工作台', exact: true }).click();
+  await page.getByText('还有未应用的表单草稿').waitFor();
+  assert.equal(await page.getByRole('button', { name: '保存后离开' }).isDisabled(), true);
+  await page.getByRole('button', { name: '取消', exact: true }).click();
+  await page.getByLabel('观察内容', { exact: true }).fill('');
   const resume = page.getByRole('button', { name: '继续编辑当前复刻作品', exact: true });
   await resume.waitFor();
   await page.waitForFunction(() =>

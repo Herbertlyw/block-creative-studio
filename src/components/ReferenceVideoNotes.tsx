@@ -112,7 +112,15 @@ export function ReferenceVideoNotes({
     !!tile ||
     !!white ||
     !!coral ||
-    !!cyan;
+    !!cyan ||
+    !!mapping ||
+    pointerConfirmed ||
+    pointerRadius !== 20 ||
+    bgmStart !== 0 ||
+    bgmOffset !== 0 ||
+    bgmGain !== 0.2 ||
+    cueGain !== 0.5 ||
+    bgmLoop;
   const {
     dirty: observationDirty,
     rebase: rebaseObservation,
@@ -499,7 +507,9 @@ export function ReferenceVideoNotes({
       link.href = blob;
       link.download = 'reference-observations.json';
       link.click();
-      if (!pointerConfirmed && pointerRadius === 20) setSavedObservation(fingerprint);
+      if (!note.trim() && !pointerConfirmed && pointerRadius === 20)
+        setSavedObservation(fingerprint);
+      else setBuildStatus('观察记录已发起下载；未添加的文字笔记或指针设置仍需另行保存到作品。');
       setTimeout(() => URL.revokeObjectURL(blob), 1000);
       setError('');
     } catch (e) {
@@ -673,7 +683,7 @@ export function ReferenceVideoNotes({
       a.href = url;
       a.download = 'bb-work.json';
       a.click();
-      setSavedObservation(fingerprint);
+      if (!note.trim()) setSavedObservation(fingerprint);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setBuildStatus(
         `已另存完整作品包，包含工程、素材、声音、来源记录与${pointerConfirmed ? '圆环指针' : '无指针设置'}。${editTemplate ? '保留了当前作品名称和完整素材、混音配置。' : ''}${warning}参考视频仍需单独保管；可打开此作品继续预览、编辑和导出。`,
