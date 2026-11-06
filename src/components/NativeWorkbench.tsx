@@ -174,6 +174,7 @@ export function NativeWorkbench({ studio }: { studio: BBWorkSession }) {
           work={current.work}
           selected={studio.selectedTake}
           onSelect={studio.selectTake}
+          onDraftChange={setEditorDraft}
         />
       )}
       <details>

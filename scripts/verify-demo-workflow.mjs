@@ -77,6 +77,15 @@ try {
   assert.ok(!JSON.stringify(imported).includes('"encoding":"ref"'));
   await page.getByRole('button', { name: '返回工作台', exact: true }).click();
   await open(synthetic.workPath);
+  await show('复制分槽图片的单槽变体');
+  await page
+    .getByLabel('变体单槽 PNG', { exact: true })
+    .setInputFiles(synthetic.imagePaths.replacement);
+  await page.getByRole('button', { name: '返回工作台', exact: true }).click();
+  await page.getByText('还有未应用的表单草稿').waitFor();
+  assert.equal(await page.getByRole('button', { name: '保存后离开' }).isDisabled(), true);
+  await page.getByRole('button', { name: '取消', exact: true }).click();
+  await page.getByLabel('变体单槽 PNG', { exact: true }).setInputFiles([]);
   await page.getByLabel('V2 工程名称', { exact: true }).fill('本机改造：继续复刻与变体');
   await save(page.getByRole('button', { name: '保存作品名称', exact: true }), 'renamed.json');
   await show('绑定作品图片');

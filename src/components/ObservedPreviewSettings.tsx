@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useRebasedDraft } from '../state/useRebasedDraft';
 import {
   inlineBrowserStudioReferences,
   hasStudioAssetReferences,
@@ -31,12 +32,14 @@ export function ObservedPreviewSettings({
   work,
   selected,
   onSelect,
+  onDraftChange,
 }: {
   document: unknown;
   audit: NativeRuntimeAudit;
   work?: BBWorkPackage | null;
   selected: string;
   onSelect: (takeId: string) => void;
+  onDraftChange?: (editor: string, dirty: boolean) => void;
 }) {
   const firstTake = (document as { takes?: Array<{ takeId?: string }> }).takes?.[0]?.takeId;
   const multi =
@@ -73,15 +76,28 @@ export function ObservedPreviewSettings({
   };
   const [groupRole, setGroupRole] = useState<'background' | 'white' | 'coral' | 'cyan'>('coral'),
     [groupFile, setGroupFile] = useState<File | null>(null);
+  const [savedGroup, setSavedGroup] = useState<{ role: typeof groupRole; file: File } | null>(null);
   const [variantBackground, setVariantBackground] = useState<File | null>(null),
     [variantTile, setVariantTile] = useState<File | null>(null);
+  const [savedImages, setSavedImages] = useState<{ background: File; tile: File } | null>(null);
   const [variantTheme, setVariantTheme] = useState('pink'),
-    [variantGain, setVariantGain] = useState(
+    [variantGain, setVariantGain] = useRebasedDraft(
       variantData.direction?.production?.audio?.bgm?.gain ?? 1,
     );
+  const [savedTheme, setSavedTheme] = useState('pink');
+  const [savedGain, setSavedGain] = useRebasedDraft(
+    variantData.direction?.production?.audio?.bgm?.gain ?? 1,
+  );
+  const variantDraft =
+    (!!groupFile && (savedGroup?.file !== groupFile || savedGroup.role !== groupRole)) ||
+    ((!!variantBackground || !!variantTile) &&
+      (savedImages?.background !== variantBackground || savedImages.tile !== variantTile)) ||
+    variantTheme !== savedTheme ||
+    variantGain !== savedGain;
   useEffect(() => {
-    setVariantGain(variantData.direction?.production?.audio?.bgm?.gain ?? 1);
-  }, [variantData.direction?.production?.audio?.bgm?.gain]);
+    onDraftChange?.('observed-variant', variantDraft);
+  }, [onDraftChange, variantDraft]);
+  useEffect(() => () => onDraftChange?.('observed-variant', false), [onDraftChange]);
   const [resolved, setResolved] = useState<
     | { status: 'loading' }
     | { status: 'error'; message: string }
@@ -303,6 +319,7 @@ export function ObservedPreviewSettings({
           `已另存 ${groupRole} 单槽变体；原工程保留，请重新打开。${pointer ? '请同时保存新工程的指针旁车。' : ''}`,
         );
       }
+      setSavedGroup({ role: groupRole, file: groupFile });
     } catch (error) {
       setStatus(`单槽变体未保存：${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -331,6 +348,7 @@ export function ObservedPreviewSettings({
           'calibrated-image-variant.json',
         );
       setStatus('已另存背景和统一方块图片变体；原工程保留，请重新打开并预览。');
+      setSavedImages({ background: variantBackground, tile: variantTile });
     } catch (error) {
       setStatus(`图片变体未保存：${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -359,6 +377,8 @@ export function ObservedPreviewSettings({
           'calibrated-theme-bgm-variant.json',
         );
       setStatus(`已另存程序主题与 BGM 增益变体；请重新打开。${result.warning}`);
+      setSavedTheme(variantTheme);
+      setSavedGain(variantGain);
     } catch (error) {
       setStatus(`变体未保存：${error instanceof Error ? error.message : String(error)}`);
     } finally {

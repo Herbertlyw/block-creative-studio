@@ -81,6 +81,7 @@ export function NativeTimedPreview(props: {
   work?: BBWorkPackage | null;
   selected: string;
   onSelect: (takeId: string) => void;
+  onDraftChange?: (editor: string, dirty: boolean) => void;
 }) {
   return (
     <BBTimelinePlayerProvider>
