@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createCrossClearBoard, createEmptyBoard } from '../src/domain/boardPresets';
+import {
+  createCrossClearBoard,
+  createEmptyBoard,
+} from '../src/nativeReference/games/block-placement/runtime/boardPresets';
 import {
   applyPlacement,
   boardFingerprint,
@@ -8,8 +11,8 @@ import {
   createGame,
   createPieceSet,
   replayActions,
-} from '../src/domain/gameEngine';
-import type { PlacementAction } from '../src/domain/types';
+} from '../src/nativeReference/games/block-placement/runtime/gameEngine';
+import type { PlacementAction } from '../src/nativeReference/domain/types';
 
 function action(pieceId: string, row: number, col: number): PlacementAction {
   return {
