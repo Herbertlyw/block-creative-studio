@@ -1,3 +1,4 @@
+import { useObservationDraft } from '../state/useObservationDraft';
 import { useEffect, useRef, useState } from 'react';
 import {
   measuredFrameSeconds,
@@ -78,8 +79,6 @@ export function ReferenceVideoNotes({
   const video = useRef<HTMLVideoElement>(null),
     structuredEditor = useRef<HTMLDetailsElement>(null);
   const generation = useRef(0);
-  const [savedObservation, setSavedObservation] = useState('');
-  const rebaseObservation = useRef(false);
   const fileIdentity = (item: File | null) => item && [item.name, item.size, item.lastModified];
   const observationFingerprint = JSON.stringify({
     hash,
@@ -101,8 +100,6 @@ export function ReferenceVideoNotes({
     pointerConfirmed,
     pointerRadius,
   });
-  const latestObservation = useRef(observationFingerprint);
-  latestObservation.current = observationFingerprint;
   const hasObservationDraft =
     observations.length > 0 ||
     !!structured ||
@@ -116,15 +113,12 @@ export function ReferenceVideoNotes({
     !!white ||
     !!coral ||
     !!cyan;
-  const observationDirty = hasObservationDraft && observationFingerprint !== savedObservation;
-  useEffect(() => {
-    if (rebaseObservation.current) {
-      rebaseObservation.current = false;
-      setSavedObservation(observationFingerprint);
-      onDraftChange?.('observation', false);
-    } else onDraftChange?.('observation', observationDirty);
-  }, [observationFingerprint, observationDirty, onDraftChange]);
-  useEffect(() => () => onDraftChange?.('observation', false), [onDraftChange]);
+  const {
+    dirty: observationDirty,
+    rebase: rebaseObservation,
+    latest: latestObservation,
+    markSaved: setSavedObservation,
+  } = useObservationDraft(observationFingerprint, hasObservationDraft, onDraftChange);
   useEffect(() => {
     if (!file) {
       setUrl('');

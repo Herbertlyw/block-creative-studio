@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BBWorkPackage } from '../contracts/bbWorkPackage';
 import {
   DEFAULT_BB_TEST_AUDIO,
@@ -18,9 +18,11 @@ const kinds: Array<{ id: BBTestCueKind; label: string }> = [
 export function BBSyntheticAudioEditor({
   work,
   onChange,
+  onDraftChange,
 }: {
   work: BBWorkPackage;
   onChange: (next: BBWorkPackage) => void;
+  onDraftChange?: (editor: string, dirty: boolean) => void;
 }) {
   const existing = readBBTestAudio(work.project),
     snapshot = JSON.stringify(existing);
@@ -31,9 +33,21 @@ export function BBSyntheticAudioEditor({
     [eventId, setEventId] = useState(''),
     [busy, setBusy] = useState(false),
     [status, setStatus] = useState('');
+  const saved = JSON.stringify(existing ?? DEFAULT_BB_TEST_AUDIO);
+  const previous = useRef(saved);
   useEffect(() => {
-    setDraft(structuredClone(existing ?? DEFAULT_BB_TEST_AUDIO));
-  }, [snapshot]);
+    setDraft((current) =>
+      JSON.stringify(current) === previous.current
+        ? structuredClone(existing ?? DEFAULT_BB_TEST_AUDIO)
+        : current,
+    );
+    previous.current = saved;
+  }, [snapshot, saved]);
+  const pending = JSON.stringify(draft) !== saved || !!eventId.trim();
+  useEffect(() => {
+    onDraftChange?.('test-audio', pending);
+  }, [onDraftChange, pending]);
+  useEffect(() => () => onDraftChange?.('test-audio', false), [onDraftChange]);
   const change = (patch: Partial<BBTestAudio>) => setDraft((old) => ({ ...old, ...patch }));
   const cue = (
     cueKind: BBTestCueKind,
@@ -55,9 +69,15 @@ export function BBSyntheticAudioEditor({
     });
   async function save(value: BBTestAudio | null) {
     setBusy(true);
+    const beforeSave = JSON.stringify(draft);
     try {
       const result = await setBBTestAudio(work, value);
       onChange(result);
+      setDraft((current) =>
+        JSON.stringify(current) === beforeSave
+          ? structuredClone(value ?? DEFAULT_BB_TEST_AUDIO)
+          : current,
+      );
       setStatus('测试音设置已更新；请保存作品。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));

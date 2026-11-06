@@ -843,7 +843,11 @@ export function NativeWorkAuthor({
         </label>
       </details>
       <ObservedVisualEditor work={work} selected={selected} onChange={onChange} />
-      <BBSyntheticAudioEditor work={work} onChange={onChange} />
+      <BBSyntheticAudioEditor
+        work={work}
+        onChange={onChange}
+        {...(onDraftChange ? { onDraftChange } : {})}
+      />
       <NativeMediaEditor
         work={work}
         hasProduction={!!doc.direction?.production}
