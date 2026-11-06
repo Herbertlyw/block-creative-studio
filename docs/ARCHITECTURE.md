@@ -1,30 +1,11 @@
-# 一期架构
+# 架构
 
-## 目标
+当前 BB 作品由 bcs-bb-work 包持有工程、素材、来源和指针。React 工作台由 useBBWorkSession 管理当前作品与所选 Take；修改需重验并避免覆盖过期异步结果。未保存保护记录当前作品修订与已发起下载的修订，不作为磁盘写入成功证明。
 
-浏览器内部完成一条可运行闭环：牌面编辑、真人或机器试玩、语义 Replay、导演节奏、三维预览和固定帧视频导出。Blender/AE 不进入一期运行链，只通过抽象接口预留下一期接入点。
+BB 原生规则与供给位于 block-placement runtime，供真人、机器及观察输入共用。各输入经过相应适配形成 BB 时间线计划，逐帧求值返回逻辑状态、显示状态、轨迹及语义事件。普通与观察外观使用不同的局部绘制层；播放器、帧时钟、音频调度和视频编码共享。3D 从同一帧做表现投影，部分 2D 素材和效果没有 3D 消费者。
 
-## 单向依赖
+工程素材解析和内容哈希校验位于 contracts；图片绑定和 WAV 混音使用各自的运行时模块。预览及导出取同一个生效预览配置。保存的外观作为默认配置，用户选择的临时覆盖独立保存于页面状态，可恢复到工程设置。
 
-```text
-Game Core
-  → PlacementAction / Take
-  → Presentation Compiler
-  → PresentationFrame
-  → Three.js StudioScene
-  → CanvasSource / WebCodecs / MP4
-```
+src/nativeReference 是当前产品运行依赖，不是可整体删除的交接快照。contracts/bb/schemas 与 workbench-extensions 是当前合同。单独的 tsconfig.calibrated 对 noUncheckedIndexedAccess 保留历史例外；新增或修改边界仍需显式检查，不代表整个工程完全启用该选项。
 
-`game-core` 不依赖 React、Three.js、浏览器或视频编码器。玩法状态和视觉状态分开，使同一 Take 可反复更换材质、镜头、特效和节奏。
-
-## 人类与机器统一入口
-
-人类拖拽和机器玩家最终都输出 `PlacementAction`。动作中的真相是 `pieceId + anchor`；指针轨迹只是导演信息。机器玩家不需要截图识别或模拟鼠标，即可通过合法动作 API 下棋。
-
-## 实时与成片分离
-
-实时试玩只记录 Replay。成片阶段编译为固定帧 `PresentationFrame`，逐帧重演并送入浏览器原生视频编码链。因此导出速度可以慢于实时，但不会丢帧或改变动作帧位。
-
-## 一期 DCC 扩展缝
-
-`src/extensions/contracts.ts` 定义 `AssetRef`、`GeometryProvider`、`EffectProvider` 和 `RendererBackend`。一期只有内建程序化资产。下一期可增加 GLB、Flipbook、Blender 或 AE Provider，而不污染玩法 Schema。
+开发检查以当前 BB runtime 的规则和回放为核心；旧公开 V1 工作台不再是生产入口。合成输入及视频应由生成器写入忽略的 outputs 目录，项目包和 task.json 是不同文件。通用素材、音频和导出与 BB 特定规则应保持模块边界。
