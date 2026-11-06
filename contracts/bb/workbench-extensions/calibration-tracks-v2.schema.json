@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.calibration-tracks.v2",
+  "title": "Workbench-authored multi-take calibrated tracks",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "version", "driver", "tracks"],
+  "properties": {
+    "contract": { "const": "bcs.workbench.calibration-tracks" },
+    "version": { "const": "2.0.0" },
+    "driver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "referenceSourceSha256"],
+      "properties": {
+        "id": { "const": "bcs.workbench.block-placement.calibrated-multi" },
+        "version": { "const": "2.0.0" },
+        "referenceSourceSha256": {
+          "const": "39e3e1346055eab21877bb8b8f5270a83ad55dcd8f42322e60091f4012f061f6"
+        }
+      }
+    },
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["takeId", "initialStateHash", "takeHash", "fps", "calibration"],
+        "properties": {
+          "takeId": { "type": "string", "minLength": 1, "maxLength": 180 },
+          "initialStateHash": { "type": "string", "pattern": "^fnv1a32:[0-9a-f]{8}$" },
+          "takeHash": { "type": "string", "pattern": "^fnv1a32:[0-9a-f]{8}$" },
+          "fps": { "type": "integer", "minimum": 15, "maximum": 60 },
+          "calibration": { "type": "object" }
+        }
+      }
+    }
+  }
+}

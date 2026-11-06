@@ -1,0 +1,495 @@
+{
+  "format": "bcs-studio-project",
+  "version": "2.0.0",
+  "id": "synthetic-production-audio",
+  "name": "合成工程音频与三素材槽",
+  "game": {
+    "contract": "bcs.game-project",
+    "contractVersion": "1.0.0",
+    "game": {
+      "id": "block-placement",
+      "moduleVersion": "1.0.0",
+      "rulesetId": "block-placement-classic-v1",
+      "rulesetVersion": "1.0.0"
+    },
+    "config": {
+      "schemaId": "bcs.runtime.block-placement.config",
+      "data": {
+        "board": {
+          "rows": 8,
+          "cols": 8,
+          "cells": [
+            ["blue", null, null, null, "lime", null, null, null],
+            [null, null, null, null, "cyan", null, null, null],
+            [null, null, null, null, "blue", null, null, null],
+            [null, null, null, null, "violet", null, null, null],
+            [null, null, null, null, "coral", null, null, null],
+            ["coral", "amber", "lime", "cyan", null, "violet", "coral", "amber"],
+            [null, null, null, null, "lime", null, null, null],
+            ["blue", "blue", null, null, "cyan", null, "blue", "blue"]
+          ]
+        },
+        "pieces": [
+          {
+            "id": "piece-0-0-single",
+            "shapeId": "single",
+            "color": "blue",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 0,
+            "cellColors": ["blue"]
+          },
+          {
+            "id": "piece-0-1-tri-h",
+            "shapeId": "tri-h",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 1,
+            "cellColors": ["violet", "amber", "blue"]
+          },
+          {
+            "id": "piece-0-2-square-2",
+            "shapeId": "square-2",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 2,
+            "cellColors": ["lime", "amber", "coral", "cyan"]
+          }
+        ],
+        "fixedPieceSupply": [
+          [
+            {
+              "id": "piece-0-0-single",
+              "shapeId": "single",
+              "color": "blue",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 0,
+              "cellColors": ["blue"]
+            },
+            {
+              "id": "piece-0-1-tri-h",
+              "shapeId": "tri-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 1,
+              "cellColors": ["violet", "amber", "blue"]
+            },
+            {
+              "id": "piece-0-2-square-2",
+              "shapeId": "square-2",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 2,
+              "cellColors": ["lime", "amber", "coral", "cyan"]
+            }
+          ],
+          [
+            {
+              "id": "piece-1-0-t-4",
+              "shapeId": "single",
+              "color": "coral",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 0,
+              "cellColors": ["coral"]
+            },
+            {
+              "id": "piece-1-1-plus-5",
+              "shapeId": "plus-5",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 1,
+              "cellColors": ["lime", "blue", "amber", "amber", "amber"]
+            },
+            {
+              "id": "piece-1-2-line5-h",
+              "shapeId": "line5-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 2,
+              "cellColors": ["amber", "lime", "violet", "blue", "lime"]
+            }
+          ]
+        ]
+      }
+    },
+    "initialState": {
+      "schemaId": "bcs.runtime.block-placement.state",
+      "data": {
+        "board": {
+          "rows": 8,
+          "cols": 8,
+          "cells": [
+            ["blue", null, null, null, "lime", null, null, null],
+            [null, null, null, null, "cyan", null, null, null],
+            [null, null, null, null, "blue", null, null, null],
+            [null, null, null, null, "violet", null, null, null],
+            [null, null, null, null, "coral", null, null, null],
+            ["coral", "amber", "lime", "cyan", null, "violet", "coral", "amber"],
+            [null, null, null, null, "lime", null, null, null],
+            ["blue", "blue", null, null, "cyan", null, "blue", "blue"]
+          ]
+        },
+        "pieces": [
+          {
+            "id": "piece-0-0-single",
+            "shapeId": "single",
+            "color": "blue",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 0,
+            "cellColors": ["blue"]
+          },
+          {
+            "id": "piece-0-1-tri-h",
+            "shapeId": "tri-h",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 1,
+            "cellColors": ["violet", "amber", "blue"]
+          },
+          {
+            "id": "piece-0-2-square-2",
+            "shapeId": "square-2",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 2,
+            "cellColors": ["lime", "amber", "coral", "cyan"]
+          }
+        ],
+        "seed": 41782,
+        "setIndex": 0,
+        "turn": 0,
+        "score": 0,
+        "combo": 0,
+        "status": "playing",
+        "fixedPieceSupply": [
+          [
+            {
+              "id": "piece-0-0-single",
+              "shapeId": "single",
+              "color": "blue",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 0,
+              "cellColors": ["blue"]
+            },
+            {
+              "id": "piece-0-1-tri-h",
+              "shapeId": "tri-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 1,
+              "cellColors": ["violet", "amber", "blue"]
+            },
+            {
+              "id": "piece-0-2-square-2",
+              "shapeId": "square-2",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 2,
+              "cellColors": ["lime", "amber", "coral", "cyan"]
+            }
+          ],
+          [
+            {
+              "id": "piece-1-0-t-4",
+              "shapeId": "single",
+              "color": "coral",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 0,
+              "cellColors": ["coral"]
+            },
+            {
+              "id": "piece-1-1-plus-5",
+              "shapeId": "plus-5",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 1,
+              "cellColors": ["lime", "blue", "amber", "amber", "amber"]
+            },
+            {
+              "id": "piece-1-2-line5-h",
+              "shapeId": "line5-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 2,
+              "cellColors": ["amber", "lime", "violet", "blue", "lime"]
+            }
+          ]
+        ]
+      },
+      "stateHash": "fnv1a32:10cad214"
+    }
+  },
+  "production": {
+    "layoutProfileRef": {
+      "id": "synthetic-missing-layout",
+      "kind": "layout",
+      "version": "1.0.0"
+    },
+    "cameraProfileRef": {
+      "id": "synthetic-missing-camera",
+      "kind": "camera",
+      "version": "1.0.0"
+    },
+    "lookPackRef": {
+      "id": "synthetic-missing-look",
+      "kind": "look",
+      "version": "1.0.0"
+    },
+    "output": {
+      "width": 512,
+      "height": 864,
+      "fps": 30,
+      "quality": "preview"
+    }
+  },
+  "takes": [
+    {
+      "contract": "bcs.game-replay",
+      "contractVersion": "1.0.0",
+      "gameId": "block-placement",
+      "moduleVersion": "1.0.0",
+      "takeId": "synthetic-take",
+      "initialStateHash": "fnv1a32:10cad214",
+      "seed": 41782,
+      "actions": [
+        {
+          "id": "synthetic-first",
+          "actor": "human",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-0-0-single",
+            "anchor": {
+              "row": 5,
+              "col": 4
+            }
+          }
+        },
+        {
+          "id": "synthetic-second",
+          "actor": "human",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-0-1-tri-h",
+            "anchor": {
+              "row": 1,
+              "col": 1
+            }
+          }
+        }
+      ],
+      "interactions": [
+        {
+          "id": "interaction-synthetic-first",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 15,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.2,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.5,
+              "y": 0.6
+            }
+          ],
+          "committedActionId": "synthetic-first"
+        },
+        {
+          "id": "interaction-synthetic-second",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 16,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.5,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 16,
+              "x": 0.4,
+              "y": 0.7
+            }
+          ],
+          "committedActionId": "synthetic-second"
+        }
+      ]
+    }
+  ],
+  "direction": {
+    "rhythm": {
+      "id": "human-natural",
+      "label": "真人自然",
+      "description": "保留轻微犹豫、末端修正和舒适的动作间隔。",
+      "globalSpeed": 1,
+      "dragFrames": 22,
+      "pickupDelayFrames": 3,
+      "placementSettleFrames": 7,
+      "betweenActionFrames": 14,
+      "clearDelayFrames": 4,
+      "clearDurationFrames": 18,
+      "cameraRecoveryFrames": 13,
+      "easing": "easeInOutCubic"
+    },
+    "style": {
+      "renderer": "reference-2d",
+      "reference2d": {
+        "profile": "block-garden-reference-v1",
+        "tileMaterial": "soft-bevel",
+        "tileFaceSet": "botanical-reference",
+        "previewFx": "full-line-tint",
+        "clearFx": "sweep-score-spark",
+        "feedbackFx": "praise-combo",
+        "ambientFx": "garden-petals",
+        "bestScore": 22634
+      },
+      "geometry": {
+        "id": "premium-beveled",
+        "depth": 0.58,
+        "bevel": 0.1,
+        "gap": 0.055
+      },
+      "material": "candy-resin",
+      "lighting": "soft-candy",
+      "camera": "premium-perspective",
+      "fx": "crystal-shatter",
+      "background": "#07142d",
+      "showPointer": true,
+      "agentAssets": {
+        "version": "1.0.0",
+        "entries": {
+          "synthetic-background": {
+            "id": "synthetic-background",
+            "kind": "image",
+            "sourceName": "synthetic-background.png",
+            "mimeType": "image/png",
+            "encoding": "base64",
+            "sha256": "79a515725ddae03e720bc779f070153d4d4440cb8dea33c1ad8022c951fe6494",
+            "width": 32,
+            "height": 32,
+            "byteLength": 2467
+          },
+          "generated-tile": {
+            "id": "generated-tile",
+            "kind": "image",
+            "sourceName": "generated-tile.png",
+            "mimeType": "image/png",
+            "encoding": "base64",
+            "sha256": "fadae46b830492e3c7704ca84be02c47dd7b25fd4ec817ccc4b1a6480d8223a6",
+            "width": 64,
+            "height": 64,
+            "byteLength": 164
+          },
+          "generated-atlas": {
+            "id": "generated-atlas",
+            "kind": "image",
+            "sourceName": "generated-atlas.png",
+            "mimeType": "image/png",
+            "encoding": "base64",
+            "sha256": "6b819bf5248345b183b7a3e5950f0095a3b6b8326bca9b857cce9d76cf0b1571",
+            "width": 64,
+            "height": 64,
+            "byteLength": 503
+          }
+        },
+        "bindings": {
+          "background.base": {
+            "slotId": "background.base",
+            "assetId": "synthetic-background",
+            "role": "background-image",
+            "fit": "cover",
+            "opacity": 1,
+            "blendMode": "source-over",
+            "inset": 0
+          },
+          "tile.face": {
+            "slotId": "tile.face",
+            "assetId": "generated-tile",
+            "role": "tile-face-image",
+            "fit": "cover",
+            "opacity": 1,
+            "blendMode": "source-over",
+            "inset": 0.06
+          },
+          "board.atlas": {
+            "slotId": "board.atlas",
+            "assetId": "generated-atlas",
+            "role": "board-atlas-image",
+            "fit": "cover",
+            "opacity": 1,
+            "blendMode": "source-over",
+            "inset": 0.06
+          }
+        }
+      }
+    },
+    "production": {
+      "version": "1.0.0",
+      "audio": {
+        "selectedPackId": "arcade-clean-v1",
+        "masterGain": 0.8,
+        "mastering": "preserve-level",
+        "sfxGain": 0.7,
+        "bgm": {
+          "assetId": "music",
+          "gain": 0.2,
+          "loop": true,
+          "startSeconds": 0.5,
+          "sourceOffsetSeconds": 0.2,
+          "fadeInSeconds": 0,
+          "fadeOutSeconds": 0
+        },
+        "cues": [
+          {
+            "eventType": "block-placement.placement-committed",
+            "assetId": "cue",
+            "gain": 0.5
+          },
+          {
+            "eventType": "block-placement.cross-cleared",
+            "assetId": "cue",
+            "gain": 0.7
+          }
+        ],
+        "assets": {
+          "music": {
+            "id": "music",
+            "kind": "audio",
+            "mimeType": "audio/wav",
+            "sha256": "85fe6e7ca3c48958ce90cf4271ba41827e6fd0d29e41b8597fa4b63b99f73385",
+            "sourceName": "music.wav",
+            "encoding": "base64"
+          },
+          "cue": {
+            "id": "cue",
+            "kind": "audio",
+            "mimeType": "audio/wav",
+            "sha256": "1037574d66f5d90d7c83fb0ee32feb4af7e183e5e5efa87a06a27032ffd80242",
+            "sourceName": "cue.wav",
+            "encoding": "base64"
+          }
+        }
+      }
+    }
+  }
+}

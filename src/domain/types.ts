@@ -1,6 +1,14 @@
 export const BOARD_SIZE = 8;
 
-export type TileColor = 'coral' | 'amber' | 'lime' | 'cyan' | 'blue' | 'violet';
+export type TileColor = 'coral' | 'amber' | 'lime' | 'cyan' | 'blue' | 'violet' | 'rose';
+export type ClearAxes = 'rows' | 'columns' | 'both';
+export type SeedSupplyVersion = 'reference-worktree-0f237a8f';
+export type ClearTrigger = 'line-complete' | 'board-full';
+export interface ReferenceClearRule {
+  turn: number;
+  axes?: ClearAxes;
+  trigger?: ClearTrigger;
+}
 export type Actor = 'human' | 'agent';
 export type StudioMode = 'edit' | 'play' | 'replay' | 'render';
 export type GameStatus = 'playing' | 'game-over';
@@ -18,7 +26,10 @@ export type ReferenceClearFxId = 'sweep-score-spark' | 'sweep-only';
 export type ReferenceFeedbackFxId = 'praise-combo' | 'score-only';
 export type ReferenceAmbientFxId = 'garden-petals' | 'none';
 
-export interface GridCell { row: number; col: number }
+export interface GridCell {
+  row: number;
+  col: number;
+}
 
 export interface BoardState {
   rows: number;
@@ -45,7 +56,16 @@ export interface PieceInstance {
 
 export interface GameSnapshot {
   board: BoardState;
+  /** Omitted means historical row-and-column clears. */
+  clearAxes?: ClearAxes;
+  clearTrigger?: ClearTrigger;
+  referenceClearRules?: ReferenceClearRule[];
   pieces: PieceInstance[];
+  /** Authored rounds, including round zero. Absent means seeded refresh. */
+  fixedPieceSupply?: PieceInstance[][];
+  /** Absent retains the public V1 seeded generator. */
+  seedSupplyVersion?: SeedSupplyVersion;
+  supplyExhausted?: boolean;
   seed: number;
   setIndex: number;
   turn: number;
@@ -55,7 +75,11 @@ export interface GameSnapshot {
 }
 
 /** Viewport-normalized pointer coordinates plus a frame offset from drag start. */
-export interface PointerSample { frameOffset: number; x: number; y: number }
+export interface PointerSample {
+  frameOffset: number;
+  x: number;
+  y: number;
+}
 
 export interface PlacementAction {
   id: string;
@@ -64,6 +88,8 @@ export interface PlacementAction {
   anchor: GridCell;
   durationFrames: number;
   pointerPath: PointerSample[];
+  /** Explicit user-authored agent paths are retained instead of regenerated. */
+  pointerPathMode?: 'authored';
 }
 
 export interface ClearResult {
@@ -113,7 +139,6 @@ export interface GeometryStyle {
   gap: number;
 }
 
-
 export interface Reference2DStyleSpec {
   profile: 'block-garden-reference-v1';
   tileMaterial: ReferenceTileMaterialId;
@@ -122,6 +147,8 @@ export interface Reference2DStyleSpec {
   clearFx: ReferenceClearFxId;
   feedbackFx: ReferenceFeedbackFxId;
   ambientFx: ReferenceAmbientFxId;
+  /** Omitted preserves the historical 2D background. */
+  backgroundColor?: string;
   bestScore: number;
 }
 
@@ -144,6 +171,26 @@ export interface RenderSpec {
   quality: 'preview' | 'standard' | 'cinematic';
 }
 
+/** Public-studio generated tones. This is not the workbench ProductionAudio contract. */
+export interface StudioTestAudio {
+  enabled: boolean;
+  sfxGain: number;
+  bgmGain?: number;
+  /** Seconds into the exported timeline before the bed starts. */
+  bgmStartSeconds?: number;
+  /** Seconds skipped from the start of the generated bed. */
+  bgmSourceOffsetSeconds?: number;
+  bgmLoop?: boolean;
+  /** Omitted preserves the historical 110 Hz test bed. */
+  bgmPattern?: 'melody-v1';
+  cueOverrides?: Array<{
+    kind: 'place' | 'line-cleared' | 'cross-cleared' | 'praise' | 'game-over';
+    eventId?: string;
+    gain: number;
+    offsetSeconds: number;
+  }>;
+}
+
 export interface ProjectSpec {
   schemaVersion: '1.0.0';
   id: string;
@@ -155,6 +202,13 @@ export interface ProjectSpec {
   style: StyleSpec;
   rhythm: RhythmProfile;
   render: RenderSpec;
+  audio?: StudioTestAudio;
+  clearAxes?: ClearAxes;
+  clearTrigger?: ClearTrigger;
+  referenceClearRules?: ReferenceClearRule[];
+  fixedPieceSupply?: PieceInstance[][];
+  /** Absent retains the public V1 seeded generator. */
+  seedSupplyVersion?: SeedSupplyVersion;
 }
 
 export interface LegalMove {
@@ -184,7 +238,11 @@ export interface CompiledTake {
   final: GameSnapshot;
 }
 
-export interface ClearingFrame { clear: ClearResult; progress: number; seed: number }
+export interface ClearingFrame {
+  clear: ClearResult;
+  progress: number;
+  seed: number;
+}
 
 export interface PlacementFeedbackFrame {
   cells: Array<GridCell & { color: TileColor }>;
@@ -196,10 +254,17 @@ export interface PresentationFrame {
   frame: number;
   fps: number;
   totalFrames?: number;
+  /** Source action identity for semantic events; stable across all frames of one action. */
+  currentActionId?: string;
   snapshot: GameSnapshot;
   board: BoardState;
   hiddenPieceId?: string;
-  draggedPiece?: { piece: PieceInstance; anchor: GridCell; progress: number; pointerDriven?: boolean };
+  draggedPiece?: {
+    piece: PieceInstance;
+    anchor: GridCell;
+    progress: number;
+    pointerDriven?: boolean;
+  };
   pointer?: { x: number; y: number; pressed: boolean };
   placementFeedback?: PlacementFeedbackFrame;
   clearing?: ClearingFrame;

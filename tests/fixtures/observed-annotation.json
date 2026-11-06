@@ -1,0 +1,206 @@
+{
+  "structured": {
+    "version": "1.0.0",
+    "sourceSha256": "4573bed4f892b3054e433fce61526e9986cfc87a6e192f360592a4fe74f4b3f2",
+    "board": {
+      "confirmed": true,
+      "cells": [
+        ["blue", "blue", "blue", "blue", "blue", "blue", "blue", null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null]
+      ]
+    },
+    "supply": {
+      "confirmed": true,
+      "rounds": [
+        [
+          {
+            "shapeId": "single",
+            "color": "blue"
+          },
+          {
+            "shapeId": "single",
+            "color": "coral"
+          },
+          {
+            "shapeId": "single",
+            "color": "lime"
+          }
+        ]
+      ],
+      "initialUsedSlots": []
+    },
+    "output": {
+      "width": 512,
+      "height": 864,
+      "fps": 30
+    },
+    "actions": [
+      {
+        "id": "1",
+        "confirmed": true,
+        "slot": 0,
+        "row": 0,
+        "col": 7,
+        "pickupFrame": 6,
+        "releaseFrame": 21,
+        "clearFrame": 27,
+        "clearRows": [0],
+        "clearCols": [],
+        "path": [
+          {
+            "frame": 6,
+            "x": 0.2,
+            "y": 0.8
+          },
+          {
+            "frame": 21,
+            "x": 0.5,
+            "y": 0.3
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "confirmed": true,
+        "slot": 1,
+        "row": 1,
+        "col": 1,
+        "pickupFrame": 36,
+        "releaseFrame": 51,
+        "clearFrame": 51,
+        "clearRows": [],
+        "clearCols": [],
+        "path": [
+          {
+            "frame": 36,
+            "x": 0.2,
+            "y": 0.8
+          },
+          {
+            "frame": 51,
+            "x": 0.5,
+            "y": 0.3
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "confirmed": true,
+        "slot": 2,
+        "row": 1,
+        "col": 2,
+        "pickupFrame": 66,
+        "releaseFrame": 81,
+        "clearFrame": 81,
+        "clearRows": [],
+        "clearCols": [],
+        "path": [
+          {
+            "frame": 66,
+            "x": 0.2,
+            "y": 0.8
+          },
+          {
+            "frame": 81,
+            "x": 0.5,
+            "y": 0.3
+          }
+        ]
+      }
+    ],
+    "seed": 42
+  },
+  "geometry": {
+    "confirmed": true,
+    "coordinateSystem": "design-1080x1920-piece-top-left",
+    "board": [60, 300, 100],
+    "rackY": 1450,
+    "rackCell": 70,
+    "rackCenters": [236, 540, 844],
+    "theme": "grey",
+    "bestScore": 0,
+    "motions": [
+      {
+        "actionId": "1",
+        "confirmed": true,
+        "points": [
+          {
+            "frame": 6,
+            "x": 200,
+            "y": 1400,
+            "cellSize": 70
+          },
+          {
+            "frame": 21,
+            "x": 760,
+            "y": 300,
+            "cellSize": 100
+          }
+        ]
+      },
+      {
+        "actionId": "2",
+        "confirmed": true,
+        "points": [
+          {
+            "frame": 36,
+            "x": 200,
+            "y": 1400,
+            "cellSize": 70
+          },
+          {
+            "frame": 51,
+            "x": 160,
+            "y": 400,
+            "cellSize": 100
+          }
+        ]
+      },
+      {
+        "actionId": "3",
+        "confirmed": true,
+        "points": [
+          {
+            "frame": 66,
+            "x": 226,
+            "y": 1379,
+            "cellSize": 70
+          },
+          {
+            "frame": 81,
+            "x": 260,
+            "y": 400,
+            "cellSize": 100
+          }
+        ]
+      }
+    ]
+  },
+  "mapping": {
+    "version": "1.0.0",
+    "mode": "stretch",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 512,
+      "height": 864
+    },
+    "x": 0,
+    "y": 0,
+    "confirmed": true
+  },
+  "observations": [],
+  "audioSettings": {
+    "bgmStart": 0,
+    "bgmOffset": 0,
+    "bgmGain": 0.2,
+    "cueGain": 0.5,
+    "bgmLoop": true
+  }
+}

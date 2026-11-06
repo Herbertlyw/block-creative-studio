@@ -1,4 +1,7 @@
 import { applyPlacement, cloneSnapshot, pieceCellColor, pieceCells } from '../domain/gameEngine';
+import { getShape, getShapeBounds } from '../domain/shapes';
+import { boardAnchorFromNormalizedPointer, pointerLandingForPlacement } from './boardLayout';
+import { buildAgentPointerPath } from './pointerPath';
 import type {
   BoardState,
   CompiledAction,
@@ -17,7 +20,7 @@ const mix = (from: number, to: number, amount: number): number => from + (to - f
 function ease(value: number, kind: RhythmProfile['easing']): number {
   const t = clamp01(value);
   if (kind === 'easeOutCubic') return 1 - (1 - t) ** 3;
-  if (kind === 'easeInOutCubic') return t < 0.5 ? 4 * t ** 3 : 1 - ((-2 * t + 2) ** 3) / 2;
+  if (kind === 'easeInOutCubic') return t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
   const c1 = 1.70158;
   const c3 = c1 + 1;
   return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2;
@@ -31,21 +34,32 @@ function snapshotWithBoard(snapshot: GameSnapshot, board: BoardState): GameSnaps
   return { ...cloneSnapshot(snapshot), board: cloneBoard(board) };
 }
 
+function landingBounds(shapeId: string | undefined): { rows: number; cols: number } {
+  if (!shapeId) return { rows: 1, cols: 1 };
+  try {
+    return getShapeBounds(getShape(shapeId));
+  } catch {
+    return { rows: 1, cols: 1 };
+  }
+}
+
 function interpolatePointer(
   samples: PointerSample[],
   elapsedFrame: number,
   durationFrames: number,
   slotIndex: number,
   anchor: { row: number; col: number },
+  bounds: { rows: number; cols: number },
 ): { x: number; y: number } {
+  const landing = pointerLandingForPlacement(anchor, bounds);
   const fallback: PointerSample[] = [
     { frameOffset: 0, x: 0.27 + slotIndex * 0.23, y: 0.88 },
-    { frameOffset: Math.round(durationFrames * 0.45), x: 0.5, y: 0.64 },
     {
-      frameOffset: durationFrames,
-      x: 0.16 + (anchor.col / 7) * 0.68,
-      y: 0.16 + (anchor.row / 7) * 0.54,
+      frameOffset: Math.round(durationFrames * 0.45),
+      x: (0.27 + slotIndex * 0.23 + landing.x) / 2,
+      y: (0.88 + landing.y) / 2,
     },
+    { frameOffset: durationFrames, x: landing.x, y: landing.y },
   ];
   const path = samples.length >= 2 ? samples : fallback;
   if (elapsedFrame <= (path[0]?.frameOffset ?? 0)) {
@@ -69,6 +83,18 @@ function interpolatePointer(
   return { x: last?.x ?? 0.5, y: last?.y ?? 0.5 };
 }
 
+function settlePointerToLanding(
+  point: { x: number; y: number },
+  anchor: { row: number; col: number },
+  bounds: { rows: number; cols: number },
+  progress: number,
+): { x: number; y: number } {
+  const landing = pointerLandingForPlacement(anchor, bounds);
+  const settle = clamp01((progress - 0.82) / 0.18);
+  if (settle <= 0) return point;
+  return { x: mix(point.x, landing.x, settle), y: mix(point.y, landing.y, settle) };
+}
+
 function directedDuration(action: PlacementAction, rhythm: RhythmProfile): number {
   const sourceWeight = action.actor === 'human' ? 0.58 : 0.25;
   const blended = action.durationFrames * sourceWeight + rhythm.dragFrames * (1 - sourceWeight);
@@ -83,14 +109,33 @@ export function compileTake(take: Take, rhythm: RhythmProfile, fps = 30): Compil
   for (const sourceAction of take.actions) {
     frameCursor += Math.max(1, Math.round(rhythm.betweenActionFrames / rhythm.globalSpeed));
     const durationFrames = directedDuration(sourceAction, rhythm);
+    const movingPiece = cursor.pieces.find((candidate) => candidate.id === sourceAction.pieceId);
+    const bounds = landingBounds(movingPiece?.shapeId);
+    const landing = pointerLandingForPlacement(sourceAction.anchor, bounds);
+    // Rhythm fields and directed duration are output frames at `fps`, not seconds.
+    // Only the 0.45s lead-in and the 0.8s tail are authored in seconds and converted with `fps`.
+    // Legacy agent paths of three samples or fewer are rebuilt; explicitly authored paths are retained.
+    const pointerPath =
+      sourceAction.actor === 'agent' &&
+      sourceAction.pointerPathMode !== 'authored' &&
+      sourceAction.pointerPath.length <= 3
+        ? buildAgentPointerPath({
+            actionIndex: compiled.length,
+            slotIndex: movingPiece?.slotIndex ?? 1,
+            landing,
+            durationFrames,
+          })
+        : sourceAction.pointerPath.map((sample) => ({
+            ...sample,
+            frameOffset: Math.round(
+              (sample.frameOffset / Math.max(1, sourceAction.durationFrames)) * durationFrames,
+            ),
+          }));
     const action: PlacementAction = {
       ...sourceAction,
       durationFrames,
       anchor: { ...sourceAction.anchor },
-      pointerPath: sourceAction.pointerPath.map((sample) => ({
-        ...sample,
-        frameOffset: Math.round((sample.frameOffset / Math.max(1, sourceAction.durationFrames)) * durationFrames),
-      })),
+      pointerPath,
     };
     const transition = applyPlacement(cursor, action);
     if (!transition) throw new Error(`无法编译无效动作：${sourceAction.id}`);
@@ -102,7 +147,8 @@ export function compileTake(take: Take, rhythm: RhythmProfile, fps = 30): Compil
       transition.clear.cells.length > 0
         ? clearStartFrame + Math.max(1, Math.round(rhythm.clearDurationFrames / rhythm.globalSpeed))
         : clearStartFrame;
-    const settleEnd = releaseFrame + Math.max(1, Math.round(rhythm.placementSettleFrames / rhythm.globalSpeed));
+    const settleEnd =
+      releaseFrame + Math.max(1, Math.round(rhythm.placementSettleFrames / rhythm.globalSpeed));
     const cameraRecoveryEnd =
       transition.clear.cells.length > 0
         ? clearEndFrame + Math.max(1, Math.round(rhythm.cameraRecoveryFrames / rhythm.globalSpeed))
@@ -151,25 +197,33 @@ export function evaluateCompiledTake(
       );
       const progress = ease(rawProgress, rhythm.easing);
       const piece = transition.before.pieces.find((candidate) => candidate.id === action.pieceId);
-      const pointer = interpolatePointer(
+      const bounds = landingBounds(piece?.shapeId);
+      const rawPointer = interpolatePointer(
         action.pointerPath,
         safeFrame - compiledAction.startFrame,
         action.durationFrames,
         piece?.slotIndex ?? 1,
         action.anchor,
+        bounds,
       );
+      const pointer = settlePointerToLanding(rawPointer, action.anchor, bounds, rawProgress);
+      const hover = boardAnchorFromNormalizedPointer(pointer, bounds);
       return {
         frame: safeFrame,
         fps: compiled.fps,
         totalFrames: compiled.totalFrames,
+        currentActionId: action.id,
         snapshot: cloneSnapshot(transition.before),
         board: cloneBoard(transition.before.board),
         hiddenPieceId: action.pieceId,
         ...(piece
           ? {
               draggedPiece: {
-                piece: { ...piece, ...(piece.cellColors ? { cellColors: [...piece.cellColors] } : {}) },
-                anchor: { ...action.anchor },
+                piece: {
+                  ...piece,
+                  ...(piece.cellColors ? { cellColors: [...piece.cellColors] } : {}),
+                },
+                anchor: hover ?? { ...action.anchor },
                 progress,
               },
             }
@@ -179,7 +233,9 @@ export function evaluateCompiledTake(
       };
     }
 
-    const placedPiece = transition.before.pieces.find((candidate) => candidate.id === action.pieceId);
+    const placedPiece = transition.before.pieces.find(
+      (candidate) => candidate.id === action.pieceId,
+    );
     const placedCells = placedPiece
       ? pieceCells(placedPiece, action.anchor).map((cell, index) => ({
           ...cell,
@@ -203,6 +259,7 @@ export function evaluateCompiledTake(
         frame: safeFrame,
         fps: compiled.fps,
         totalFrames: compiled.totalFrames,
+        currentActionId: action.id,
         snapshot,
         board: cloneBoard(transition.placedBoard),
         ...(placedCells.length > 0
@@ -247,6 +304,7 @@ export function evaluateCompiledTake(
         frame: safeFrame,
         fps: compiled.fps,
         totalFrames: compiled.totalFrames,
+        currentActionId: action.id,
         snapshot,
         board: cloneBoard(transition.placedBoard),
         clearing: {

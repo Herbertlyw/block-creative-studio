@@ -3,12 +3,7 @@
   "$id": "https://block-creative.local/schema/project-v1.json",
   "title": "Block Creative Studio project bundle",
   "type": "object",
-  "required": [
-    "format",
-    "version",
-    "project",
-    "takes"
-  ],
+  "required": ["format", "version", "project", "takes"],
   "properties": {
     "format": {
       "const": "block-creative-studio-project"
@@ -30,21 +25,11 @@
   "additionalProperties": false,
   "$defs": {
     "tileColor": {
-      "enum": [
-        "coral",
-        "amber",
-        "lime",
-        "cyan",
-        "blue",
-        "violet"
-      ]
+      "enum": ["coral", "amber", "lime", "cyan", "blue", "violet", "rose"]
     },
     "cell": {
       "type": "object",
-      "required": [
-        "row",
-        "col"
-      ],
+      "required": ["row", "col"],
       "properties": {
         "row": {
           "type": "integer",
@@ -61,11 +46,7 @@
     },
     "board": {
       "type": "object",
-      "required": [
-        "rows",
-        "cols",
-        "cells"
-      ],
+      "required": ["rows", "cols", "cells"],
       "properties": {
         "rows": {
           "const": 8
@@ -98,14 +79,7 @@
     },
     "piece": {
       "type": "object",
-      "required": [
-        "id",
-        "shapeId",
-        "color",
-        "used",
-        "setIndex",
-        "slotIndex"
-      ],
+      "required": ["id", "shapeId", "color", "used", "setIndex", "slotIndex"],
       "properties": {
         "id": {
           "type": "string",
@@ -155,16 +129,7 @@
     },
     "snapshot": {
       "type": "object",
-      "required": [
-        "board",
-        "pieces",
-        "seed",
-        "setIndex",
-        "turn",
-        "score",
-        "combo",
-        "status"
-      ],
+      "required": ["board", "pieces", "seed", "setIndex", "turn", "score", "combo", "status"],
       "properties": {
         "board": {
           "$ref": "#/$defs/board"
@@ -198,21 +163,52 @@
           "maximum": 100000
         },
         "status": {
-          "enum": [
-            "playing",
-            "game-over"
-          ]
+          "enum": ["playing", "game-over"]
+        },
+        "clearAxes": {
+          "enum": ["both", "columns", "rows"]
+        },
+        "clearTrigger": {
+          "enum": ["board-full", "line-complete"]
+        },
+        "referenceClearRules": {
+          "$ref": "#/$defs/referenceClearRules"
+        },
+        "seedSupplyVersion": { "const": "reference-worktree-0f237a8f" },
+        "fixedPieceSupply": {
+          "$ref": "#/$defs/fixedPieceSupply"
+        },
+        "supplyExhausted": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
     },
+    "referenceClearRules": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["turn"],
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["axes"] }, { "required": ["trigger"] }],
+        "properties": {
+          "turn": { "type": "integer", "minimum": 0, "maximum": 499 },
+          "axes": { "enum": ["rows", "columns", "both"] },
+          "trigger": { "enum": ["line-complete", "board-full"] }
+        }
+      }
+    },
+    "fixedPieceSupply": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/pieceTray" }
+    },
     "pointerSample": {
       "type": "object",
-      "required": [
-        "frameOffset",
-        "x",
-        "y"
-      ],
+      "required": ["frameOffset", "x", "y"],
       "properties": {
         "frameOffset": {
           "type": "integer",
@@ -234,14 +230,7 @@
     },
     "action": {
       "type": "object",
-      "required": [
-        "id",
-        "actor",
-        "pieceId",
-        "anchor",
-        "durationFrames",
-        "pointerPath"
-      ],
+      "required": ["id", "actor", "pieceId", "anchor", "durationFrames", "pointerPath"],
       "properties": {
         "id": {
           "type": "string",
@@ -249,10 +238,7 @@
           "maxLength": 180
         },
         "actor": {
-          "enum": [
-            "human",
-            "agent"
-          ]
+          "enum": ["human", "agent"]
         },
         "pieceId": {
           "type": "string",
@@ -267,6 +253,7 @@
           "minimum": 1,
           "maximum": 10000
         },
+        "pointerPathMode": { "const": "authored" },
         "pointerPath": {
           "type": "array",
           "maxItems": 10000,
@@ -279,13 +266,7 @@
     },
     "take": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "createdAt",
-        "initial",
-        "actions"
-      ],
+      "required": ["id", "name", "createdAt", "initial", "actions"],
       "properties": {
         "id": {
           "type": "string",
@@ -317,19 +298,10 @@
     },
     "geometry": {
       "type": "object",
-      "required": [
-        "id",
-        "depth",
-        "bevel",
-        "gap"
-      ],
+      "required": ["id", "depth", "bevel", "gap"],
       "properties": {
         "id": {
-          "enum": [
-            "soft-cube",
-            "premium-beveled",
-            "candy-rounded"
-          ]
+          "enum": ["soft-cube", "premium-beveled", "candy-rounded"]
         },
         "depth": {
           "type": "number",
@@ -351,52 +323,25 @@
     },
     "style": {
       "type": "object",
-      "required": [
-        "material",
-        "lighting",
-        "camera",
-        "fx",
-        "geometry",
-        "background",
-        "showPointer"
-      ],
+      "required": ["material", "lighting", "camera", "fx", "geometry", "background", "showPointer"],
       "properties": {
         "renderer": {
-          "enum": [
-            "reference-2d",
-            "three-3d"
-          ]
+          "enum": ["reference-2d", "three-3d"]
         },
         "reference2d": {
           "$ref": "#/$defs/reference2dStyle"
         },
         "material": {
-          "enum": [
-            "glossy-plastic",
-            "candy-resin",
-            "crystal-glass"
-          ]
+          "enum": ["glossy-plastic", "candy-resin", "crystal-glass"]
         },
         "lighting": {
-          "enum": [
-            "clean-studio",
-            "soft-candy",
-            "neon-contrast"
-          ]
+          "enum": ["clean-studio", "soft-candy", "neon-contrast"]
         },
         "camera": {
-          "enum": [
-            "flat-gameplay",
-            "premium-perspective",
-            "dynamic-clear"
-          ]
+          "enum": ["flat-gameplay", "premium-perspective", "dynamic-clear"]
         },
         "fx": {
-          "enum": [
-            "clean-pop",
-            "crystal-shatter",
-            "energy-burst"
-          ]
+          "enum": ["clean-pop", "crystal-shatter", "energy-burst"]
         },
         "geometry": {
           "$ref": "#/$defs/geometry"
@@ -429,12 +374,7 @@
       ],
       "properties": {
         "id": {
-          "enum": [
-            "human-natural",
-            "tight-fast",
-            "suspense-burst",
-            "combo-rush"
-          ]
+          "enum": ["human-natural", "tight-fast", "suspense-burst", "combo-rush"]
         },
         "label": {
           "type": "string",
@@ -487,23 +427,14 @@
           "maximum": 1000
         },
         "easing": {
-          "enum": [
-            "easeOutCubic",
-            "easeInOutCubic",
-            "easeOutBack"
-          ]
+          "enum": ["easeOutCubic", "easeInOutCubic", "easeOutBack"]
         }
       },
       "additionalProperties": false
     },
     "render": {
       "type": "object",
-      "required": [
-        "width",
-        "height",
-        "fps",
-        "quality"
-      ],
+      "required": ["width", "height", "fps", "quality"],
       "properties": {
         "width": {
           "type": "integer",
@@ -523,11 +454,7 @@
           "maximum": 120
         },
         "quality": {
-          "enum": [
-            "preview",
-            "standard",
-            "cinematic"
-          ]
+          "enum": ["preview", "standard", "cinematic"]
         }
       },
       "additionalProperties": false
@@ -582,6 +509,50 @@
         },
         "render": {
           "$ref": "#/$defs/render"
+        },
+        "audio": {
+          "$ref": "#/$defs/studioTestAudio"
+        },
+        "clearAxes": {
+          "enum": ["both", "columns", "rows"]
+        },
+        "clearTrigger": {
+          "enum": ["board-full", "line-complete"]
+        },
+        "referenceClearRules": {
+          "$ref": "#/$defs/referenceClearRules"
+        },
+        "seedSupplyVersion": { "const": "reference-worktree-0f237a8f" },
+        "fixedPieceSupply": {
+          "$ref": "#/$defs/fixedPieceSupply"
+        }
+      },
+      "additionalProperties": false
+    },
+    "studioTestAudio": {
+      "type": "object",
+      "required": ["enabled", "sfxGain"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "sfxGain": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bgmGain": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bgmStartSeconds": { "type": "number", "minimum": 0 },
+        "bgmSourceOffsetSeconds": { "type": "number", "minimum": 0 },
+        "bgmLoop": { "type": "boolean" },
+        "bgmPattern": { "const": "melody-v1" },
+        "cueOverrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "gain", "offsetSeconds"],
+            "properties": {
+              "kind": { "enum": ["place", "line-cleared", "cross-cleared", "praise", "game-over"] },
+              "eventId": { "type": "string", "minLength": 1, "maxLength": 512 },
+              "gain": { "type": "number", "minimum": 0, "maximum": 1 },
+              "offsetSeconds": { "type": "number", "minimum": -60, "maximum": 60 }
+            },
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false
@@ -599,44 +570,27 @@
         "bestScore"
       ],
       "properties": {
+        "backgroundColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         "profile": {
           "const": "block-garden-reference-v1"
         },
         "tileMaterial": {
-          "enum": [
-            "soft-bevel",
-            "flat-matte"
-          ]
+          "enum": ["soft-bevel", "flat-matte"]
         },
         "tileFaceSet": {
-          "enum": [
-            "botanical-reference",
-            "none"
-          ]
+          "enum": ["botanical-reference", "none"]
         },
         "previewFx": {
-          "enum": [
-            "full-line-tint",
-            "cells-only"
-          ]
+          "enum": ["full-line-tint", "cells-only"]
         },
         "clearFx": {
-          "enum": [
-            "sweep-score-spark",
-            "sweep-only"
-          ]
+          "enum": ["sweep-score-spark", "sweep-only"]
         },
         "feedbackFx": {
-          "enum": [
-            "praise-combo",
-            "score-only"
-          ]
+          "enum": ["praise-combo", "score-only"]
         },
         "ambientFx": {
-          "enum": [
-            "garden-petals",
-            "none"
-          ]
+          "enum": ["garden-petals", "none"]
         },
         "bestScore": {
           "type": "integer",

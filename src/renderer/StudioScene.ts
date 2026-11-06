@@ -5,9 +5,13 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { boardFingerprint, canPlace, pieceCellColor } from '../domain/gameEngine';
-import { seededFloat } from '../domain/rng';
-import { getShape, getShapeBounds } from '../domain/shapes';
+import {
+  boardFingerprint,
+  canPlace,
+  pieceCellColor,
+} from '../nativeReference/games/block-placement/runtime/gameEngine';
+import { seededFloat } from '../nativeReference/domain/rng';
+import { getShape, getShapeBounds } from '../nativeReference/games/block-placement/runtime/shapes';
 import type {
   BoardState,
   ClearingFrame,
@@ -24,6 +28,12 @@ export interface StudioSceneOptions {
   quality?: 'interactive' | 'cinematic';
   alpha?: boolean;
 }
+
+/** Only the appearance values actually consumed by the 3D backend. */
+export type ThreeSceneStyle = Pick<
+  StyleSpec,
+  'material' | 'lighting' | 'camera' | 'fx' | 'geometry' | 'background' | 'showPointer'
+>;
 
 export type PickResult =
   | { kind: 'cell'; row: number; col: number }
@@ -237,7 +247,7 @@ export class StudioScene {
   );
   private readonly environmentTarget: THREE.WebGLRenderTarget;
 
-  private style: StyleSpec | null = null;
+  private style: ThreeSceneStyle | null = null;
   private frame: PresentationFrame | null = null;
   private currentBoardKey = '';
   private currentRackKey = '';
@@ -348,15 +358,16 @@ export class StudioScene {
     this.started = false;
   }
 
-  setFrame(frame: PresentationFrame, style: StyleSpec): void {
+  setFrame(frame: PresentationFrame, style: ThreeSceneStyle): void {
     if (this.disposed) return;
     this.frame = frame;
     this.style = style;
+    this.applyShardMaterial(style);
     this.syncCamera(frame.cameraPunch);
     this.syncScene();
   }
 
-  setLiveSnapshot(snapshot: GameSnapshot, style: StyleSpec): void {
+  setLiveSnapshot(snapshot: GameSnapshot, style: ThreeSceneStyle): void {
     this.setFrame(
       {
         frame: snapshot.turn,
@@ -441,7 +452,10 @@ export class StudioScene {
 
   isValidAnchor(pieceId: string, anchor: GridCell): boolean {
     const piece = this.frame?.snapshot.pieces.find((candidate) => candidate.id === pieceId);
-    return Boolean(piece && canPlace(this.frame?.snapshot.board ?? { rows: 0, cols: 0, cells: [] }, piece, anchor));
+    return Boolean(
+      piece &&
+        canPlace(this.frame?.snapshot.board ?? { rows: 0, cols: 0, cells: [] }, piece, anchor),
+    );
   }
 
   render(time = this.rafTime): void {
@@ -452,12 +466,12 @@ export class StudioScene {
     this.composer.render();
   }
 
-  renderAt(frame: PresentationFrame, style: StyleSpec): void {
+  renderAt(frame: PresentationFrame, style: ThreeSceneStyle): void {
     this.setFrame(frame, style);
     this.render(frame.frame * (1000 / Math.max(1, frame.fps)));
   }
 
-  async warmup(frame: PresentationFrame, style: StyleSpec): Promise<void> {
+  async warmup(frame: PresentationFrame, style: ThreeSceneStyle): Promise<void> {
     this.renderAt(frame, style);
     await this.renderer.compileAsync(this.scene, this.camera);
     this.renderAt(frame, style);
@@ -536,8 +550,13 @@ export class StudioScene {
     }
 
     const rackKey = `${this.frame.snapshot.pieces
-      .map((piece) => `${piece.id}:${piece.shapeId}:${piece.color}:${piece.cellColors?.join('.') ?? ''}:${piece.used ? 1 : 0}`)
-      .join(',')}:${this.frame.hiddenPieceId ?? ''}:${this.currentGeometryKey}:${this.style.material}`;
+      .map(
+        (piece) =>
+          `${piece.id}:${piece.shapeId}:${piece.color}:${piece.cellColors?.join('.') ?? ''}:${piece.used ? 1 : 0}`,
+      )
+      .join(
+        ',',
+      )}:${this.frame.hiddenPieceId ?? ''}:${this.currentGeometryKey}:${this.style.material}`;
     if (rackKey !== this.currentRackKey) {
       this.rebuildRack();
       this.currentRackKey = rackKey;
@@ -641,6 +660,19 @@ export class StudioScene {
     this.currentBackground = this.style.background;
   }
 
+  private applyShardMaterial(style: ThreeSceneStyle): void {
+    if (style.material === 'crystal-glass') {
+      this.shardMaterial.roughness = 0.04;
+      this.shardMaterial.metalness = 0.02;
+    } else if (style.material === 'candy-resin') {
+      this.shardMaterial.roughness = 0.32;
+      this.shardMaterial.metalness = 0;
+    } else {
+      this.shardMaterial.roughness = 0.16;
+      this.shardMaterial.metalness = 0.06;
+    }
+  }
+
   private getMaterial(color: TileColor, opacity = 1): THREE.MeshPhysicalMaterial {
     if (!this.style) throw new Error('Style not initialized.');
     const key = `${this.style.material}:${color}:${opacity.toFixed(2)}`;
@@ -715,8 +747,13 @@ export class StudioScene {
       group.position.copy(this.rackPosition(piece.slotIndex));
       group.scale.setScalar(0.62);
 
-      for (const [[row, col], cellIndex] of shape.cells.map((cell, index) => [cell, index] as const)) {
-        const mesh = new THREE.Mesh(this.blockGeometry, this.getMaterial(pieceCellColor(piece, cellIndex)));
+      for (const [[row, col], cellIndex] of shape.cells.map(
+        (cell, index) => [cell, index] as const,
+      )) {
+        const mesh = new THREE.Mesh(
+          this.blockGeometry,
+          this.getMaterial(pieceCellColor(piece, cellIndex)),
+        );
         mesh.position.set(
           (col - (bounds.cols - 1) / 2) * CELL_PITCH,
           ((bounds.rows - 1) / 2 - row) * CELL_PITCH,
@@ -758,7 +795,9 @@ export class StudioScene {
     const group = new THREE.Group();
     group.position.copy(position);
     group.scale.setScalar(0.62 + clamp01(progress) * 0.38);
-    for (const [[row, col], cellIndex] of shape.cells.map((cell, index) => [cell, index] as const)) {
+    for (const [[row, col], cellIndex] of shape.cells.map(
+      (cell, index) => [cell, index] as const,
+    )) {
       const baseMaterial = this.getMaterial(pieceCellColor(piece, cellIndex), valid ? 0.86 : 0.58);
       const material = valid ? baseMaterial : this.invalidPlacementMaterial;
       const mesh = new THREE.Mesh(this.blockGeometry, material);
@@ -776,19 +815,16 @@ export class StudioScene {
   private rebuildUi(ctaProgress: number): void {
     disposeGroupObjects(this.uiRoot);
     if (!this.frame) return;
-    const score = createLabelSprite(
-      String(this.frame.snapshot.score).padStart(4, '0'),
-      'SCORE',
-    );
+    const score = createLabelSprite(String(this.frame.snapshot.score).padStart(4, '0'), 'SCORE');
     score.position.set(0, 5.5, 1.2);
     this.uiRoot.add(score);
 
     if (this.frame.snapshot.combo > 1) {
-      const combo = createLabelSprite(
-        `× ${this.frame.snapshot.combo}`,
-        'COMBO',
-        { accent: '#fff0a8', width: 640, height: 220 },
-      );
+      const combo = createLabelSprite(`× ${this.frame.snapshot.combo}`, 'COMBO', {
+        accent: '#fff0a8',
+        width: 640,
+        height: 220,
+      });
       combo.scale.multiplyScalar(0.62);
       combo.position.set(0, 4.7, 1.15);
       this.uiRoot.add(combo);
@@ -883,8 +919,7 @@ export class StudioScene {
           t * (2 + seededFloat(clearing.seed, baseIndex + 5) * 9),
         );
         const scale =
-          (0.7 + seededFloat(clearing.seed, baseIndex + 6) * 0.68) *
-          Math.pow(1 - progress, 0.36);
+          (0.7 + seededFloat(clearing.seed, baseIndex + 6) * 0.68) * Math.pow(1 - progress, 0.36);
         dummy.scale.setScalar(scale);
         dummy.updateMatrix();
         this.shardMesh.setMatrixAt(shardIndex, dummy.matrix);

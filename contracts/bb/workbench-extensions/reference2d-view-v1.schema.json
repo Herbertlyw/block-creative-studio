@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.reference2d-view.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "version", "design", "layout", "camera", "fps"],
+  "properties": {
+    "contract": { "const": "bcs.workbench.reference2d-view" },
+    "version": { "const": "1.0.0" },
+    "design": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": { "width": { "const": 1064 }, "height": { "const": 1788 } }
+    },
+    "fps": { "type": "integer", "minimum": 15, "maximum": 60 },
+    "layout": { "$ref": "#/$defs/transform" },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "keyframes"],
+      "properties": {
+        "mode": { "enum": ["fixed", "keyframed"] },
+        "keyframes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["frame", "scale", "x", "y"],
+            "properties": {
+              "frame": { "type": "integer", "minimum": 0, "maximum": 18000 },
+              "scale": { "type": "number", "minimum": 0.5, "maximum": 2 },
+              "x": { "type": "number", "minimum": -1064, "maximum": 1064 },
+              "y": { "type": "number", "minimum": -1788, "maximum": 1788 }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scale", "x", "y"],
+      "properties": {
+        "scale": { "type": "number", "minimum": 0.5, "maximum": 2 },
+        "x": { "type": "number", "minimum": -1064, "maximum": 1064 },
+        "y": { "type": "number", "minimum": -1788, "maximum": 1788 }
+      }
+    }
+  }
+}

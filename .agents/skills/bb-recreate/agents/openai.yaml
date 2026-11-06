@@ -1,0 +1,4 @@
+interface:
+  display_name: 'BB 视频复刻'
+  short_description: '把 BB 参考视频整理成可编辑工程，并按需预览和导出样片'
+  default_prompt: '使用 $bb-recreate 根据这段 BB 参考视频建立可编辑工程，并按我的要求交付预览或视频。'

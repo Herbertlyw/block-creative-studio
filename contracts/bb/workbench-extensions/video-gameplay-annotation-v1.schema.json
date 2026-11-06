@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.video-gameplay-annotation.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceSha256", "seed", "board", "supply", "actions", "output"],
+  "properties": {
+    "version": { "const": "1.0.0" },
+    "sourceSha256": { "type": "string", "minLength": 1 },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "board": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmed", "cells"],
+      "properties": {
+        "confirmed": { "const": true },
+        "cells": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "type": "array",
+            "minItems": 8,
+            "maxItems": 8,
+            "items": { "enum": [null, "coral", "amber", "lime", "cyan", "blue", "violet", "rose"] }
+          }
+        }
+      }
+    },
+    "supply": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmed", "initialUsedSlots", "rounds"],
+      "properties": {
+        "confirmed": { "const": true },
+        "initialUsedSlots": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 2,
+          "items": { "type": "integer", "minimum": 0, "maximum": 2 }
+        },
+        "rounds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["shapeId", "color"],
+              "properties": {
+                "shapeId": { "type": "string", "minLength": 1 },
+                "color": { "enum": ["coral", "amber", "lime", "cyan", "blue", "violet", "rose"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "fps"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 256, "maximum": 4096 },
+        "height": { "type": "integer", "minimum": 256, "maximum": 4096 },
+        "fps": { "type": "integer", "minimum": 15, "maximum": 60 }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "confirmed",
+          "slot",
+          "row",
+          "col",
+          "pickupFrame",
+          "releaseFrame",
+          "clearFrame",
+          "clearRows",
+          "clearCols",
+          "path"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "confirmed": { "const": true },
+          "slot": { "type": "integer", "minimum": 0, "maximum": 2 },
+          "row": { "type": "integer" },
+          "col": { "type": "integer" },
+          "pickupFrame": { "type": "integer", "minimum": 0 },
+          "releaseFrame": { "type": "integer", "minimum": 0 },
+          "clearFrame": { "type": "integer", "minimum": 0 },
+          "clearRows": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "integer", "minimum": 0, "maximum": 7 }
+          },
+          "clearCols": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "integer", "minimum": 0, "maximum": 7 }
+          },
+          "path": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["frame", "x", "y"],
+              "properties": {
+                "frame": { "type": "integer", "minimum": 0 },
+                "x": { "type": "number", "minimum": 0, "maximum": 1 },
+                "y": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

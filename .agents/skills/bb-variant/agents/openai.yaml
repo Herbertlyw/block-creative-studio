@@ -1,0 +1,4 @@
+interface:
+  display_name: 'BB 工程变体'
+  short_description: '保留原作品玩法与时序，制作 BB 图片、音乐和效果变体'
+  default_prompt: '使用 $bb-variant 修改这份 BB 工程，只改变我指定的内容，并保留其余玩法、时序和素材。'

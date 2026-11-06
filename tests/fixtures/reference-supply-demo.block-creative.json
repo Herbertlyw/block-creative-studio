@@ -1,0 +1,293 @@
+{
+  "format": "block-creative-studio-project",
+  "version": "1.0.0",
+  "project": {
+    "schemaVersion": "1.0.0",
+    "id": "demo-cross-clear",
+    "name": "参考版本种子供给验证",
+    "ruleProfile": "block-placement-classic-v1",
+    "seed": 0,
+    "setupBoard": {
+      "rows": 8,
+      "cols": 8,
+      "cells": [
+        ["blue", null, null, null, "lime", null, null, null],
+        [null, null, null, null, "cyan", null, null, null],
+        [null, null, null, null, "blue", null, null, null],
+        [null, null, null, null, "violet", null, null, null],
+        [null, null, null, null, "coral", null, null, null],
+        ["coral", "amber", "lime", "cyan", null, "violet", "coral", "amber"],
+        [null, null, null, null, "lime", null, null, null],
+        ["blue", "blue", null, null, "cyan", null, "blue", "blue"]
+      ]
+    },
+    "setupPieces": [
+      {
+        "id": "piece-0-0-single",
+        "shapeId": "single",
+        "color": "amber",
+        "used": false,
+        "setIndex": 0,
+        "slotIndex": 0
+      },
+      {
+        "id": "piece-0-1-tri-h",
+        "shapeId": "tri-h",
+        "color": "coral",
+        "used": false,
+        "setIndex": 0,
+        "slotIndex": 1
+      },
+      {
+        "id": "piece-0-2-square-2",
+        "shapeId": "square-2",
+        "color": "coral",
+        "used": false,
+        "setIndex": 0,
+        "slotIndex": 2
+      }
+    ],
+    "style": {
+      "renderer": "reference-2d",
+      "reference2d": {
+        "profile": "block-garden-reference-v1",
+        "tileMaterial": "soft-bevel",
+        "tileFaceSet": "botanical-reference",
+        "previewFx": "full-line-tint",
+        "clearFx": "sweep-score-spark",
+        "feedbackFx": "praise-combo",
+        "ambientFx": "garden-petals",
+        "bestScore": 22634
+      },
+      "material": "candy-resin",
+      "lighting": "soft-candy",
+      "camera": "dynamic-clear",
+      "fx": "crystal-shatter",
+      "geometry": {
+        "id": "premium-beveled",
+        "depth": 0.58,
+        "bevel": 0.1,
+        "gap": 0.055
+      },
+      "background": "#07142d",
+      "showPointer": true
+    },
+    "rhythm": {
+      "id": "suspense-burst",
+      "label": "悬念爆发",
+      "description": "拖拽前段克制，关键落点与清除被有意放大。",
+      "globalSpeed": 0.94,
+      "dragFrames": 24,
+      "pickupDelayFrames": 4,
+      "placementSettleFrames": 8,
+      "betweenActionFrames": 16,
+      "clearDelayFrames": 6,
+      "clearDurationFrames": 25,
+      "cameraRecoveryFrames": 18,
+      "easing": "easeOutBack"
+    },
+    "render": {
+      "width": 512,
+      "height": 864,
+      "fps": 30,
+      "quality": "preview"
+    },
+    "audio": {
+      "enabled": true,
+      "sfxGain": 0.35,
+      "bgmGain": 0.2,
+      "bgmStartSeconds": 0.5,
+      "bgmSourceOffsetSeconds": 0.5,
+      "bgmPattern": "melody-v1",
+      "cueOverrides": [
+        {
+          "kind": "place",
+          "gain": 1,
+          "offsetSeconds": 0.1
+        }
+      ]
+    },
+    "seedSupplyVersion": "reference-worktree-0f237a8f"
+  },
+  "takes": [
+    {
+      "id": "agent-take-3f715057-ede8-4049-9506-7934d3f20338",
+      "name": "机器试玩",
+      "createdAt": "2026-11-01T16:11:22.714Z",
+      "initial": {
+        "board": {
+          "rows": 8,
+          "cols": 8,
+          "cells": [
+            ["blue", null, null, null, "lime", null, null, null],
+            [null, null, null, null, "cyan", null, null, null],
+            [null, null, null, null, "blue", null, null, null],
+            [null, null, null, null, "violet", null, null, null],
+            [null, null, null, null, "coral", null, null, null],
+            ["coral", "amber", "lime", "cyan", null, "violet", "coral", "amber"],
+            [null, null, null, null, "lime", null, null, null],
+            ["blue", "blue", null, null, "cyan", null, "blue", "blue"]
+          ]
+        },
+        "pieces": [
+          {
+            "id": "piece-0-0-single",
+            "shapeId": "single",
+            "color": "amber",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 0
+          },
+          {
+            "id": "piece-0-1-tri-h",
+            "shapeId": "tri-h",
+            "color": "coral",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 1
+          },
+          {
+            "id": "piece-0-2-square-2",
+            "shapeId": "square-2",
+            "color": "coral",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 2
+          }
+        ],
+        "seed": 0,
+        "setIndex": 0,
+        "turn": 0,
+        "score": 0,
+        "combo": 0,
+        "status": "playing",
+        "seedSupplyVersion": "reference-worktree-0f237a8f"
+      },
+      "actions": [
+        {
+          "id": "agent-action-1",
+          "actor": "agent",
+          "pieceId": "piece-0-0-single",
+          "anchor": {
+            "row": 5,
+            "col": 4
+          },
+          "durationFrames": 15,
+          "pointerPath": [
+            {
+              "frameOffset": 0,
+              "x": 0.27,
+              "y": 0.88
+            },
+            {
+              "frameOffset": 8,
+              "x": 0.369509708835848,
+              "y": 0.7132803401120251
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.5573308270676691,
+              "y": 0.6040268456375839
+            }
+          ]
+        },
+        {
+          "id": "agent-action-2",
+          "actor": "agent",
+          "pieceId": "piece-0-1-tri-h",
+          "anchor": {
+            "row": 7,
+            "col": 3
+          },
+          "durationFrames": 15,
+          "pointerPath": [
+            {
+              "frameOffset": 0,
+              "x": 0.5,
+              "y": 0.88
+            },
+            {
+              "frameOffset": 4,
+              "x": 0.5527763755025147,
+              "y": 0.8103863265546416
+            },
+            {
+              "frameOffset": 8,
+              "x": 0.4873308270676691,
+              "y": 0.6843064876957494
+            },
+            {
+              "frameOffset": 11,
+              "x": 0.4753308270676691,
+              "y": 0.6963064876957494
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.5573308270676691,
+              "y": 0.7293064876957495
+            }
+          ]
+        },
+        {
+          "id": "agent-action-3",
+          "actor": "agent",
+          "pieceId": "piece-0-2-square-2",
+          "anchor": {
+            "row": 0,
+            "col": 6
+          },
+          "durationFrames": 15,
+          "pointerPath": [
+            {
+              "frameOffset": 0,
+              "x": 0.73,
+              "y": 0.88
+            },
+            {
+              "frameOffset": 8,
+              "x": 0.6859879850633295,
+              "y": 0.5920249533229045
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.8204887218045113,
+              "y": 0.3221476510067114
+            }
+          ]
+        },
+        {
+          "id": "agent-action-4",
+          "actor": "agent",
+          "pieceId": "piece-1-0-domino-v",
+          "anchor": {
+            "row": 6,
+            "col": 2
+          },
+          "durationFrames": 15,
+          "pointerPath": [
+            {
+              "frameOffset": 0,
+              "x": 0.27,
+              "y": 0.88
+            },
+            {
+              "frameOffset": 5,
+              "x": 0.33752440329010447,
+              "y": 0.7966737397184236
+            },
+            {
+              "frameOffset": 10,
+              "x": 0.3868045112781955,
+              "y": 0.7259865771812081
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.3468045112781955,
+              "y": 0.697986577181208
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

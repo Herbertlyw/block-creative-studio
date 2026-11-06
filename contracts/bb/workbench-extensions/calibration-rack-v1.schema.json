@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.calibration-rack.v1",
+  "title": "BB current workbench optional rack-center extension",
+  "description": "Optional rackCenters on referenceCalibration or each workbenchCalibrationV2 track. Design coordinates: 1080 by 1920. Absence preserves appearance.rackCenters, otherwise [236,540,844]. Explicit centers override appearance centers; per-piece rackPositions remain more specific.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "rackCenters": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1080
+      }
+    }
+  }
+}

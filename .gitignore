@@ -8,3 +8,13 @@ coverage/
 .core-dist/
 *.zip
 *.bundle
+
+# Local work, generated evidence, and transient test data
+outputs/
+BB_LOCAL_HANDOFF.txt
+__pycache__/
+*.py[cod]
+*.pcm
+*.orig
+*.f32
+examples/generated/

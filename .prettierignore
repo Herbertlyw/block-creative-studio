@@ -1,0 +1,10 @@
+node_modules/
+dist/
+outputs/
+coverage/
+examples/generated/
+contracts/bb/reference-snapshot/
+contracts/bb/supplement-*/
+src/nativeReference/
+BB_LOCAL_HANDOFF.txt
+*.orig

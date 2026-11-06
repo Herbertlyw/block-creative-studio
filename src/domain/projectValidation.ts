@@ -1,4 +1,6 @@
-import { boardFingerprint, createGame, replayActions } from './gameEngine';
+import { parseReferenceClearRules } from './clearRules';
+import { boardFingerprint, createProjectGame, replayActions } from './gameEngine';
+import { identifyCreativeDocument } from './projectIdentity';
 import { getShape, TILE_COLORS } from './shapes';
 import type {
   BoardState,
@@ -8,6 +10,7 @@ import type {
   ProjectSpec,
   Reference2DStyleSpec,
   RhythmProfile,
+  StudioTestAudio,
   StyleSpec,
   Take,
   TileColor,
@@ -33,7 +36,7 @@ const REFERENCE_PREVIEW_FX = new Set(['full-line-tint', 'cells-only']);
 const REFERENCE_CLEAR_FX = new Set(['sweep-score-spark', 'sweep-only']);
 const REFERENCE_FEEDBACK_FX = new Set(['praise-combo', 'score-only']);
 const REFERENCE_AMBIENT_FX = new Set(['garden-petals', 'none']);
-const COLORS = new Set<string>(TILE_COLORS);
+const COLORS = new Set<string>([...TILE_COLORS, 'rose']);
 
 function piecesFingerprint(pieces: PieceInstance[]): string {
   return [...pieces]
@@ -62,11 +65,111 @@ function snapshotFingerprint(snapshot: GameSnapshot): string {
     snapshot.score,
     snapshot.combo,
     snapshot.status,
+    snapshot.clearAxes ?? '',
+    snapshot.clearTrigger ?? '',
+    snapshot.supplyExhausted ? 1 : 0,
+    JSON.stringify(snapshot.referenceClearRules ?? []),
+    snapshot.fixedPieceSupply?.map(piecesFingerprint).join('~') ?? '',
+    snapshot.seedSupplyVersion ?? '',
   ].join('~');
 }
 
 function fail(path: string, detail: string): never {
   throw new Error(`项目文件校验失败：${path} ${detail}`);
+}
+
+const FIELD_NOTES: Record<string, string> = {
+  audio:
+    '工作台 V1 的声音配置。当前只接受公开包自己的测试音效 {enabled, sfxGain}，以及可选的 bgmGain、bgmStartSeconds、bgmSourceOffsetSeconds、bgmLoop。不能丢弃或替换原声音。',
+  lookDev: '3D 灯光外观扩展。当前渲染器不会读取它。',
+  diagnosticView: '诊断视图。当前预览不会读取它。',
+  enabledPasses: '渲染通道开关。当前预览不会读取它。',
+  materialRuntime: '材质运行时描述。当前材质面板不会读取它。',
+  materialBehavior: '材质行为。当前材质面板不会读取它。',
+  shotExecution: '镜头执行。当前导演不会读取它。',
+  agentAssets: '素材绑定。当前导入不会静默丢掉图集或附件。',
+};
+
+function rejectUnknownKeys(
+  source: Record<string, unknown>,
+  allowed: ReadonlySet<string>,
+  path: string,
+): void {
+  for (const key of Object.keys(source)) {
+    if (allowed.has(key)) continue;
+    const note = FIELD_NOTES[key];
+    fail(
+      `${path}.${key}`,
+      note
+        ? `不能在当前编辑器中应用。${note}已拒绝导入。`
+        : '不是当前编辑器认识的字段。为避免静默丢弃，已拒绝导入。',
+    );
+  }
+}
+
+export function isStudioTestAudio(value: unknown): value is StudioTestAudio {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const source = value as Record<string, unknown>;
+  const keys = Object.keys(source);
+  const audioKeys = new Set([
+    'enabled',
+    'sfxGain',
+    'bgmGain',
+    'bgmStartSeconds',
+    'bgmSourceOffsetSeconds',
+    'bgmLoop',
+    'bgmPattern',
+    'cueOverrides',
+  ]);
+  if (keys.some((key) => !audioKeys.has(key))) return false;
+  if (typeof source.enabled !== 'boolean') return false;
+  if (typeof source.sfxGain !== 'number' || !Number.isFinite(source.sfxGain)) return false;
+  for (const key of ['bgmGain', 'bgmStartSeconds', 'bgmSourceOffsetSeconds']) {
+    if (
+      source[key] !== undefined &&
+      (typeof source[key] !== 'number' || !Number.isFinite(source[key]) || source[key] < 0)
+    )
+      return false;
+  }
+  if (source.bgmLoop !== undefined && typeof source.bgmLoop !== 'boolean') return false;
+  if (source.bgmPattern !== undefined && source.bgmPattern !== 'melody-v1') return false;
+  if (source.bgmGain !== undefined && (source.bgmGain as number) > 1) return false;
+  if (source.cueOverrides !== undefined) {
+    if (!Array.isArray(source.cueOverrides)) return false;
+    const kinds = new Set(['place', 'line-cleared', 'cross-cleared', 'praise', 'game-over']);
+    const seen = new Set<string>();
+    for (const item of source.cueOverrides) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+      const cue = item as Record<string, unknown>;
+      if (
+        Object.keys(cue).some(
+          (key) => !['kind', 'gain', 'offsetSeconds', 'eventId'].includes(key),
+        ) ||
+        typeof cue.kind !== 'string' ||
+        !kinds.has(cue.kind)
+      )
+        return false;
+      if (
+        cue.eventId !== undefined &&
+        (typeof cue.eventId !== 'string' || cue.eventId.length < 1 || cue.eventId.length > 512)
+      )
+        return false;
+      const key = `${cue.kind}:${cue.eventId ?? ''}`;
+      if (seen.has(key)) return false;
+      if (
+        typeof cue.gain !== 'number' ||
+        !Number.isFinite(cue.gain) ||
+        cue.gain < 0 ||
+        cue.gain > 1 ||
+        typeof cue.offsetSeconds !== 'number' ||
+        !Number.isFinite(cue.offsetSeconds) ||
+        Math.abs(cue.offsetSeconds) > 60
+      )
+        return false;
+      seen.add(key);
+    }
+  }
+  return true;
 }
 
 function record(value: unknown, path: string): Record<string, unknown> {
@@ -101,14 +204,18 @@ function enumeration<T extends string>(value: unknown, values: Set<string>, path
 
 function parseBoard(value: unknown, path: string): BoardState {
   const source = record(value, path);
+  rejectUnknownKeys(source, new Set(['rows', 'cols', 'cells']), path);
   const rows = integer(source.rows, `${path}.rows`, 8, 8);
   const cols = integer(source.cols, `${path}.cols`, 8, 8);
-  if (!Array.isArray(source.cells) || source.cells.length !== rows) fail(`${path}.cells`, '必须有 8 行。');
+  if (!Array.isArray(source.cells) || source.cells.length !== rows)
+    fail(`${path}.cells`, '必须有 8 行。');
   const cells = source.cells.map((rowValue, row) => {
-    if (!Array.isArray(rowValue) || rowValue.length !== cols) fail(`${path}.cells[${row}]`, '必须有 8 列。');
+    if (!Array.isArray(rowValue) || rowValue.length !== cols)
+      fail(`${path}.cells[${row}]`, '必须有 8 列。');
     return rowValue.map((cell, col) => {
       if (cell === null) return null;
-      if (typeof cell !== 'string' || !COLORS.has(cell)) fail(`${path}.cells[${row}][${col}]`, '颜色无效。');
+      if (typeof cell !== 'string' || !COLORS.has(cell))
+        fail(`${path}.cells[${row}][${col}]`, '颜色无效。');
       return cell as TileColor;
     });
   });
@@ -117,6 +224,11 @@ function parseBoard(value: unknown, path: string): BoardState {
 
 function parsePiece(value: unknown, path: string): PieceInstance {
   const source = record(value, path);
+  rejectUnknownKeys(
+    source,
+    new Set(['id', 'shapeId', 'color', 'used', 'setIndex', 'slotIndex', 'cellColors']),
+    path,
+  );
   const shapeId = string(source.shapeId, `${path}.shapeId`, 80);
   let shape: ReturnType<typeof getShape>;
   try {
@@ -159,11 +271,78 @@ function parsePieces(value: unknown, path: string): PieceInstance[] {
   return pieces;
 }
 
+function parseAxes(value: unknown, path: string): 'rows' | 'columns' | 'both' {
+  if (value === 'rows' || value === 'columns' || value === 'both') return value;
+  fail(path, '必须是 rows、columns 或 both。');
+}
+
+function parseTrigger(value: unknown, path: string): 'line-complete' | 'board-full' {
+  if (value === 'line-complete' || value === 'board-full') return value;
+  fail(path, '必须是 line-complete 或 board-full。');
+}
+
+function parseRuleFields(
+  source: Record<string, unknown>,
+  path: string,
+): Pick<GameSnapshot, 'clearAxes' | 'clearTrigger' | 'referenceClearRules'> {
+  let referenceClearRules: GameSnapshot['referenceClearRules'];
+  if (source.referenceClearRules !== undefined) {
+    try {
+      referenceClearRules = parseReferenceClearRules(source.referenceClearRules);
+    } catch (error) {
+      fail(`${path}.referenceClearRules`, error instanceof Error ? error.message : '无效。');
+    }
+  }
+  return {
+    ...(source.clearAxes === undefined
+      ? {}
+      : { clearAxes: parseAxes(source.clearAxes, `${path}.clearAxes`) }),
+    ...(source.clearTrigger === undefined
+      ? {}
+      : { clearTrigger: parseTrigger(source.clearTrigger, `${path}.clearTrigger`) }),
+    ...(referenceClearRules ? { referenceClearRules } : {}),
+  };
+}
+
+function parseSupply(value: unknown, path: string): PieceInstance[][] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 500)
+    fail(path, '必须是 1–500 组候选。');
+  const supply = value.map((batch, index) => {
+    const pieces = parsePieces(batch, `${path}[${index}]`);
+    if (pieces.some((piece) => piece.setIndex !== index || piece.used)) {
+      fail(`${path}[${index}]`, '每组 setIndex 必须等于轮次，且供给中的候选不能已使用。');
+    }
+    return pieces;
+  });
+  return supply;
+}
+
 function parseSnapshot(value: unknown, path: string): GameSnapshot {
   const source = record(value, path);
-  const status = source.status === 'playing' || source.status === 'game-over'
-    ? source.status
-    : fail(`${path}.status`, '无效。');
+  rejectUnknownKeys(
+    source,
+    new Set([
+      'board',
+      'pieces',
+      'seed',
+      'setIndex',
+      'turn',
+      'score',
+      'combo',
+      'status',
+      'clearAxes',
+      'clearTrigger',
+      'referenceClearRules',
+      'fixedPieceSupply',
+      'supplyExhausted',
+      'seedSupplyVersion',
+    ]),
+    path,
+  );
+  const status =
+    source.status === 'playing' || source.status === 'game-over'
+      ? source.status
+      : fail(`${path}.status`, '无效。');
   const pieces = parsePieces(source.pieces, `${path}.pieces`);
   const setIndex = integer(source.setIndex, `${path}.setIndex`, 0, 100_000);
   if (pieces.some((piece) => piece.setIndex !== setIndex)) {
@@ -178,19 +357,59 @@ function parseSnapshot(value: unknown, path: string): GameSnapshot {
     score: integer(source.score, `${path}.score`, 0, 2_147_483_647),
     combo: integer(source.combo, `${path}.combo`, 0, 100_000),
     status,
+    ...parseRuleFields(source, path),
+    ...(source.seedSupplyVersion === undefined
+      ? {}
+      : {
+          seedSupplyVersion:
+            source.seedSupplyVersion === 'reference-worktree-0f237a8f'
+              ? source.seedSupplyVersion
+              : fail(`${path}.seedSupplyVersion`, '未知种子供给版本。'),
+        }),
+    ...(source.supplyExhausted === undefined
+      ? {}
+      : {
+          supplyExhausted:
+            source.supplyExhausted === true
+              ? true
+              : fail(`${path}.supplyExhausted`, '必须是 true。'),
+        }),
+    ...(source.fixedPieceSupply === undefined
+      ? {}
+      : { fixedPieceSupply: parseSupply(source.fixedPieceSupply, `${path}.fixedPieceSupply`) }),
   };
 }
 
 function parseAction(value: unknown, path: string): PlacementAction {
   const source = record(value, path);
+  rejectUnknownKeys(
+    source,
+    new Set([
+      'id',
+      'actor',
+      'pieceId',
+      'anchor',
+      'durationFrames',
+      'pointerPath',
+      'pointerPathMode',
+    ]),
+    path,
+  );
   const anchorSource = record(source.anchor, `${path}.anchor`);
+  rejectUnknownKeys(anchorSource, new Set(['row', 'col']), `${path}.anchor`);
   if (!Array.isArray(source.pointerPath) || source.pointerPath.length > 10_000) {
     fail(`${path}.pointerPath`, '必须是长度不超过 10000 的数组。');
   }
   let previousFrame = -1;
   const pointerPath = source.pointerPath.map((sampleValue, index) => {
     const sample = record(sampleValue, `${path}.pointerPath[${index}]`);
-    const frameOffset = integer(sample.frameOffset, `${path}.pointerPath[${index}].frameOffset`, 0, 100_000);
+    rejectUnknownKeys(sample, new Set(['frameOffset', 'x', 'y']), `${path}.pointerPath[${index}]`);
+    const frameOffset = integer(
+      sample.frameOffset,
+      `${path}.pointerPath[${index}].frameOffset`,
+      0,
+      100_000,
+    );
     if (frameOffset < previousFrame) fail(`${path}.pointerPath`, 'frameOffset 必须按升序排列。');
     previousFrame = frameOffset;
     return {
@@ -206,11 +425,16 @@ function parseAction(value: unknown, path: string): PlacementAction {
   if (pointerPath.some((sample) => sample.frameOffset > durationFrames)) {
     fail(`${path}.pointerPath`, 'frameOffset 不能超过动作 durationFrames。');
   }
+  if (source.pointerPathMode !== undefined && source.pointerPathMode !== 'authored')
+    fail(`${path}.pointerPathMode`, '未知轨迹模式。');
+  if (source.pointerPathMode === 'authored' && pointerPath.length < 2)
+    fail(`${path}.pointerPath`, '自定义轨迹至少需要两个点。');
   return {
     id: string(source.id, `${path}.id`, 180),
-    actor: source.actor === 'human' || source.actor === 'agent'
-      ? source.actor
-      : fail(`${path}.actor`, '必须是 human 或 agent。'),
+    actor:
+      source.actor === 'human' || source.actor === 'agent'
+        ? source.actor
+        : fail(`${path}.actor`, '必须是 human 或 agent。'),
     pieceId: string(source.pieceId, `${path}.pieceId`, 180),
     anchor: {
       row: integer(anchorSource.row, `${path}.anchor.row`, 0, 7),
@@ -218,18 +442,23 @@ function parseAction(value: unknown, path: string): PlacementAction {
     },
     durationFrames,
     pointerPath,
+    ...(source.pointerPathMode === 'authored' ? { pointerPathMode: 'authored' as const } : {}),
   };
 }
 
 function parseTake(value: unknown, path: string): Take {
   const source = record(value, path);
-  if (!Array.isArray(source.actions) || source.actions.length > 2_000) fail(`${path}.actions`, '动作数量超过限制。');
+  rejectUnknownKeys(source, new Set(['id', 'name', 'createdAt', 'initial', 'actions']), path);
+  if (!Array.isArray(source.actions) || source.actions.length > 2_000)
+    fail(`${path}.actions`, '动作数量超过限制。');
   const take: Take = {
     id: string(source.id, `${path}.id`, 180),
     name: string(source.name, `${path}.name`, 240),
     createdAt: string(source.createdAt, `${path}.createdAt`, 80),
     initial: parseSnapshot(source.initial, `${path}.initial`),
-    actions: source.actions.map((action, index) => parseAction(action, `${path}.actions[${index}]`)),
+    actions: source.actions.map((action, index) =>
+      parseAction(action, `${path}.actions[${index}]`),
+    ),
   };
   if (Number.isNaN(Date.parse(take.createdAt))) fail(`${path}.createdAt`, '不是合法 ISO 日期。');
   if (new Set(take.actions.map((action) => action.id)).size !== take.actions.length) {
@@ -257,35 +486,82 @@ const LEGACY_REFERENCE_2D_STYLE: Reference2DStyleSpec = {
 function parseReference2DStyle(value: unknown, path: string): Reference2DStyleSpec {
   if (value === undefined) return { ...LEGACY_REFERENCE_2D_STYLE };
   const source = record(value, path);
+  rejectUnknownKeys(
+    source,
+    new Set([
+      'profile',
+      'tileMaterial',
+      'tileFaceSet',
+      'tileSkin',
+      'previewFx',
+      'clearFx',
+      'feedbackFx',
+      'ambientFx',
+      'backgroundColor',
+      'bestScore',
+    ]),
+    path,
+  );
   return {
-    profile: source.profile === 'block-garden-reference-v1'
-      ? 'block-garden-reference-v1'
-      : fail(`${path}.profile`, '仅支持 block-garden-reference-v1。'),
-    tileMaterial: source.tileMaterial === undefined
-      ? 'soft-bevel'
-      : enumeration(source.tileMaterial, REFERENCE_TILE_MATERIALS, `${path}.tileMaterial`),
-    tileFaceSet: source.tileFaceSet === undefined
-      ? source.tileSkin === 'solid-color' ? 'none' : 'botanical-reference'
-      : enumeration(source.tileFaceSet, REFERENCE_TILE_FACE_SETS, `${path}.tileFaceSet`),
+    profile:
+      source.profile === 'block-garden-reference-v1'
+        ? 'block-garden-reference-v1'
+        : fail(`${path}.profile`, '仅支持 block-garden-reference-v1。'),
+    tileMaterial:
+      source.tileMaterial === undefined
+        ? 'soft-bevel'
+        : enumeration(source.tileMaterial, REFERENCE_TILE_MATERIALS, `${path}.tileMaterial`),
+    tileFaceSet:
+      source.tileFaceSet === undefined
+        ? source.tileSkin === 'solid-color'
+          ? 'none'
+          : 'botanical-reference'
+        : enumeration(source.tileFaceSet, REFERENCE_TILE_FACE_SETS, `${path}.tileFaceSet`),
     previewFx: enumeration(source.previewFx, REFERENCE_PREVIEW_FX, `${path}.previewFx`),
     clearFx: enumeration(source.clearFx, REFERENCE_CLEAR_FX, `${path}.clearFx`),
     feedbackFx: enumeration(source.feedbackFx, REFERENCE_FEEDBACK_FX, `${path}.feedbackFx`),
     ambientFx: enumeration(source.ambientFx, REFERENCE_AMBIENT_FX, `${path}.ambientFx`),
+    ...(source.backgroundColor === undefined
+      ? {}
+      : {
+          backgroundColor:
+            typeof source.backgroundColor === 'string' &&
+            /^#[0-9a-f]{6}$/iu.test(source.backgroundColor)
+              ? source.backgroundColor
+              : fail(`${path}.backgroundColor`, '必须是 #RRGGBB。'),
+        }),
     bestScore: integer(source.bestScore, `${path}.bestScore`, 0, 2_147_483_647),
   };
 }
 
 function parseStyle(value: unknown, path: string): StyleSpec {
   const source = record(value, path);
+  rejectUnknownKeys(
+    source,
+    new Set([
+      'renderer',
+      'reference2d',
+      'material',
+      'lighting',
+      'camera',
+      'fx',
+      'geometry',
+      'background',
+      'showPointer',
+    ]),
+    path,
+  );
   const geometry = record(source.geometry, `${path}.geometry`);
+  rejectUnknownKeys(geometry, new Set(['id', 'depth', 'bevel', 'gap']), `${path}.geometry`);
   const background = string(source.background, `${path}.background`, 32);
   if (!/^#[0-9a-f]{6}$/iu.test(background)) fail(`${path}.background`, '必须是 #RRGGBB。');
   return {
     // Bundles exported before the reference-first rebuild had no renderer field.
     // Preserve their appearance by treating them as the original experimental 3D backend.
-    renderer: source.renderer === undefined
-      ? 'three-3d'
-      : enumeration(source.renderer, RENDERERS, `${path}.renderer`),
+    renderer:
+      source.renderer === undefined
+        ? 'three-3d'
+        : enumeration(source.renderer, RENDERERS, `${path}.renderer`),
     reference2d: parseReference2DStyle(source.reference2d, `${path}.reference2d`),
     material: enumeration(source.material, MATERIALS, `${path}.material`),
     lighting: enumeration(source.lighting, LIGHTS, `${path}.lighting`),
@@ -298,17 +574,39 @@ function parseStyle(value: unknown, path: string): StyleSpec {
       gap: finite(geometry.gap, `${path}.geometry.gap`, 0, 0.5),
     },
     background,
-    showPointer: typeof source.showPointer === 'boolean'
-      ? source.showPointer
-      : fail(`${path}.showPointer`, '必须是布尔值。'),
+    showPointer:
+      typeof source.showPointer === 'boolean'
+        ? source.showPointer
+        : fail(`${path}.showPointer`, '必须是布尔值。'),
   };
 }
 
 function parseRhythm(value: unknown, path: string): RhythmProfile {
   const source = record(value, path);
-  const easing = source.easing === 'easeOutCubic' || source.easing === 'easeInOutCubic' || source.easing === 'easeOutBack'
-    ? source.easing
-    : fail(`${path}.easing`, '无效。');
+  rejectUnknownKeys(
+    source,
+    new Set([
+      'id',
+      'label',
+      'description',
+      'globalSpeed',
+      'dragFrames',
+      'pickupDelayFrames',
+      'placementSettleFrames',
+      'betweenActionFrames',
+      'clearDelayFrames',
+      'clearDurationFrames',
+      'cameraRecoveryFrames',
+      'easing',
+    ]),
+    path,
+  );
+  const easing =
+    source.easing === 'easeOutCubic' ||
+    source.easing === 'easeInOutCubic' ||
+    source.easing === 'easeOutBack'
+      ? source.easing
+      : fail(`${path}.easing`, '无效。');
   return {
     id: enumeration(source.id, RHYTHMS, `${path}.id`),
     label: string(source.label, `${path}.label`, 80),
@@ -316,28 +614,99 @@ function parseRhythm(value: unknown, path: string): RhythmProfile {
     globalSpeed: finite(source.globalSpeed, `${path}.globalSpeed`, 0.1, 8),
     dragFrames: integer(source.dragFrames, `${path}.dragFrames`, 1, 1_000),
     pickupDelayFrames: integer(source.pickupDelayFrames, `${path}.pickupDelayFrames`, 0, 1_000),
-    placementSettleFrames: integer(source.placementSettleFrames, `${path}.placementSettleFrames`, 0, 1_000),
-    betweenActionFrames: integer(source.betweenActionFrames, `${path}.betweenActionFrames`, 0, 1_000),
+    placementSettleFrames: integer(
+      source.placementSettleFrames,
+      `${path}.placementSettleFrames`,
+      0,
+      1_000,
+    ),
+    betweenActionFrames: integer(
+      source.betweenActionFrames,
+      `${path}.betweenActionFrames`,
+      0,
+      1_000,
+    ),
     clearDelayFrames: integer(source.clearDelayFrames, `${path}.clearDelayFrames`, 0, 1_000),
-    clearDurationFrames: integer(source.clearDurationFrames, `${path}.clearDurationFrames`, 1, 1_000),
-    cameraRecoveryFrames: integer(source.cameraRecoveryFrames, `${path}.cameraRecoveryFrames`, 0, 1_000),
+    clearDurationFrames: integer(
+      source.clearDurationFrames,
+      `${path}.clearDurationFrames`,
+      1,
+      1_000,
+    ),
+    cameraRecoveryFrames: integer(
+      source.cameraRecoveryFrames,
+      `${path}.cameraRecoveryFrames`,
+      0,
+      1_000,
+    ),
     easing,
+  };
+}
+
+function parseTestAudio(value: unknown, path: string): StudioTestAudio {
+  if (!isStudioTestAudio(value)) {
+    const keys =
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.keys(value as object).join(', ')
+        : '无效结构';
+    fail(path, `不是公开包测试音效。看到的字段：${keys}。${FIELD_NOTES.audio}已拒绝导入。`);
+  }
+  if (value.sfxGain < 0 || value.sfxGain > 1) fail(`${path}.sfxGain`, '必须在 0 到 1 之间。');
+  return {
+    enabled: value.enabled,
+    sfxGain: value.sfxGain,
+    ...(typeof value.bgmGain === 'number' ? { bgmGain: value.bgmGain } : {}),
+    ...(typeof value.bgmStartSeconds === 'number'
+      ? { bgmStartSeconds: value.bgmStartSeconds }
+      : {}),
+    ...(typeof value.bgmSourceOffsetSeconds === 'number'
+      ? { bgmSourceOffsetSeconds: value.bgmSourceOffsetSeconds }
+      : {}),
+    ...(typeof value.bgmLoop === 'boolean' ? { bgmLoop: value.bgmLoop } : {}),
+    ...(value.bgmPattern ? { bgmPattern: value.bgmPattern } : {}),
+    ...(value.cueOverrides ? { cueOverrides: structuredClone(value.cueOverrides) } : {}),
   };
 }
 
 function parseProject(value: unknown, path: string): ProjectSpec {
   const source = record(value, path);
+  rejectUnknownKeys(
+    source,
+    new Set([
+      'schemaVersion',
+      'id',
+      'name',
+      'ruleProfile',
+      'seed',
+      'setupBoard',
+      'setupPieces',
+      'style',
+      'rhythm',
+      'render',
+      'audio',
+      'clearAxes',
+      'clearTrigger',
+      'referenceClearRules',
+      'fixedPieceSupply',
+      'seedSupplyVersion',
+    ]),
+    path,
+  );
   const render = record(source.render, `${path}.render`);
-  const quality = render.quality === 'preview' || render.quality === 'standard' || render.quality === 'cinematic'
-    ? render.quality
-    : fail(`${path}.render.quality`, '无效。');
+  rejectUnknownKeys(render, new Set(['width', 'height', 'fps', 'quality']), `${path}.render`);
+  const quality =
+    render.quality === 'preview' || render.quality === 'standard' || render.quality === 'cinematic'
+      ? render.quality
+      : fail(`${path}.render.quality`, '无效。');
   const project: ProjectSpec = {
-    schemaVersion: source.schemaVersion === '1.0.0' ? '1.0.0' : fail(`${path}.schemaVersion`, '仅支持 1.0.0。'),
+    schemaVersion:
+      source.schemaVersion === '1.0.0' ? '1.0.0' : fail(`${path}.schemaVersion`, '仅支持 1.0.0。'),
     id: string(source.id, `${path}.id`, 180),
     name: string(source.name, `${path}.name`, 240),
-    ruleProfile: source.ruleProfile === 'block-placement-classic-v1'
-      ? 'block-placement-classic-v1'
-      : fail(`${path}.ruleProfile`, '无效。'),
+    ruleProfile:
+      source.ruleProfile === 'block-placement-classic-v1'
+        ? 'block-placement-classic-v1'
+        : fail(`${path}.ruleProfile`, '无效。'),
     seed: integer(source.seed, `${path}.seed`, 0, 2_147_483_647),
     setupBoard: parseBoard(source.setupBoard, `${path}.setupBoard`),
     setupPieces: parsePieces(source.setupPieces, `${path}.setupPieces`),
@@ -349,6 +718,19 @@ function parseProject(value: unknown, path: string): ProjectSpec {
       fps: integer(render.fps, `${path}.render.fps`, 1, 120),
       quality,
     },
+    ...(source.audio === undefined ? {} : { audio: parseTestAudio(source.audio, `${path}.audio`) }),
+    ...parseRuleFields(source, path),
+    ...(source.seedSupplyVersion === undefined
+      ? {}
+      : {
+          seedSupplyVersion:
+            source.seedSupplyVersion === 'reference-worktree-0f237a8f'
+              ? source.seedSupplyVersion
+              : fail(`${path}.seedSupplyVersion`, '未知种子供给版本。'),
+        }),
+    ...(source.fixedPieceSupply === undefined
+      ? {}
+      : { fixedPieceSupply: parseSupply(source.fixedPieceSupply, `${path}.fixedPieceSupply`) }),
   };
   if (project.render.width % 2 !== 0 || project.render.height % 2 !== 0) {
     fail(`${path}.render`, 'H.264 输出宽高必须是偶数。');
@@ -359,21 +741,28 @@ function parseProject(value: unknown, path: string): ProjectSpec {
   if (project.setupPieces.some((piece) => piece.setIndex !== 0)) {
     fail(`${path}.setupPieces`, '一期项目的初始候选块 setIndex 必须为 0。');
   }
+  if (
+    project.fixedPieceSupply &&
+    piecesFingerprint(project.setupPieces) !== piecesFingerprint(project.fixedPieceSupply[0]!)
+  ) {
+    fail(`${path}.fixedPieceSupply[0]`, '第一轮固定供给必须与初始候选完全一致。');
+  }
   return project;
 }
 
 export function parseStudioBundle(value: unknown): StudioBundle {
   const source = record(value, 'root');
   if (source.format !== 'block-creative-studio-project' || source.version !== '1.0.0') {
-    fail('root', '不是受支持的 Block Creative Studio 项目。');
+    fail('root', identifyCreativeDocument(source).detail);
   }
+  rejectUnknownKeys(source, new Set(['format', 'version', 'project', 'takes']), 'root');
   if (!Array.isArray(source.takes) || source.takes.length > 500) fail('root.takes', '数量无效。');
   const project = parseProject(source.project, 'root.project');
   const takes = source.takes.map((take, index) => parseTake(take, `root.takes[${index}]`));
   if (new Set(takes.map((take) => take.id)).size !== takes.length) {
     fail('root.takes', 'take id 必须唯一。');
   }
-  const expectedInitial = createGame(project.setupBoard, project.seed, project.setupPieces);
+  const expectedInitial = createProjectGame(project);
   const expectedInitialKey = snapshotFingerprint(expectedInitial);
   for (const [index, take] of takes.entries()) {
     if (snapshotFingerprint(take.initial) !== expectedInitialKey) {

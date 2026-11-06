@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.synthetic-audio.v1",
+  "type": "object",
+  "properties": {
+    "contract": { "const": "bcs.workbench.synthetic-audio" },
+    "version": { "const": "1.0.0" },
+    "sfxGain": { "type": "number", "minimum": 0, "maximum": 1 },
+    "bgmGain": { "type": "number", "minimum": 0, "maximum": 1 },
+    "bgmStartSeconds": { "type": "number", "minimum": 0, "maximum": 3600 },
+    "bgmSourceOffsetSeconds": { "type": "number", "minimum": 0, "maximum": 3600 },
+    "bgmLoop": { "type": "boolean" },
+    "bgmPattern": { "enum": ["tone", "melody-v1"] },
+    "cueOverrides": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "enum": ["place", "line-cleared", "cross-cleared", "praise", "game-over"] },
+          "eventId": { "type": "string", "minLength": 1, "maxLength": 512 },
+          "gain": { "type": "number", "minimum": 0, "maximum": 1 },
+          "offsetSeconds": { "type": "number", "minimum": -60, "maximum": 60 }
+        },
+        "required": ["kind", "gain", "offsetSeconds"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "contract",
+    "version",
+    "sfxGain",
+    "bgmGain",
+    "bgmStartSeconds",
+    "bgmSourceOffsetSeconds",
+    "bgmLoop",
+    "bgmPattern",
+    "cueOverrides"
+  ],
+  "additionalProperties": false
+}

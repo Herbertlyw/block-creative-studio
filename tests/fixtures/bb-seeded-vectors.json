@@ -1,0 +1,198 @@
+[
+  {
+    "seed": 0,
+    "round": 0,
+    "monochrome": ["single:amber", "z-4:coral", "plus-5:coral"],
+    "multicolor": [
+      ["cyan"],
+      ["lime", "blue", "coral", "cyan"],
+      ["blue", "lime", "cyan", "violet", "blue"]
+    ]
+  },
+  {
+    "seed": 0,
+    "round": 1,
+    "monochrome": ["domino-v:rose", "l-5:rose", "s-4:lime"],
+    "multicolor": [
+      ["rose", "blue"],
+      ["rose", "blue", "cyan", "coral", "cyan"],
+      ["amber", "violet", "cyan", "blue"]
+    ]
+  },
+  {
+    "seed": 0,
+    "round": 17,
+    "monochrome": ["j-5:blue", "z-4:amber", "domino-h:cyan"],
+    "multicolor": [
+      ["amber", "rose", "coral", "rose", "violet"],
+      ["amber", "cyan", "blue", "blue"],
+      ["coral", "violet"]
+    ]
+  },
+  {
+    "seed": 0,
+    "round": 100000,
+    "monochrome": ["square-2:cyan", "line4-v:amber", "t-4:amber"],
+    "multicolor": [
+      ["rose", "blue", "rose", "violet"],
+      ["lime", "violet", "lime", "violet"],
+      ["violet", "rose", "blue", "cyan"]
+    ]
+  },
+  {
+    "seed": 1,
+    "round": 0,
+    "monochrome": ["t-4:violet", "line4-h:lime", "l-5:blue"],
+    "multicolor": [
+      ["lime", "rose", "lime", "lime"],
+      ["lime", "amber", "lime", "coral"],
+      ["blue", "lime", "lime", "violet", "violet"]
+    ]
+  },
+  {
+    "seed": 1,
+    "round": 1,
+    "monochrome": ["l-5:violet", "line5-h:amber", "z-4:violet"],
+    "multicolor": [
+      ["cyan", "blue", "coral", "violet", "violet"],
+      ["amber", "rose", "coral", "violet", "rose"],
+      ["violet", "blue", "amber", "lime"]
+    ]
+  },
+  {
+    "seed": 1,
+    "round": 17,
+    "monochrome": ["single:amber", "z-4:coral", "domino-v:lime"],
+    "multicolor": [["coral"], ["coral", "coral", "rose", "cyan"], ["lime", "coral"]]
+  },
+  {
+    "seed": 1,
+    "round": 100000,
+    "monochrome": ["l-5:cyan", "square-2:blue", "j-5:lime"],
+    "multicolor": [
+      ["cyan", "blue", "violet", "violet", "amber"],
+      ["lime", "coral", "violet", "violet"],
+      ["violet", "coral", "rose", "cyan", "lime"]
+    ]
+  },
+  {
+    "seed": 99,
+    "round": 0,
+    "monochrome": ["line5-h:rose", "line5-h:rose", "j-5:blue"],
+    "multicolor": [
+      ["blue", "cyan", "lime", "blue", "violet"],
+      ["violet", "rose", "violet", "cyan", "blue"],
+      ["cyan", "blue", "rose", "blue", "coral"]
+    ]
+  },
+  {
+    "seed": 99,
+    "round": 1,
+    "monochrome": ["l-3:blue", "l-3:cyan", "line5-h:amber"],
+    "multicolor": [
+      ["coral", "rose", "lime"],
+      ["violet", "rose", "lime"],
+      ["violet", "violet", "rose", "blue", "coral"]
+    ]
+  },
+  {
+    "seed": 99,
+    "round": 17,
+    "monochrome": ["tri-h:blue", "square-2:coral", "domino-h:amber"],
+    "multicolor": [
+      ["rose", "amber", "amber"],
+      ["violet", "amber", "rose", "coral"],
+      ["cyan", "violet"]
+    ]
+  },
+  {
+    "seed": 99,
+    "round": 100000,
+    "monochrome": ["l-3:rose", "domino-h:violet", "domino-v:amber"],
+    "multicolor": [
+      ["cyan", "rose", "violet"],
+      ["cyan", "rose"],
+      ["amber", "blue"]
+    ]
+  },
+  {
+    "seed": 41782,
+    "round": 0,
+    "monochrome": ["line4-h:blue", "line4-h:rose", "l-5:rose"],
+    "multicolor": [
+      ["lime", "cyan", "amber", "coral"],
+      ["rose", "amber", "blue", "lime"],
+      ["amber", "violet", "lime", "amber", "coral"]
+    ]
+  },
+  {
+    "seed": 41782,
+    "round": 1,
+    "monochrome": ["t-4:amber", "plus-5:rose", "line5-h:rose"],
+    "multicolor": [
+      ["blue", "blue", "violet", "rose"],
+      ["lime", "violet", "amber", "amber", "lime"],
+      ["amber", "lime", "rose", "violet", "cyan"]
+    ]
+  },
+  {
+    "seed": 41782,
+    "round": 17,
+    "monochrome": ["line5-h:blue", "domino-v:coral", "s-4:lime"],
+    "multicolor": [
+      ["blue", "rose", "cyan", "cyan", "violet"],
+      ["cyan", "amber"],
+      ["lime", "amber", "lime", "rose"]
+    ]
+  },
+  {
+    "seed": 41782,
+    "round": 100000,
+    "monochrome": ["z-4:coral", "line5-h:amber", "domino-v:blue"],
+    "multicolor": [
+      ["blue", "coral", "amber", "blue"],
+      ["blue", "blue", "rose", "coral", "rose"],
+      ["amber", "blue"]
+    ]
+  },
+  {
+    "seed": 2147483647,
+    "round": 0,
+    "monochrome": ["tri-v:violet", "line4-h:lime", "square-2:lime"],
+    "multicolor": [
+      ["lime", "rose", "blue"],
+      ["rose", "rose", "coral", "cyan"],
+      ["rose", "amber", "rose", "cyan"]
+    ]
+  },
+  {
+    "seed": 2147483647,
+    "round": 1,
+    "monochrome": ["l-3:lime", "domino-h:lime", "plus-5:lime"],
+    "multicolor": [
+      ["amber", "violet", "rose"],
+      ["lime", "amber"],
+      ["rose", "coral", "amber", "lime", "amber"]
+    ]
+  },
+  {
+    "seed": 2147483647,
+    "round": 17,
+    "monochrome": ["t-4:blue", "line4-v:lime", "z-4:violet"],
+    "multicolor": [
+      ["violet", "amber", "rose", "cyan"],
+      ["blue", "coral", "coral", "rose"],
+      ["amber", "coral", "amber", "blue"]
+    ]
+  },
+  {
+    "seed": 2147483647,
+    "round": 100000,
+    "monochrome": ["plus-5:rose", "t-4:rose", "t-4:blue"],
+    "multicolor": [
+      ["lime", "coral", "rose", "rose", "coral"],
+      ["coral", "blue", "rose", "violet"],
+      ["blue", "rose", "coral", "cyan"]
+    ]
+  }
+]

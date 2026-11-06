@@ -1,7 +1,24 @@
 import { cloneBoard, createEmptyBoard } from './boardPresets';
+import {
+  applyPlacement as applyNativePlacement,
+  detectClear as detectNativeClear,
+  hasAnyLegalMove as hasNativeLegalMove,
+  pieceCells,
+  findLegalAnchors,
+} from '../nativeReference/games/block-placement/runtime/gameEngine';
+export {
+  pieceCells,
+  pieceCellColor,
+  pieceColors,
+  canPlace,
+  findLegalAnchors,
+  hasAnyLegalMove,
+} from '../nativeReference/games/block-placement/runtime/gameEngine';
 import { hash32, seededInt } from './rng';
 import { createRuntimeId } from './runtimeId';
-import { getShape, SHAPES, TILE_COLORS } from './shapes';
+import { pointerLandingForPlacement } from '../director/boardLayout';
+import { buildAgentPointerPath } from '../director/pointerPath';
+import { getShape, getShapeBounds, TILE_COLORS } from './shapes';
 import {
   BOARD_SIZE,
   type BoardState,
@@ -14,18 +31,55 @@ import {
   type PlacementAction,
   type Take,
   type TileColor,
+  type ClearAxes,
+  type ClearTrigger,
+  type ReferenceClearRule,
+  type SeedSupplyVersion,
 } from './types';
 
-const GENERATED_SHAPES = SHAPES.filter((shape) => shape.id !== 'square-3');
+// Frozen order from the reference snapshot before its opt-in authored poses are appended.
+const GENERATED_SHAPE_IDS = [
+  'single',
+  'domino-h',
+  'domino-v',
+  'tri-h',
+  'tri-v',
+  'line4-h',
+  'line4-v',
+  'line5-h',
+  'line5-v',
+  'square-2',
+  'l-3',
+  'l-5',
+  'j-5',
+  't-4',
+  's-4',
+  'z-4',
+  'plus-5',
+] as const;
+const GENERATED_SHAPES = GENERATED_SHAPE_IDS.map(getShape);
+const REFERENCE_TILE_COLORS: TileColor[] = [...TILE_COLORS, 'rose'];
+
+function clonePiece(piece: PieceInstance): PieceInstance {
+  return {
+    ...piece,
+    ...(piece.cellColors ? { cellColors: [...piece.cellColors] } : {}),
+  };
+}
 
 export function cloneSnapshot(snapshot: GameSnapshot): GameSnapshot {
   return {
     ...snapshot,
     board: cloneBoard(snapshot.board),
-    pieces: snapshot.pieces.map((piece) => ({
-      ...piece,
-      ...(piece.cellColors ? { cellColors: [...piece.cellColors] } : {}),
-    })),
+    pieces: snapshot.pieces.map(clonePiece),
+    ...(snapshot.fixedPieceSupply
+      ? {
+          fixedPieceSupply: snapshot.fixedPieceSupply.map((batch) => batch.map(clonePiece)),
+        }
+      : {}),
+    ...(snapshot.referenceClearRules
+      ? { referenceClearRules: snapshot.referenceClearRules.map((rule) => ({ ...rule })) }
+      : {}),
   };
 }
 
@@ -36,6 +90,7 @@ const TILE_FINGERPRINT_CODE: Record<TileColor, string> = {
   cyan: '3',
   blue: '4',
   violet: '5',
+  rose: '6',
 };
 
 export function boardFingerprint(board: BoardState): string {
@@ -44,7 +99,24 @@ export function boardFingerprint(board: BoardState): string {
     .join('/');
 }
 
-export function createPieceSet(seed: number, setIndex: number, shapeIds?: string[]): PieceInstance[] {
+export interface CreateGameOptions {
+  fixedPieceSupply?: PieceInstance[][];
+  seedSupplyVersion?: SeedSupplyVersion;
+  clearAxes?: ClearAxes;
+  clearTrigger?: ClearTrigger;
+  referenceClearRules?: ReferenceClearRule[];
+}
+
+export function createPieceSet(
+  seed: number,
+  setIndex: number,
+  shapeIds?: string[],
+  options?: { multiColor?: boolean; seedSupplyVersion?: SeedSupplyVersion },
+): PieceInstance[] {
+  const palette =
+    options?.seedSupplyVersion === 'reference-worktree-0f237a8f'
+      ? REFERENCE_TILE_COLORS
+      : TILE_COLORS;
   return Array.from({ length: 3 }, (_, slotIndex) => {
     const requestedShape = shapeIds?.[slotIndex];
     const shape = requestedShape
@@ -54,22 +126,25 @@ export function createPieceSet(seed: number, setIndex: number, shapeIds?: string
         ];
     if (!shape) throw new Error('Unable to select a generated piece shape.');
 
-    const color = TILE_COLORS[
-      seededInt(hash32(seed + setIndex * 991), slotIndex * 29 + 11, TILE_COLORS.length)
-    ];
+    const color =
+      palette[seededInt(hash32(seed + setIndex * 991), slotIndex * 29 + 11, palette.length)];
     if (!color) throw new Error('Unable to select a generated tile color.');
 
-    const generatedCellColors = requestedShape
-      ? undefined
-      : shape.cells.map((_, cellIndex) =>
-          TILE_COLORS[
-            seededInt(
-              hash32(seed + setIndex * 1297 + slotIndex * 131),
-              cellIndex * 43 + 19,
-              TILE_COLORS.length,
-            )
-          ] ?? color,
-        );
+    const useMultiColor =
+      options?.multiColor ??
+      (options?.seedSupplyVersion === 'reference-worktree-0f237a8f' ? false : !requestedShape);
+    const generatedCellColors = useMultiColor
+      ? shape.cells.map(
+          (_, cellIndex) =>
+            palette[
+              seededInt(
+                hash32(seed + setIndex * 1297 + slotIndex * 131),
+                cellIndex * 43 + 19,
+                palette.length,
+              )
+            ] ?? color,
+        )
+      : undefined;
 
     return {
       id: `piece-${setIndex}-${slotIndex}-${shape.id}`,
@@ -87,13 +162,19 @@ export function createGame(
   board: BoardState = createEmptyBoard(),
   seed = 41782,
   pieces: PieceInstance[] = createPieceSet(seed, 0),
+  options?: CreateGameOptions,
 ): GameSnapshot {
   const snapshot: GameSnapshot = {
     board: cloneBoard(board),
+    ...(options?.seedSupplyVersion ? { seedSupplyVersion: options.seedSupplyVersion } : {}),
+    ...(options?.clearAxes ? { clearAxes: options.clearAxes } : {}),
+    ...(options?.clearTrigger ? { clearTrigger: options.clearTrigger } : {}),
+    ...(options?.referenceClearRules
+      ? { referenceClearRules: options.referenceClearRules.map((rule) => ({ ...rule })) }
+      : {}),
     pieces: pieces.map((piece) => ({
-      ...piece,
+      ...clonePiece(piece),
       used: false,
-      ...(piece.cellColors ? { cellColors: [...piece.cellColors] } : {}),
     })),
     seed,
     setIndex: pieces[0]?.setIndex ?? 0,
@@ -101,170 +182,105 @@ export function createGame(
     score: 0,
     combo: 0,
     status: 'playing',
+    ...(options?.fixedPieceSupply
+      ? {
+          fixedPieceSupply: options.fixedPieceSupply.map((batch) =>
+            batch.map((piece) => ({
+              ...clonePiece(piece),
+              used: false,
+            })),
+          ),
+        }
+      : {}),
   };
-  if (!hasAnyLegalMove(snapshot)) snapshot.status = 'game-over';
+  if (!hasNativeLegalMove(snapshot)) snapshot.status = 'game-over';
   return snapshot;
 }
 
-export function pieceCells(piece: PieceInstance, anchor: GridCell): GridCell[] {
-  return getShape(piece.shapeId).cells.map(([row, col]) => ({
-    row: anchor.row + row,
-    col: anchor.col + col,
-  }));
+export function createProjectGame(project: {
+  setupBoard: BoardState;
+  seed: number;
+  setupPieces: PieceInstance[];
+  clearAxes?: ClearAxes;
+  clearTrigger?: ClearTrigger;
+  referenceClearRules?: ReferenceClearRule[];
+  fixedPieceSupply?: PieceInstance[][];
+  seedSupplyVersion?: SeedSupplyVersion;
+}): GameSnapshot {
+  return createGame(project.setupBoard, project.seed, project.setupPieces, {
+    ...(project.clearAxes ? { clearAxes: project.clearAxes } : {}),
+    ...(project.clearTrigger ? { clearTrigger: project.clearTrigger } : {}),
+    ...(project.referenceClearRules ? { referenceClearRules: project.referenceClearRules } : {}),
+    ...(project.fixedPieceSupply ? { fixedPieceSupply: project.fixedPieceSupply } : {}),
+    ...(project.seedSupplyVersion ? { seedSupplyVersion: project.seedSupplyVersion } : {}),
+  });
 }
 
-export function pieceCellColor(piece: PieceInstance, cellIndex: number): TileColor {
-  return piece.cellColors?.[cellIndex] ?? piece.color;
-}
-
-export function pieceColors(piece: PieceInstance): TileColor[] {
-  return getShape(piece.shapeId).cells.map((_, index) => pieceCellColor(piece, index));
-}
-
-export function canPlace(board: BoardState, piece: PieceInstance, anchor: GridCell): boolean {
-  if (piece.used) return false;
-  return pieceCells(piece, anchor).every(
-    ({ row, col }) =>
-      row >= 0 && row < board.rows && col >= 0 && col < board.cols && board.cells[row]?.[col] === null,
+export function placementRejectionReason(
+  snapshot: GameSnapshot,
+  pieceId: string,
+  anchor: GridCell,
+): string | null {
+  if (snapshot.status === 'game-over') return '对局已结束，不能再落子。';
+  const piece = snapshot.pieces.find((candidate) => candidate.id === pieceId);
+  if (!piece) return `找不到候选块 ${pieceId}。`;
+  if (piece.used) return `候选块 ${pieceId} 已经用过。`;
+  const cells = pieceCells(piece, anchor);
+  const outside = cells.filter(
+    (cell) =>
+      cell.row < 0 ||
+      cell.col < 0 ||
+      cell.row >= snapshot.board.rows ||
+      cell.col >= snapshot.board.cols,
   );
+  if (outside.length > 0) {
+    return `落点超出 8×8 棋盘（${outside.map((cell) => `${cell.row},${cell.col}`).join(' ')}）。`;
+  }
+  const blocked = cells.filter((cell) => snapshot.board.cells[cell.row]?.[cell.col]);
+  if (blocked.length > 0) {
+    return `落点与已有方块重叠（${blocked.map((cell) => `${cell.row},${cell.col}`).join(' ')}）。`;
+  }
+  return null;
 }
 
-export function findLegalAnchors(board: BoardState, piece: PieceInstance): GridCell[] {
-  const anchors: GridCell[] = [];
-  for (let row = 0; row < board.rows; row += 1) {
-    for (let col = 0; col < board.cols; col += 1) {
-      if (canPlace(board, piece, { row, col })) anchors.push({ row, col });
-    }
-  }
-  return anchors;
+/** Use the same BB rule implementation as the native work runtime. */
+export function detectClear(
+  board: BoardState,
+  clearAxes: ClearAxes = 'both',
+  clearTrigger: ClearTrigger = 'line-complete',
+): ClearResult {
+  return detectNativeClear(board, clearAxes, clearTrigger);
 }
 
-function hasLegalMoveIgnoringStatus(snapshot: GameSnapshot): boolean {
-  return snapshot.pieces.some(
-    (piece) => !piece.used && findLegalAnchors(snapshot.board, piece).length > 0,
-  );
-}
-
-export function hasAnyLegalMove(snapshot: GameSnapshot): boolean {
-  return snapshot.status !== 'game-over' && hasLegalMoveIgnoringStatus(snapshot);
-}
-
-export function detectClear(board: BoardState): ClearResult {
-  const rows: number[] = [];
-  const cols: number[] = [];
-
-  for (let row = 0; row < board.rows; row += 1) {
-    const current = board.cells[row];
-    if (current && current.every((cell) => cell !== null)) rows.push(row);
+/**
+ * Resolve through the native BB runtime. Until the legacy workbench is removed,
+ * its explicit seeded-supply mode remains attached to the state and refreshes
+ * its tray with that mode; the placement, clearing and scoring rules are shared.
+ */
+export function applyPlacement(
+  snapshot: GameSnapshot,
+  action: PlacementAction,
+): GameTransition | null {
+  const transition = applyNativePlacement(snapshot, action);
+  if (!transition) return null;
+  // The native clone retains the rule array by reference; the workbench exposes
+  // transition snapshots to editors, so preserve its previous isolation here.
+  if (transition.before.referenceClearRules) {
+    transition.before.referenceClearRules = structuredClone(transition.before.referenceClearRules);
   }
-
-  for (let col = 0; col < board.cols; col += 1) {
-    let full = true;
-    for (let row = 0; row < board.rows; row += 1) {
-      if (board.cells[row]?.[col] === null || board.cells[row]?.[col] === undefined) {
-        full = false;
-        break;
-      }
-    }
-    if (full) cols.push(col);
+  const after: GameSnapshot = transition.after;
+  if (snapshot.seedSupplyVersion) after.seedSupplyVersion = snapshot.seedSupplyVersion;
+  if (!snapshot.fixedPieceSupply && after.setIndex !== snapshot.setIndex) {
+    after.pieces = createPieceSet(
+      snapshot.seed,
+      after.setIndex,
+      undefined,
+      snapshot.seedSupplyVersion ? { seedSupplyVersion: snapshot.seedSupplyVersion } : undefined,
+    );
+    after.status = 'playing';
+    if (!hasNativeLegalMove(after)) after.status = 'game-over';
   }
-
-  const keys = new Set<string>();
-  const cells: ClearResult['cells'] = [];
-  const addCell = (row: number, col: number): void => {
-    const key = `${row}:${col}`;
-    if (keys.has(key)) return;
-    const color = board.cells[row]?.[col];
-    if (!color) return;
-    keys.add(key);
-    cells.push({ row, col, color });
-  };
-
-  for (const row of rows) {
-    for (let col = 0; col < board.cols; col += 1) addCell(row, col);
-  }
-  for (const col of cols) {
-    for (let row = 0; row < board.rows; row += 1) addCell(row, col);
-  }
-
-  return { rows, cols, cells };
-}
-
-function scoreTransition(
-  pieceSize: number,
-  clear: ClearResult,
-  combo: number,
-): { placementPoints: number; clearBonusPoints: number; total: number } {
-  const placementPoints = pieceSize;
-  const lineCount = clear.rows.length + clear.cols.length;
-  if (lineCount === 0) return { placementPoints, clearBonusPoints: 0, total: placementPoints };
-  const lineBonus = lineCount * lineCount * 12;
-  const comboBonus = Math.max(0, combo - 1) * 18;
-  const clearBonusPoints = clear.cells.length * 2 + lineBonus + comboBonus;
-  return { placementPoints, clearBonusPoints, total: placementPoints + clearBonusPoints };
-}
-
-export function applyPlacement(snapshot: GameSnapshot, action: PlacementAction): GameTransition | null {
-  if (snapshot.status === 'game-over') return null;
-  const piece = snapshot.pieces.find((candidate) => candidate.id === action.pieceId);
-  if (!piece || piece.used || !canPlace(snapshot.board, piece, action.anchor)) return null;
-
-  const before = cloneSnapshot(snapshot);
-  const placedBoard = cloneBoard(snapshot.board);
-  for (const [cellIndex, { row, col }] of pieceCells(piece, action.anchor).entries()) {
-    const targetRow = placedBoard.cells[row];
-    if (!targetRow) throw new Error(`Invalid board row ${row}.`);
-    targetRow[col] = pieceCellColor(piece, cellIndex);
-  }
-
-  const clear = detectClear(placedBoard);
-  const boardAfterClear = cloneBoard(placedBoard);
-  for (const { row, col } of clear.cells) {
-    const targetRow = boardAfterClear.cells[row];
-    if (targetRow) targetRow[col] = null;
-  }
-
-  const combo = clear.cells.length > 0 ? snapshot.combo + 1 : 0;
-  const score = scoreTransition(getShape(piece.shapeId).cells.length, clear, combo);
-  const points = score.total;
-  let setIndex = snapshot.setIndex;
-  let pieces = snapshot.pieces.map((candidate) =>
-    candidate.id === piece.id
-      ? { ...candidate, used: true, ...(candidate.cellColors ? { cellColors: [...candidate.cellColors] } : {}) }
-      : { ...candidate, ...(candidate.cellColors ? { cellColors: [...candidate.cellColors] } : {}) },
-  );
-
-  if (pieces.every((candidate) => candidate.used)) {
-    setIndex += 1;
-    pieces = createPieceSet(snapshot.seed, setIndex);
-  }
-
-  const after: GameSnapshot = {
-    board: boardAfterClear,
-    pieces,
-    seed: snapshot.seed,
-    setIndex,
-    turn: snapshot.turn + 1,
-    score: snapshot.score + points,
-    combo,
-    status: 'playing',
-  };
-  if (!hasLegalMoveIgnoringStatus(after)) after.status = 'game-over';
-
-  return {
-    before,
-    placedBoard,
-    after,
-    action: {
-      ...action,
-      anchor: { ...action.anchor },
-      pointerPath: action.pointerPath.map((sample) => ({ ...sample })),
-    },
-    clear,
-    placementPoints: score.placementPoints,
-    clearBonusPoints: score.clearBonusPoints,
-    points,
-  };
+  return { ...transition, after };
 }
 
 function occupiedCount(board: BoardState): number {
@@ -325,15 +341,29 @@ export function chooseGreedyMove(snapshot: GameSnapshot): LegalMove | null {
 }
 
 export function replayActions(initial: GameSnapshot, actions: PlacementAction[]): GameTransition[] {
+  const diagnosis = diagnoseReplay(initial, actions);
+  if (!diagnosis.ok)
+    throw new Error(`Take contains invalid action: ${diagnosis.actionId}（${diagnosis.reason}）`);
+  return diagnosis.transitions;
+}
+
+export function diagnoseReplay(
+  initial: GameSnapshot,
+  actions: PlacementAction[],
+):
+  | { ok: true; transitions: GameTransition[] }
+  | { ok: false; index: number; actionId: string; reason: string } {
   const transitions: GameTransition[] = [];
   let cursor = cloneSnapshot(initial);
-  for (const action of actions) {
+  for (const [index, action] of actions.entries()) {
+    const reason = placementRejectionReason(cursor, action.pieceId, action.anchor);
+    if (reason) return { ok: false, index, actionId: action.id, reason };
     const transition = applyPlacement(cursor, action);
-    if (!transition) throw new Error(`Take contains invalid action: ${action.id}`);
+    if (!transition) return { ok: false, index, actionId: action.id, reason: '落子未能执行。' };
     transitions.push(transition);
     cursor = transition.after;
   }
-  return transitions;
+  return { ok: true, transitions };
 }
 
 export function makeAgentTake(initial: GameSnapshot, maximumActions = 9): Take {
@@ -345,22 +375,19 @@ export function makeAgentTake(initial: GameSnapshot, maximumActions = 9): Take {
     if (!move) break;
     const activePiece = cursor.pieces.find((piece) => piece.id === move.pieceId);
     if (!activePiece) break;
-    const startX = 0.27 + activePiece.slotIndex * 0.23;
+    const bounds = getShapeBounds(getShape(activePiece.shapeId));
     const action: PlacementAction = {
       id: `agent-action-${index + 1}`,
       actor: 'agent',
       pieceId: move.pieceId,
       anchor: { ...move.anchor },
       durationFrames: 15,
-      pointerPath: [
-        { frameOffset: 0, x: startX, y: 0.88 },
-        { frameOffset: 6, x: (startX + 0.5) / 2, y: 0.62 },
-        {
-          frameOffset: 15,
-          x: 0.16 + (move.anchor.col / Math.max(1, BOARD_SIZE - 1)) * 0.68,
-          y: 0.18 + (move.anchor.row / Math.max(1, BOARD_SIZE - 1)) * 0.5,
-        },
-      ],
+      pointerPath: buildAgentPointerPath({
+        actionIndex: index,
+        slotIndex: activePiece.slotIndex,
+        landing: pointerLandingForPlacement(move.anchor, bounds),
+        durationFrames: 15,
+      }),
     };
     const transition = applyPlacement(cursor, action);
     if (!transition) break;

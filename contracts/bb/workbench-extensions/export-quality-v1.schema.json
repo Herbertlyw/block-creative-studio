@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.export-quality.v1",
+  "type": "object",
+  "properties": {
+    "contract": { "const": "bcs.workbench.export-quality" },
+    "version": { "const": "1.0.0" },
+    "preset": { "enum": ["preview", "standard", "cinematic"] }
+  },
+  "required": ["contract", "version", "preset"],
+  "additionalProperties": false
+}

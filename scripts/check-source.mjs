@@ -1,23 +1,25 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, resolve, dirname, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const sourceRoots = ['src', 'tests'];
-
-function walk(path) {
-  const entries = readdirSync(path, { withFileTypes: true });
-  return entries.flatMap((entry) => {
-    const next = resolve(path, entry.name);
-    return entry.isDirectory() ? walk(next) : [next];
+function trackedFiles(...paths) {
+  const result = spawnSync('git', ['ls-files', '-z', '--', ...paths], {
+    cwd: root,
+    encoding: 'utf8',
   });
+  if (result.status !== 0) throw new Error(`Unable to list tracked source: ${result.stderr}`);
+  return result.stdout
+    .split('\0')
+    .filter(Boolean)
+    .map((path) => resolve(root, path))
+    .filter(existsSync);
 }
 
-const sourceFiles = sourceRoots
-  .flatMap((directory) => walk(resolve(root, directory)))
-  .filter((path) => ['.ts', '.tsx'].includes(extname(path)));
-sourceFiles.push(resolve(root, 'vite.config.ts'));
+const sourceFiles = trackedFiles('src', 'tests', 'vite.config.ts').filter((path) =>
+  ['.ts', '.tsx'].includes(extname(path)),
+);
 
 const syntax = spawnSync(
   'tsc',
@@ -69,10 +71,18 @@ if (missing.length > 0) {
   throw new Error(`Unresolved relative imports:\n${missing.join('\n')}`);
 }
 
-const jsonFiles = walk(root).filter((path) => {
-  const normalized = relative(root, path);
-  return extname(path) === '.json' && !normalized.startsWith('.git/') && !normalized.startsWith('.core-dist/');
-});
+const jsonFiles = trackedFiles(
+  'src',
+  'tests',
+  'contracts/bb/schemas',
+  'contracts/bb/workbench-extensions',
+  'package.json',
+  'package-lock.json',
+  'tsconfig.json',
+  'tsconfig.app.json',
+  'tsconfig.node.json',
+  'tsconfig.calibrated.json',
+).filter((path) => extname(path) === '.json');
 for (const file of jsonFiles) JSON.parse(readFileSync(file, 'utf8'));
 
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));

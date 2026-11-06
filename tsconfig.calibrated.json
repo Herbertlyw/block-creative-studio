@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.calibrated.tsbuildinfo",
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["src/games/block-placement/calibrated/**/*.ts", "src/vite-env.d.ts"],
+  "exclude": []
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.reference2d-background.v1",
+  "type": "object",
+  "properties": {
+    "contract": { "const": "bcs.workbench.reference2d-background" },
+    "version": { "const": "1.0.0" },
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+  },
+  "required": ["contract", "version", "color"],
+  "additionalProperties": false
+}

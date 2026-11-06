@@ -2,7 +2,11 @@ import { BOARD_SIZE, type BoardState, type TileColor } from './types';
 import { TILE_COLORS } from './shapes';
 
 export function createEmptyBoard(): BoardState {
-  return { rows: BOARD_SIZE, cols: BOARD_SIZE, cells: Array.from({ length: BOARD_SIZE }, () => Array<TileColor | null>(BOARD_SIZE).fill(null)) };
+  return {
+    rows: BOARD_SIZE,
+    cols: BOARD_SIZE,
+    cells: Array.from({ length: BOARD_SIZE }, () => Array<TileColor | null>(BOARD_SIZE).fill(null)),
+  };
 }
 
 export function cloneBoard(board: BoardState): BoardState {
@@ -29,14 +33,16 @@ export function createShowcaseBoard(): BoardState {
 
 export function createCrossClearBoard(): BoardState {
   const board = createEmptyBoard();
-  for (let col = 0; col < BOARD_SIZE; col += 1) if (col !== 4) {
-    const line = board.cells[5];
-    if (line) line[col] = TILE_COLORS[col % TILE_COLORS.length] ?? 'blue';
-  }
-  for (let row = 0; row < BOARD_SIZE; row += 1) if (row !== 5) {
-    const line = board.cells[row];
-    if (line) line[4] = TILE_COLORS[(row + 2) % TILE_COLORS.length] ?? 'blue';
-  }
+  for (let col = 0; col < BOARD_SIZE; col += 1)
+    if (col !== 4) {
+      const line = board.cells[5];
+      if (line) line[col] = TILE_COLORS[col % TILE_COLORS.length] ?? 'blue';
+    }
+  for (let row = 0; row < BOARD_SIZE; row += 1)
+    if (row !== 5) {
+      const line = board.cells[row];
+      if (line) line[4] = TILE_COLORS[(row + 2) % TILE_COLORS.length] ?? 'blue';
+    }
   fill(board, 7, [0, 1, 6, 7], 'blue');
   return board;
 }

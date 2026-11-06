@@ -21,7 +21,6 @@ export interface NamedPreset<T extends string> {
   description: string;
 }
 
-
 export const RENDERER_OPTIONS: Array<NamedPreset<RenderBackendId>> = [
   {
     id: 'reference-2d',
@@ -41,22 +40,38 @@ export const REFERENCE_TILE_MATERIAL_OPTIONS: Array<NamedPreset<ReferenceTileMat
 ];
 
 export const REFERENCE_TILE_FACE_OPTIONS: Array<NamedPreset<ReferenceTileFaceSetId>> = [
-  { id: 'botanical-reference', label: '植物牌面纹样', description: '花朵、叶片与参考视频一致的低对比浮雕图案。' },
+  {
+    id: 'botanical-reference',
+    label: '植物牌面纹样',
+    description: '花朵、叶片与参考视频一致的低对比浮雕图案。',
+  },
   { id: 'none', label: '无牌面纹样', description: '关闭图案，仅保留方块材质。' },
 ];
 
 export const REFERENCE_PREVIEW_OPTIONS: Array<NamedPreset<ReferencePreviewFxId>> = [
-  { id: 'full-line-tint', label: '整行预填充', description: '落子会消除时，对完整行列做半透明染色。' },
+  {
+    id: 'full-line-tint',
+    label: '整行预填充',
+    description: '落子会消除时，对完整行列做半透明染色。',
+  },
   { id: 'cells-only', label: '仅落点预览', description: '只显示即将落下的方块，不染整行。' },
 ];
 
 export const REFERENCE_CLEAR_OPTIONS: Array<NamedPreset<ReferenceClearFxId>> = [
-  { id: 'sweep-score-spark', label: '扫光 + 逐格计分', description: '参考视频的亮带、星屑、逐格数字与消散。' },
+  {
+    id: 'sweep-score-spark',
+    label: '扫光 + 逐格计分',
+    description: '参考视频的亮带、星屑、逐格数字与消散。',
+  },
   { id: 'sweep-only', label: '简洁扫光', description: '保留行列亮带，弱化数字与粒子。' },
 ];
 
 export const REFERENCE_FEEDBACK_OPTIONS: Array<NamedPreset<ReferenceFeedbackFxId>> = [
-  { id: 'praise-combo', label: '评价词 + Combo', description: 'Nice、Great、Fantastic、Unbelievable 与连击演出。' },
+  {
+    id: 'praise-combo',
+    label: '评价词 + Combo',
+    description: 'Good、Great、Amazing、Fantastic、Unbelievable 与连击演出。',
+  },
   { id: 'score-only', label: '仅积分', description: '不显示大评价词和 Combo 装饰。' },
 ];
 

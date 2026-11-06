@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.reference2d-variant.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "version", "lookKey", "clearFromLook", "lookRef", "clearRef"],
+  "properties": {
+    "contract": { "const": "bcs.workbench.reference2d-variant" },
+    "version": { "const": "1.0.0" },
+    "lookKey": {
+      "enum": ["builtin.reference-clean.look@1.0.0", "builtin.reference-garden.look@1.0.0"]
+    },
+    "clearFromLook": {
+      "enum": ["builtin.reference-clean.look@1.0.0", "builtin.reference-garden.look@1.0.0"]
+    },
+    "lookRef": { "$ref": "#/$defs/ref" },
+    "clearRef": { "$ref": "#/$defs/ref" }
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "kind", "contentHash"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "contentHash": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

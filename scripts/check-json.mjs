@@ -21,7 +21,9 @@ for (const file of files) {
   try {
     JSON.parse(readFileSync(file, 'utf8'));
   } catch (error) {
-    failures.push(`${file.slice(root.length + 1)}: ${error instanceof Error ? error.message : String(error)}`);
+    failures.push(
+      `${file.slice(root.length + 1)}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 

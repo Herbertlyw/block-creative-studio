@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcs.workbench.source-design-map@1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "mode", "crop", "x", "y", "confirmed"],
+  "properties": {
+    "version": { "const": "1.0.0" },
+    "mode": { "enum": ["contain", "cover", "stretch"] },
+    "confirmed": { "type": "boolean" },
+    "x": { "type": "number", "minimum": -2160, "maximum": 2160 },
+    "y": { "type": "number", "minimum": -3840, "maximum": 3840 },
+    "crop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  }
+}

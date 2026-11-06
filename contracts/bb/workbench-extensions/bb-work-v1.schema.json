@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative-studio.example/contracts/bb-work-v1.schema.json",
+  "title": "BB work package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "project", "pointer", "source"],
+  "properties": {
+    "format": {
+      "const": "bcs-bb-work"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "project": {
+      "type": "object"
+    },
+    "pointer": {
+      "type": ["object", "null"]
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["link", "observation"],
+          "properties": {
+            "link": {
+              "type": "object"
+            },
+            "observation": {
+              "type": "object"
+            },
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["relation", "parentProjectSha256"],
+              "properties": {
+                "relation": {
+                  "const": "derived"
+                },
+                "parentProjectSha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

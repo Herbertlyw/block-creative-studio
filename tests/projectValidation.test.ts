@@ -37,7 +37,6 @@ describe('project validation', () => {
     expect(parsed.takes).toHaveLength(1);
   });
 
-
   it('accepts per-cell colors and preserves the reference 2D renderer profile', () => {
     const payload = structuredClone(bundle());
     payload.project.setupPieces[1]!.cellColors = ['coral', 'lime', 'blue'];

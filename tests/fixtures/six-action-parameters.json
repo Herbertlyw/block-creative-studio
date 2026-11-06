@@ -1,0 +1,436 @@
+{
+  "game": {
+    "contract": "bcs.game-project",
+    "contractVersion": "1.0.0",
+    "game": {
+      "id": "block-placement",
+      "moduleVersion": "1.0.0",
+      "rulesetId": "block-placement-classic-v1",
+      "rulesetVersion": "1.0.0"
+    },
+    "config": {
+      "schemaId": "bcs.runtime.block-placement.config",
+      "data": {
+        "board": {
+          "rows": 8,
+          "cols": 8,
+          "cells": [
+            ["blue", null, "amber", null, "lime", null, null, null],
+            [null, null, null, null, "cyan", null, null, null],
+            [null, null, null, null, "blue", null, null, null],
+            [null, null, null, null, "violet", null, null, null],
+            [null, null, null, null, "coral", null, null, null],
+            ["coral", "amber", "lime", "cyan", null, "violet", "coral", "amber"],
+            [null, null, null, null, "lime", null, null, null],
+            ["blue", "blue", null, null, "cyan", null, "blue", "blue"]
+          ]
+        },
+        "pieces": [
+          {
+            "id": "piece-0-0-single",
+            "shapeId": "single",
+            "color": "blue",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 0,
+            "cellColors": ["blue"]
+          },
+          {
+            "id": "piece-0-1-tri-h",
+            "shapeId": "tri-h",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 1,
+            "cellColors": ["violet", "amber", "blue"]
+          },
+          {
+            "id": "piece-0-2-square-2",
+            "shapeId": "square-2",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 2,
+            "cellColors": ["lime", "amber", "coral", "cyan"]
+          }
+        ],
+        "fixedPieceSupply": [
+          [
+            {
+              "id": "piece-0-0-single",
+              "shapeId": "single",
+              "color": "blue",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 0,
+              "cellColors": ["blue"]
+            },
+            {
+              "id": "piece-0-1-tri-h",
+              "shapeId": "tri-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 1,
+              "cellColors": ["violet", "amber", "blue"]
+            },
+            {
+              "id": "piece-0-2-square-2",
+              "shapeId": "square-2",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 2,
+              "cellColors": ["lime", "amber", "coral", "cyan"]
+            }
+          ],
+          [
+            {
+              "id": "piece-1-0-t-4",
+              "shapeId": "single",
+              "color": "coral",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 0,
+              "cellColors": ["coral"]
+            },
+            {
+              "id": "piece-1-1-plus-5",
+              "shapeId": "plus-5",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 1,
+              "cellColors": ["lime", "blue", "amber", "amber", "amber"]
+            },
+            {
+              "id": "piece-1-2-line5-h",
+              "shapeId": "line5-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 2,
+              "cellColors": ["amber", "lime", "violet", "blue", "lime"]
+            }
+          ]
+        ]
+      }
+    },
+    "initialState": {
+      "schemaId": "bcs.runtime.block-placement.state",
+      "data": {
+        "board": {
+          "rows": 8,
+          "cols": 8,
+          "cells": [
+            ["blue", null, "amber", null, "lime", null, null, null],
+            [null, null, null, null, "cyan", null, null, null],
+            [null, null, null, null, "blue", null, null, null],
+            [null, null, null, null, "violet", null, null, null],
+            [null, null, null, null, "coral", null, null, null],
+            ["coral", "amber", "lime", "cyan", null, "violet", "coral", "amber"],
+            [null, null, null, null, "lime", null, null, null],
+            ["blue", "blue", null, null, "cyan", null, "blue", "blue"]
+          ]
+        },
+        "pieces": [
+          {
+            "id": "piece-0-0-single",
+            "shapeId": "single",
+            "color": "blue",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 0,
+            "cellColors": ["blue"]
+          },
+          {
+            "id": "piece-0-1-tri-h",
+            "shapeId": "tri-h",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 1,
+            "cellColors": ["violet", "amber", "blue"]
+          },
+          {
+            "id": "piece-0-2-square-2",
+            "shapeId": "square-2",
+            "color": "violet",
+            "used": false,
+            "setIndex": 0,
+            "slotIndex": 2,
+            "cellColors": ["lime", "amber", "coral", "cyan"]
+          }
+        ],
+        "seed": 41782,
+        "setIndex": 0,
+        "turn": 0,
+        "score": 0,
+        "combo": 0,
+        "status": "playing",
+        "fixedPieceSupply": [
+          [
+            {
+              "id": "piece-0-0-single",
+              "shapeId": "single",
+              "color": "blue",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 0,
+              "cellColors": ["blue"]
+            },
+            {
+              "id": "piece-0-1-tri-h",
+              "shapeId": "tri-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 1,
+              "cellColors": ["violet", "amber", "blue"]
+            },
+            {
+              "id": "piece-0-2-square-2",
+              "shapeId": "square-2",
+              "color": "violet",
+              "used": false,
+              "setIndex": 0,
+              "slotIndex": 2,
+              "cellColors": ["lime", "amber", "coral", "cyan"]
+            }
+          ],
+          [
+            {
+              "id": "piece-1-0-t-4",
+              "shapeId": "single",
+              "color": "coral",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 0,
+              "cellColors": ["coral"]
+            },
+            {
+              "id": "piece-1-1-plus-5",
+              "shapeId": "plus-5",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 1,
+              "cellColors": ["lime", "blue", "amber", "amber", "amber"]
+            },
+            {
+              "id": "piece-1-2-line5-h",
+              "shapeId": "line5-h",
+              "color": "violet",
+              "used": false,
+              "setIndex": 1,
+              "slotIndex": 2,
+              "cellColors": ["amber", "lime", "violet", "blue", "lime"]
+            }
+          ]
+        ]
+      },
+      "stateHash": "fnv1a32:f5cdb92e"
+    }
+  },
+  "takes": [
+    {
+      "contract": "bcs.game-replay",
+      "contractVersion": "1.0.0",
+      "gameId": "block-placement",
+      "moduleVersion": "1.0.0",
+      "takeId": "synthetic-take",
+      "initialStateHash": "fnv1a32:f5cdb92e",
+      "seed": 41782,
+      "actions": [
+        {
+          "id": "synthetic-first",
+          "actor": "human",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-0-0-single",
+            "anchor": {
+              "row": 5,
+              "col": 4
+            }
+          }
+        },
+        {
+          "id": "synthetic-second",
+          "actor": "human",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-0-1-tri-h",
+            "anchor": {
+              "row": 1,
+              "col": 1
+            }
+          }
+        },
+        {
+          "id": "long-2",
+          "actor": "agent",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-0-2-square-2",
+            "anchor": {
+              "row": 0,
+              "col": 6
+            }
+          }
+        },
+        {
+          "id": "long-3",
+          "actor": "human",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-1-2-line5-h",
+            "anchor": {
+              "row": 2,
+              "col": 3
+            }
+          }
+        },
+        {
+          "id": "long-4",
+          "actor": "agent",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-1-1-plus-5",
+            "anchor": {
+              "row": 3,
+              "col": 3
+            }
+          }
+        },
+        {
+          "id": "long-5",
+          "actor": "human",
+          "schemaId": "bcs.runtime.block-placement.semantic-action",
+          "action": {
+            "pieceId": "piece-1-0-t-4",
+            "anchor": {
+              "row": 3,
+              "col": 3
+            }
+          }
+        }
+      ],
+      "interactions": [
+        {
+          "id": "interaction-synthetic-first",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 15,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.2,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.5,
+              "y": 0.6
+            }
+          ],
+          "committedActionId": "synthetic-first"
+        },
+        {
+          "id": "interaction-synthetic-second",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 16,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.5,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 16,
+              "x": 0.4,
+              "y": 0.7
+            }
+          ],
+          "committedActionId": "synthetic-second"
+        },
+        {
+          "id": "inter-long-2",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 14,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.3,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 14,
+              "x": 0.5,
+              "y": 0.5
+            }
+          ],
+          "committedActionId": "long-2"
+        },
+        {
+          "id": "inter-long-3",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 15,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.3,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 15,
+              "x": 0.5,
+              "y": 0.5
+            }
+          ],
+          "committedActionId": "long-3"
+        },
+        {
+          "id": "inter-long-4",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 16,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.3,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 16,
+              "x": 0.5,
+              "y": 0.5
+            }
+          ],
+          "committedActionId": "long-4"
+        },
+        {
+          "id": "inter-long-5",
+          "modality": "pointer",
+          "startFrame": 0,
+          "endFrame": 17,
+          "samples": [
+            {
+              "frameOffset": 0,
+              "x": 0.3,
+              "y": 0.8
+            },
+            {
+              "frameOffset": 17,
+              "x": 0.5,
+              "y": 0.5
+            }
+          ],
+          "committedActionId": "long-5"
+        }
+      ]
+    }
+  ]
+}

@@ -54,13 +54,15 @@ for (const scanRoot of scanRoots) {
       for (const match of source.matchAll(pattern)) {
         const specifier = match[1];
         if (!specifier?.startsWith('.')) continue;
-        if (!candidates(file, specifier).some((candidate) => {
-          try {
-            return statSync(candidate).isFile();
-          } catch {
-            return false;
-          }
-        })) {
+        if (
+          !candidates(file, specifier).some((candidate) => {
+            try {
+              return statSync(candidate).isFile();
+            } catch {
+              return false;
+            }
+          })
+        ) {
           problems.push(`${file.slice(root.length + 1)} -> ${specifier}`);
         }
       }
