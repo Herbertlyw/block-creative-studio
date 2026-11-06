@@ -1,6 +1,6 @@
 import { parseBlockPlacementState } from '../../src/nativeReference/games/block-placement/schemas';
 import { hashBlockPlacementState } from '../../src/nativeReference/games/block-placement/legacyRuntime';
-import { RHYTHM_PRESETS } from '../../src/director/rhythmPresets';
+import { RHYTHM_PRESETS } from '../../src/nativeReference/director/rhythmPresets';
 import { DEFAULT_STYLE } from '../../src/renderer/stylePresets';
 import { splitPointerPlacement } from '../../src/nativeReference/game-runtime/replayEnvelope';
 

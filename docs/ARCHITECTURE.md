@@ -6,6 +6,6 @@ BB 原生规则与供给位于 block-placement runtime，供真人、机器及�
 
 工程素材解析和内容哈希校验位于 contracts；图片绑定和 WAV 混音使用各自的运行时模块。预览及导出取同一个生效预览配置。保存的外观作为默认配置，用户选择的临时覆盖独立保存于页面状态，可恢复到工程设置。
 
-src/nativeReference 是当前产品运行依赖，不是可整体删除的交接快照。contracts/bb/schemas 与 workbench-extensions 是当前合同。单独的 tsconfig.calibrated 对 noUncheckedIndexedAccess 保留历史例外；新增或修改边界仍需显式检查，不代表整个工程完全启用该选项。
+src/nativeReference 是当前产品运行依赖，不是可整体删除的交接快照；它已作为本项目代码维护，不能再声称所有文件与原摘录的哈希一致。contracts/bb/schemas 与 workbench-extensions 是当前合同。单独的 tsconfig.calibrated 对 noUncheckedIndexedAccess 保留历史例外；新增或修改边界仍需显式检查，不代表整个工程完全启用该选项。
 
 开发检查以当前 BB runtime 的规则和回放为核心；旧公开 V1 工作台不再是生产入口。合成输入及视频应由生成器写入忽略的 outputs 目录，项目包和 task.json 是不同文件。通用素材、音频和导出与 BB 特定规则应保持模块边界。

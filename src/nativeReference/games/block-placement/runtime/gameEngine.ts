@@ -23,6 +23,7 @@ export function cloneSnapshot(snapshot: GameSnapshot): GameSnapshot {
   return {
     ...snapshot,
     board: cloneBoard(snapshot.board),
+    ...(snapshot.referenceClearRules ? { referenceClearRules: structuredClone(snapshot.referenceClearRules) } : {}),
     pieces: snapshot.pieces.map((piece) => ({
       ...piece,
       ...(piece.cellColors ? { cellColors: [...piece.cellColors] } : {}),

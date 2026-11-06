@@ -8,6 +8,6 @@
 
 工作台外观可以保存在作品中。普通作品预览默认跟随已保存设置；修改临时外观后可选择“恢复工程设置”。实际作品修改后需保存；离开时提供保存、放弃或取消，并在刷新关闭时提供浏览器警告。浏览器提示仅表明保存请求已发起。
 
-测试使用 npm test、npm run check、npm run build。浏览器端生成演示输入并验证预览、保存和一段有声视频可执行 npm run test:browser:preview-session。开发格式化可运行 npm run format；冻结参考副本、生成输出和依赖被排除。
+测试使用 npm test、npm run check、npm run build。浏览器端生成演示输入并验证预览、保存和一段有声视频可执行 npm run test:browser:preview-session。开发格式化可运行 npm run format；运行时依赖目录 `src/nativeReference`、生成输出和依赖包被排除。
 
 音频 AAC 时间校准使用当前实际编码器，不固定某台设备的延迟。浏览器视频 seek 为近似定位。VFR、任意特效序列、全部历史工程和所有浏览器或 3D 素材组合未覆盖；合成测试不代表真实视频视觉或听感已获得认可。

@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   boardAnchorFromNormalizedPointer,
-  pointerLandingForPlacement,
-} from '../src/director/boardLayout';
-import { compileTake, evaluateCompiledTake } from '../src/director/presentationCompiler';
-import { RHYTHM_PRESETS } from '../src/director/rhythmPresets';
-import { createEmptyBoard } from '../src/domain/boardPresets';
-import { createGame, createPieceSet } from '../src/domain/gameEngine';
-import type { Take } from '../src/domain/types';
+  boardPieceCenterNormalized as pointerLandingForPlacement,
+} from '../src/nativeReference/games/block-placement/profiles/layout';
+import {
+  compileTake,
+  evaluateCompiledTake,
+} from '../src/nativeReference/games/block-placement/presentation/presentationCompiler';
+import { RHYTHM_PRESETS } from '../src/nativeReference/director/rhythmPresets';
+import { createEmptyBoard } from '../src/nativeReference/games/block-placement/runtime/boardPresets';
+import {
+  createGame,
+  createPieceSet,
+} from '../src/nativeReference/games/block-placement/runtime/gameEngine';
+import type { Take } from '../src/nativeReference/domain/types';
 
 describe('presentation compiler', () => {
   it('compiles a semantic take into deterministic frames', () => {
@@ -214,7 +220,7 @@ describe('presentation compiler', () => {
   });
 });
 
-it('preserves explicitly authored short agent paths while keeping legacy regeneration', () => {
+it('preserves recorded human paths while generating short machine paths', () => {
   const pieces = createPieceSet(5, 0, ['single', 'single', 'single']);
   const initial = createGame(createEmptyBoard(), 5, pieces);
   const path = [
@@ -238,7 +244,7 @@ it('preserves explicitly authored short agent paths while keeping legacy regener
   };
   const legacy = compileTake(take, RHYTHM_PRESETS['tight-fast'], 30);
   const authored = compileTake(
-    { ...take, actions: [{ ...action, pointerPathMode: 'authored' }] },
+    { ...take, actions: [{ ...action, actor: 'human' }] },
     RHYTHM_PRESETS['tight-fast'],
     30,
   );

@@ -7,7 +7,7 @@ import { blockPlacementPacketFromFrame } from '../src/nativeReference/games/bloc
 import { readBBFrame } from '../src/games/block-placement/planning/timelineFrameSource';
 import { authoredPacketFrame } from '../src/games/block-placement/presentation/evaluateAuthoredFrame';
 import { evaluateCompiledTake } from '../src/nativeReference/games/block-placement/presentation/presentationCompiler';
-import * as frozenCompiler from '../src/nativeReference/games/block-placement/presentation/presentationCompiler';
+import * as referenceCompiler from '../src/nativeReference/games/block-placement/presentation/presentationCompiler';
 
 const legacyFrame = (
   packet: ReturnType<ReturnType<typeof compileNativeTake>['frameSource']['evaluate']>,
@@ -62,10 +62,10 @@ it.each([30, 45, 60])('preserves every ordinary display frame at %i fps', (fps) 
     );
 });
 
-it('evaluates the production authored source without calling the frozen visual evaluator', () => {
+it('evaluates the production authored source without calling the reference visual evaluator', () => {
   const doc = ordinaryProject();
-  const spy = vi.spyOn(frozenCompiler, 'evaluateCompiledTake').mockImplementation(() => {
-    throw new Error('frozen evaluator was called');
+  const spy = vi.spyOn(referenceCompiler, 'evaluateCompiledTake').mockImplementation(() => {
+    throw new Error('reference evaluator was called');
   });
   try {
     const { frameSource } = compileNativeTake(doc, 'synthetic-take');

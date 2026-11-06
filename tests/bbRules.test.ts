@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { audioCuesForTake } from '../src/domain/audioCues';
-import { compileTake } from '../src/director/presentationCompiler';
-import { RHYTHM_PRESETS } from '../src/director/rhythmPresets';
-import { createEmptyBoard } from '../src/domain/boardPresets';
-import { blastPraiseTier } from '../src/domain/praise';
+import { normalizeAuthoredTake } from '../src/games/block-placement/planning/normalizeAuthoredTake';
+import { createBBTimelineSource } from '../src/games/block-placement/planning/timelineFrameSource';
+import { compileTake } from '../src/nativeReference/games/block-placement/presentation/presentationCompiler';
+import { RHYTHM_PRESETS } from '../src/nativeReference/director/rhythmPresets';
+import { createEmptyBoard } from '../src/nativeReference/games/block-placement/runtime/boardPresets';
+import { blastPraiseTier } from '../src/nativeReference/domain/types';
 import {
   applyPlacement,
   createGame,
   createPieceSet,
   replayActions,
-} from '../src/domain/gameEngine';
-import type { BoardState, PlacementAction, TileColor } from '../src/domain/types';
+} from '../src/nativeReference/games/block-placement/runtime/gameEngine';
+import type { BoardState, PlacementAction, TileColor } from '../src/nativeReference/domain/types';
 
 function place(pieceId: string, row: number, col: number): PlacementAction {
   return {
@@ -30,7 +31,7 @@ function board6(fill: (cells: Array<Array<TileColor | null>>) => void): BoardSta
 }
 
 describe('reference rule alignment', () => {
-  it('keeps the public six-color seeded supply stable and can force single-color pieces', () => {
+  it('keeps the native seven-color seeded supply stable and supports explicit multicolor pieces', () => {
     const first = createPieceSet(99, 0);
     const again = createPieceSet(99, 0);
     expect(
@@ -38,13 +39,13 @@ describe('reference rule alignment', () => {
     ).toEqual(
       first.map((piece) => `${piece.shapeId}:${piece.color}:${piece.cellColors?.join(',')}`),
     );
-    expect(first.every((piece) => piece.cellColors && piece.cellColors.length > 0)).toBe(true);
+    expect(first.every((piece) => piece.cellColors === undefined)).toBe(true);
     expect(createPieceSet(99, 0).map((piece) => piece.shapeId)).toEqual(
       createPieceSet(99, 0, undefined, { multiColor: false }).map((piece) => piece.shapeId),
     );
     expect(
-      createPieceSet(99, 0, undefined, { multiColor: false }).every(
-        (piece) => piece.cellColors === undefined,
+      createPieceSet(99, 0, undefined, { multiColor: true }).every(
+        (piece) => piece.cellColors && piece.cellColors.length > 0,
       ),
     ).toBe(true);
     expect(createPieceSet(99, 1).map((piece) => piece.id)).not.toEqual(
@@ -54,7 +55,7 @@ describe('reference rule alignment', () => {
 
   it('exhausts an authored supply instead of generating another round', () => {
     const round0 = createPieceSet(4, 0, ['single', 'single', 'single']);
-    let game = createGame(createEmptyBoard(), 4, round0, { fixedPieceSupply: [round0] });
+    let game = createGame(createEmptyBoard(), 4, round0, [round0]);
     for (let index = 0; index < 3; index += 1) {
       const live = game.pieces.find((piece) => !piece.used)!;
       game = applyPlacement(game, place(live.id, 0, index))!.after;
@@ -91,7 +92,7 @@ describe('reference rule alignment', () => {
         for (let col = 0; col < 5; col += 1) cells[row]![col] = 'blue';
     });
     const pieces = createPieceSet(2, 0, ['tri-v', 'line5-h', 'single']);
-    const rowGame = createGame(rowsOnly, 2, pieces, { clearAxes: 'rows' });
+    const rowGame = createGame(rowsOnly, 2, pieces, undefined, 'rows');
     const rowStep = applyPlacement(rowGame, place(pieces[0]!.id, 3, 5))!;
     expect(rowStep.clear.rows).toEqual([3, 4, 5]);
     expect(rowStep.clear.cols).toEqual([]);
@@ -101,16 +102,21 @@ describe('reference rule alignment', () => {
     fullCells[0]![0] = null;
     fullCells[5]![5] = null;
     const singles = createPieceSet(3, 0, ['single', 'single', 'single']);
-    const full = createGame({ rows: 6, cols: 6, cells: fullCells }, 3, singles, {
-      clearTrigger: 'board-full',
-    });
+    const full = createGame(
+      { rows: 6, cols: 6, cells: fullCells },
+      3,
+      singles,
+      undefined,
+      undefined,
+      'board-full',
+    );
     const steps = replayActions(full, [place(singles[0]!.id, 0, 0), place(singles[1]!.id, 5, 5)]);
     expect(steps[0]!.clear.cells).toHaveLength(0);
     expect(steps[1]!.clear.cells).toHaveLength(36);
 
-    const override = createGame(rowsOnly, 2, pieces, {
-      referenceClearRules: [{ turn: 0, axes: 'rows' }],
-    });
+    const override = createGame(rowsOnly, 2, pieces, undefined, undefined, undefined, [
+      { turn: 0, axes: 'rows' },
+    ]);
     const first = applyPlacement(override, place(pieces[0]!.id, 3, 5))!;
     expect(first.clear.cols).toEqual([]);
     expect(first.after.clearAxes).toBeUndefined();
@@ -134,17 +140,25 @@ describe('reference rule alignment', () => {
       RHYTHM_PRESETS['tight-fast'],
       30,
     );
-    const cues = audioCuesForTake(compiled);
-    expect(cues.filter((cue) => cue.kind === 'cross-cleared')).toHaveLength(1);
-    expect(cues.some((cue) => cue.kind === 'line-cleared')).toBe(false);
-    const clear = cues.find((cue) => cue.kind === 'cross-cleared')!;
-    const praise = cues.find((cue) => cue.kind === 'praise')!;
+    const source = createBBTimelineSource(
+      normalizeAuthoredTake('take', compiled, RHYTHM_PRESETS['tight-fast']),
+    );
+    const events = new Map<string, { type: string; frame: number }>();
+    for (let frame = 0; frame < source.totalFrames; frame++)
+      for (const event of source.evaluate(frame).semanticEvents)
+        if (!events.has(event.id)) events.set(event.id, { type: event.type, frame });
+    const values = [...events.values()];
+    expect(values.filter((event) => event.type === 'block-placement.cross-cleared')).toHaveLength(
+      1,
+    );
+    expect(values.some((event) => event.type === 'block-placement.line-cleared')).toBe(false);
+    const clear = values.find((event) => event.type === 'block-placement.cross-cleared')!;
+    const praise = values.find((event) => event.type.startsWith('block-placement.praise-'))!;
     expect(clear.frame).toBe(compiled.actions[0]!.clearStartFrame);
     expect(praise.frame).toBe(clear.frame);
-    expect(cues.find((cue) => cue.kind === 'place')!.frame).toBe(
-      compiled.actions[0]!.releaseFrame + 1,
-    );
-    expect(clear.seconds).toBe(clear.frame / 30);
+    expect(
+      values.find((event) => event.type === 'block-placement.placement-committed')!.frame,
+    ).toBe(compiled.actions[0]!.releaseFrame + 1);
   });
 });
 
