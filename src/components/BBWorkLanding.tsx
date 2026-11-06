@@ -1,12 +1,33 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReferenceVideoNotes } from './ReferenceVideoNotes';
 import type { BBWorkSession } from '../state/useBBWorkSession';
+import type { BBWorkPackage } from '../contracts/bbWorkPackage';
+
+type Transition =
+  | { kind: 'new' }
+  | { kind: 'import'; file: File }
+  | { kind: 'observed'; work: BBWorkPackage };
 
 export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
+  const observation = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<File | null>(null);
+  const [observationDirty, setObservationDirty] = useState(false);
+  const [transition, setTransition] = useState<Transition | null>(null);
+  const onDraftChange = useCallback((editor: string, dirty: boolean) => {
+    if (editor === 'observation') setObservationDirty(dirty);
+  }, []);
+  useEffect(() => {
+    if (!observationDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [observationDirty]);
   const [projectFiles, setProjectFiles] = useState<File[]>([]),
     [casFiles, setCasFiles] = useState<File[]>([]),
     [libraryFiles, setLibraryFiles] = useState<File[]>([]);
@@ -26,23 +47,59 @@ export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
       setBusy(false);
     }
   }
+  async function perform(next: Transition) {
+    if (next.kind === 'import') return open(next.file);
+    setBusy(true);
+    try {
+      if (next.kind === 'new') await studio.createNativeWork();
+      else studio.setNativeWork(next.work, 'bb-observed-work.json', undefined, true);
+      setError('');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+  function request(next: Transition) {
+    if (observationDirty) setTransition(next);
+    else void perform(next);
+  }
+  function returnToSave() {
+    setTransition(null);
+    const section = observation.current?.querySelector<HTMLDetailsElement>('#bb-reference-editor');
+    if (section) section.open = true;
+    requestAnimationFrame(() => {
+      const note = section?.querySelector<HTMLInputElement>('input[aria-label="观察内容"]');
+      const save = Array.from(section?.querySelectorAll<HTMLButtonElement>('button') ?? []).find(
+        (button) => button.textContent?.trim() === '保存观察记录 JSON',
+      );
+      (note?.value.trim() ? note : save)?.focus();
+    });
+  }
   return (
     <main className="native-document">
       <h1>BB 工作台</h1>
       <p>新建或打开作品；参考视频保留在本机，并在观察时核验身份。</p>
-      <button
-        disabled={busy}
-        onClick={() => {
-          setBusy(true);
-          void studio
-            .createNativeWork()
-            .then(() => setError(''))
-            .catch((reason: unknown) =>
-              setError(reason instanceof Error ? reason.message : String(reason)),
-            )
-            .finally(() => setBusy(false));
-        }}
-      >
+      {transition && (
+        <div role="dialog" aria-modal="true" aria-label="未保存的观察草稿">
+          <p>
+            观察记录有未保存的内容。请返回并将文字添加到记录，再保存观察记录
+            JSON；也可明确放弃后继续。
+          </p>
+          <button onClick={() => setTransition(null)}>取消</button>{' '}
+          <button onClick={returnToSave}>返回保存</button>{' '}
+          <button
+            onClick={() => {
+              const next = transition;
+              setTransition(null);
+              void perform(next);
+            }}
+          >
+            放弃草稿并继续
+          </button>
+        </div>
+      )}
+      <button disabled={busy} onClick={() => request({ kind: 'new' })}>
         新建 BB 作品
       </button>{' '}
       <button disabled={busy} onClick={() => input.current?.click()}>
@@ -57,7 +114,7 @@ export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
           const file = event.target.files?.[0];
           event.target.value = '';
           if (!file) return;
-          void open(file);
+          request({ kind: 'import', file });
         }}
       />
       {error && <p role="alert">{error}</p>}
@@ -93,22 +150,18 @@ export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
           </p>
         ))}
         {pending && (
-          <button disabled={busy} onClick={() => void open(pending)}>
+          <button disabled={busy} onClick={() => request({ kind: 'import', file: pending })}>
             重新打开 {pending.name}
           </button>
         )}
       </details>
-      <ReferenceVideoNotes
-        hasCurrentWork={false}
-        onOpenCreated={(work) => {
-          try {
-            studio.setNativeWork(work, 'bb-observed-work.json', undefined, true);
-            setError('');
-          } catch (reason) {
-            setError(reason instanceof Error ? reason.message : String(reason));
-          }
-        }}
-      />
+      <div ref={observation} inert={busy || !!transition}>
+        <ReferenceVideoNotes
+          hasCurrentWork={false}
+          onDraftChange={onDraftChange}
+          onOpenCreated={(work) => request({ kind: 'observed', work })}
+        />
+      </div>
     </main>
   );
 }
