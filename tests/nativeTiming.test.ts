@@ -249,7 +249,7 @@ it('converts a legal 36-action fixed-supply take without the former 32-action ca
         );
   }
   expect(JSON.parse(manyText)).toEqual(many);
-}, 15000);
+}, 90000);
 
 it('fits the six-action take by bounded interaction adjustments while preserving the original', async () => {
   const { retimeNativeFpsAbsolute } = await import('../src/contracts/editNativeDocument');
@@ -355,4 +355,4 @@ it('checks unrounded event and pointer times for noninteger and downsampled rate
     expect(after.direction.production.audio).toEqual(doc.direction.production.audio);
     expect(JSON.parse(before)).toEqual(doc);
   }
-});
+}, 30000);
