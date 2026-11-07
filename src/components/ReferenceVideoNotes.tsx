@@ -1,3 +1,5 @@
+import { ObservationImageInputs } from './ObservationImageInputs';
+import { ObservationAudioInputs } from './ObservationAudioInputs';
 import { useObservationDraft } from '../state/useObservationDraft';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -937,76 +939,18 @@ export function ReferenceVideoNotes({
                 rows={10}
               />
             </label>{' '}
-            <fieldset disabled={!!editTemplate || building}>
-              <legend>初次生成的图片</legend>
-              <p>
-                可选 PNG 精灵：背景铺满 1080×1920
-                画布；牌面用于棋盘、候选及拖动方块。共用模式使用一张图片，分槽模式按下面明确的三组使用；部分清除覆盖层和碎片由程序绘制。每张不超过
-                2 MiB；不提供时使用程序图形，不代表与参考一致。
-              </p>
-              {savedImages.length > 0 && (
-                <p>
-                  之前记录的图片：{savedImages.map((x) => `${x.role}: ${x.name}`).join('、')}
-                  ；作品包内嵌图片会自动恢复，否则生成前须重新选择并核验哈希。
-                  <button onClick={() => setSavedImages([])}>清除已保存图片绑定</button>
-                </p>
-              )}
-              <label>
-                校准背景 PNG{' '}
-                <input
-                  aria-label="校准背景 PNG"
-                  type="file"
-                  accept="image/png,.png"
-                  onChange={(e) => setBackground(e.target.files?.[0] ?? null)}
-                />
-              </label>{' '}
-              <label>
-                方块图片模式{' '}
-                <select
-                  aria-label="方块图片模式"
-                  value={imageMode}
-                  onChange={(e) => setImageMode(e.target.value as typeof imageMode)}
-                >
-                  <option value="shared">全部共用一张</option>
-                  <option value="grouped">灰色主题：white、coral、cyan 分槽</option>
-                </select>
-              </label>{' '}
-              {imageMode === 'shared' ? (
-                <label>
-                  校准方块 PNG{' '}
-                  <input
-                    aria-label="校准方块 PNG"
-                    type="file"
-                    accept="image/png,.png"
-                    onChange={(e) => setTile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
-              ) : (
-                <>
-                  <p>
-                    灰色主题下 coral、cyan 使用各自图片；blue、amber、lime、violet、rose
-                    与其他颜色共用 white。三槽均须选择，其他主题不支持此分槽模式。
-                  </p>
-                  {(
-                    [
-                      ['white', setWhite],
-                      ['coral', setCoral],
-                      ['cyan', setCyan],
-                    ] as const
-                  ).map(([role, set]) => (
-                    <label key={role}>
-                      {role} PNG{' '}
-                      <input
-                        aria-label={`校准 ${role} PNG`}
-                        type="file"
-                        accept="image/png,.png"
-                        onChange={(e) => set(e.target.files?.[0] ?? null)}
-                      />
-                    </label>
-                  ))}
-                </>
-              )}
-            </fieldset>
+            <ObservationImageInputs
+              disabled={!!editTemplate || building}
+              savedImages={savedImages}
+              onClearSaved={() => setSavedImages([])}
+              imageMode={imageMode}
+              onImageModeChange={setImageMode}
+              onBackgroundChange={setBackground}
+              onTileChange={setTile}
+              onWhiteChange={setWhite}
+              onCoralChange={setCoral}
+              onCyanChange={setCyan}
+            />
             <ObservedGeometryEditor
               mapping={mapping}
               setMapping={(value) => {
@@ -1050,102 +994,24 @@ export function ReferenceVideoNotes({
               </label>
               。启用需要已确认的源画面映射；生成旁车后在校准预览中载入，未载入时不会显示。
             </p>
-            <fieldset disabled={!!editTemplate || building}>
-              <legend>初次生成的音频</legend>
-              <p>
-                可选音频：所选 WAV
-                会核验并内嵌到新工程；不选择则生成无工程音频的工程。关闭页面后需重新选择文件。
-              </p>
-              {savedAudio.length > 0 && (
-                <p>
-                  之前记录的音频：{savedAudio.map((x) => `${x.role}: ${x.name}`).join('、')}
-                  ；作品包内嵌音频会自动恢复；单独观察记录需要重新选择文件。
-                  <button onClick={() => setSavedAudio([])}>清除已保存音频绑定</button>
-                </p>
-              )}
-              <label>
-                BGM WAV{' '}
-                <input
-                  aria-label="校准 BGM WAV"
-                  type="file"
-                  accept="audio/wav,.wav"
-                  onChange={(e) => setBgm(e.target.files?.[0] ?? null)}
-                />
-              </label>{' '}
-              <label>
-                落子 WAV{' '}
-                <input
-                  aria-label="校准落子 WAV"
-                  type="file"
-                  accept="audio/wav,.wav"
-                  onChange={(e) => setPlacement(e.target.files?.[0] ?? null)}
-                />
-              </label>{' '}
-              <label>
-                消除 WAV{' '}
-                <input
-                  aria-label="校准消除 WAV"
-                  type="file"
-                  accept="audio/wav,.wav"
-                  onChange={(e) => setClearCue(e.target.files?.[0] ?? null)}
-                />
-              </label>{' '}
-              <label>
-                BGM 起点秒{' '}
-                <input
-                  aria-label="校准 BGM 起点"
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={bgmStart}
-                  onChange={(e) => setBgmStart(e.target.valueAsNumber)}
-                />
-              </label>{' '}
-              <label>
-                源内偏移秒{' '}
-                <input
-                  aria-label="校准 BGM 偏移"
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={bgmOffset}
-                  onChange={(e) => setBgmOffset(e.target.valueAsNumber)}
-                />
-              </label>{' '}
-              <label>
-                BGM 增益{' '}
-                <input
-                  aria-label="校准 BGM 增益"
-                  type="number"
-                  min={0}
-                  max={1}
-                  step={0.1}
-                  value={bgmGain}
-                  onChange={(e) => setBgmGain(e.target.valueAsNumber)}
-                />
-              </label>{' '}
-              <label>
-                事件音效增益{' '}
-                <input
-                  aria-label="校准音效增益"
-                  type="number"
-                  min={0}
-                  max={1}
-                  step={0.1}
-                  value={cueGain}
-                  onChange={(e) => setCueGain(e.target.valueAsNumber)}
-                />
-              </label>{' '}
-              <label>
-                <input
-                  aria-label="校准 BGM 循环"
-                  type="checkbox"
-                  checked={bgmLoop}
-                  onChange={(e) => setBgmLoop(e.target.checked)}
-                />
-                循环
-              </label>{' '}
-            </fieldset>
+            <ObservationAudioInputs
+              disabled={!!editTemplate || building}
+              savedAudio={savedAudio}
+              onClearSaved={() => setSavedAudio([])}
+              bgmStart={bgmStart}
+              bgmOffset={bgmOffset}
+              bgmGain={bgmGain}
+              cueGain={cueGain}
+              bgmLoop={bgmLoop}
+              onBgmChange={setBgm}
+              onPlacementChange={setPlacement}
+              onClearCueChange={setClearCue}
+              onBgmStartChange={setBgmStart}
+              onBgmOffsetChange={setBgmOffset}
+              onBgmGainChange={setBgmGain}
+              onCueGainChange={setCueGain}
+              onBgmLoopChange={setBgmLoop}
+            />
             <button onClick={() => void calibrate()} disabled={!measurement || building}>
               校验并另存校准工程
             </button>
