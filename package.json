@@ -27,7 +27,8 @@
     "test:browser:landing-draft": "node scripts/verify-landing-observation-draft.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check:repository": "node scripts/check-repository-cleanliness.mjs"
+    "check:repository": "node scripts/check-repository-cleanliness.mjs",
+    "test:repository": "node --test scripts/repository-cleanliness.test.mjs"
   },
   "dependencies": {
     "ajv": "8.17.1",

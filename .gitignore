@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 dist/
 .vite/
 *.local
@@ -8,6 +8,9 @@ coverage/
 .core-dist/
 *.zip
 *.bundle
+.env
+.env.*
+!.env.example
 
 # Local work, generated evidence, and transient test data
 outputs/
@@ -18,3 +21,18 @@ __pycache__/
 *.orig
 *.f32
 examples/generated/
+
+# Generated media belongs in outputs/; source images may live in src/assets or public.
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.aac
+*.m4a
+*.flac
+*.ogg
+*.tar
+*.tar.gz
+*.tgz
