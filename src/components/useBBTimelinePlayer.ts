@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { exportBBVideo } from '../exporter/exportBBVideo';
+import { exportFrameVideo } from '../exporter/exportFrameVideo';
 import { startPreviewAudio } from '../contracts/previewAudio';
 import type { CompiledFrameSource } from '../nativeReference/game-runtime/frameSource';
 import { useFramePlayback, type PlaybackAudio } from './useFramePlayback';
@@ -171,7 +171,7 @@ export function useBBTimelinePlayer(config: BBPreviewConfiguration | null) {
       drawing = await config.createStage(target, width, height, 'export', 0, config.quality.scale);
       const track = await config.audio(),
         active = drawing;
-      const blob = await exportBBVideo({
+      const blob = await exportFrameVideo({
         canvas: target,
         width,
         height,

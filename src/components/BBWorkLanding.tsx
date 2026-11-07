@@ -6,9 +6,16 @@ import type { BBWorkPackage } from '../contracts/bbWorkPackage';
 type Transition =
   | { kind: 'new' }
   | { kind: 'import'; file: File }
+  | { kind: 'bc' }
   | { kind: 'observed'; work: BBWorkPackage };
 
-export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
+export function BBWorkLanding({
+  studio,
+  onOpenBC,
+}: {
+  studio: BBWorkSession;
+  onOpenBC?: () => void;
+}) {
   const observation = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null),
     [error, setError] = useState(''),
@@ -48,6 +55,10 @@ export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
     }
   }
   async function perform(next: Transition) {
+    if (next.kind === 'bc') {
+      onOpenBC?.();
+      return;
+    }
     if (next.kind === 'import') return open(next.file);
     setBusy(true);
     try {
@@ -105,6 +116,14 @@ export function BBWorkLanding({ studio }: { studio: BBWorkSession }) {
       <button disabled={busy} onClick={() => input.current?.click()}>
         导入项目
       </button>
+      {onOpenBC && (
+        <>
+          {' '}
+          <button disabled={busy} onClick={() => request({ kind: 'bc' })}>
+            打开 BC 落消工作台
+          </button>
+        </>
+      )}
       <input
         ref={input}
         type="file"

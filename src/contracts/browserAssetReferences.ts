@@ -67,9 +67,11 @@ async function inlineBBAssets(source: unknown, read: AgentAssetRefReader) {
 function indexDirectory(
   files: readonly DirectoryFile[] | undefined,
   title: string,
+  maximumFiles: number,
 ): Map<string, DirectoryFile> | null {
   if (!files?.length) return null;
-  if (files.length > 10000) fail('ASSET_DIRECTORY_TOO_LARGE', `${title}超过 10000 个文件。`);
+  if (files.length > maximumFiles)
+    fail('ASSET_DIRECTORY_TOO_LARGE', `${title}超过 ${maximumFiles} 个文件。`);
   const index = new Map<string, DirectoryFile>();
   let root: string | undefined;
   for (const file of files) {
@@ -107,10 +109,16 @@ function safeAttachment(locator: string): string {
 }
 /** Mirrors the received filesystem reader's project-relative and sha256/xx/digest.bin layouts.
  * Files are restricted to explicitly selected directory snapshots; no filesystem or network lookup occurs. */
-export function createBrowserAssetRefReader(sources: BrowserAssetSources): AgentAssetRefReader {
-  const project = indexDirectory(sources.project, '工程目录'),
-    cas = indexDirectory(sources.cas, 'CAS 素材库'),
-    library = indexDirectory(sources.library, '元素库缓存');
+export function createBrowserAssetRefReader(
+  sources: BrowserAssetSources,
+  options: { maxFilesPerDirectory?: number } = {},
+): AgentAssetRefReader {
+  const maximumFiles = options.maxFilesPerDirectory ?? 10_000;
+  if (!Number.isInteger(maximumFiles) || maximumFiles < 1 || maximumFiles > 100_000)
+    fail('ASSET_DIRECTORY_LIMIT_INVALID', '素材目录文件数上限无效。');
+  const project = indexDirectory(sources.project, '工程目录', maximumFiles),
+    cas = indexDirectory(sources.cas, 'CAS 素材库', maximumFiles),
+    library = indexDirectory(sources.library, '元素库缓存', maximumFiles);
   const cache = new Map<string, Promise<Uint8Array>>();
   return async (ref: ParsedAgentAssetRef) => {
     const index = ref.kind === 'attachment' ? project : ref.kind === 'cas' ? cas : library;

@@ -12,7 +12,7 @@ import { alignAacPriming } from '../nativeReference/exporter/aacPriming';
 import { measureAudioCodecDelay, trimMp4AudioPresentation } from './audioTiming';
 
 /** Shared frame encoder: callers provide the exact already-warmed drawing surface. */
-export async function exportBBVideo({
+export async function exportFrameVideo({
   canvas,
   width,
   height,

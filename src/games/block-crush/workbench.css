@@ -1,0 +1,332 @@
+html:has(.bc-shell),
+body:has(.bc-shell),
+#root:has(.bc-shell) {
+  min-width: 0;
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+  color-scheme: light;
+}
+.bc-shell {
+  min-height: 100vh;
+  background: #f4f7f6;
+}
+.bc-workbench {
+  --bc-ink: #18323c;
+  --bc-muted: #64777e;
+  --bc-line: #dce7e7;
+  --bc-accent: #126d64;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 28px 64px;
+  color: var(--bc-ink);
+  font-family: inherit;
+}
+.bc-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.bc-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--bc-accent);
+}
+.bc-header h1 {
+  font-size: 30px;
+  letter-spacing: -0.04em;
+  margin: 6px 0;
+}
+.bc-workbench p {
+  color: var(--bc-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 8px 0 16px;
+}
+.bc-workbench button,
+.bc-workbench select,
+.bc-workbench input:not([type='range']):not([type='color']):not([type='checkbox']),
+.bc-workbench textarea {
+  font: inherit;
+  border: 1px solid var(--bc-line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #fff;
+  color: var(--bc-ink);
+}
+.bc-workbench button {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 38px;
+}
+.bc-workbench button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.bc-workbench button:hover:not(:disabled) {
+  border-color: var(--bc-accent);
+}
+.bc-workbench button:focus-visible,
+.bc-workbench input:focus-visible,
+.bc-workbench select:focus-visible,
+.bc-workbench textarea:focus-visible {
+  outline: 3px solid #7dd3c7;
+  outline-offset: 2px;
+}
+.bc-workbench .bc-primary {
+  background: var(--bc-accent);
+  color: white;
+  border-color: var(--bc-accent);
+}
+.bc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bc-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 0.9fr);
+  gap: 24px;
+  align-items: start;
+}
+.bc-preview {
+  position: sticky;
+  top: 20px;
+  border: 1px solid var(--bc-line);
+  border-radius: 16px;
+  background: #eef4f3;
+  padding: 20px;
+  text-align: center;
+}
+.bc-preview-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+.bc-preview-heading span {
+  font-size: 11px;
+  color: var(--bc-muted);
+}
+.bc-preview canvas {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(65vh, 720px);
+  margin: auto;
+  background: #12262d;
+  border-radius: 8px;
+}
+.bc-transport {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+  font-size: 12px;
+}
+.bc-transport input {
+  flex: 1;
+  min-width: 40px;
+  accent-color: var(--bc-accent);
+}
+.bc-preview > .bc-toolbar {
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.bc-editors {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.bc-card {
+  border: 1px solid var(--bc-line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 18px 20px;
+}
+.bc-card h2 {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.bc-card form > button {
+  margin-top: 8px;
+}
+.bc-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 12px 0;
+}
+.bc-card label > input:not([type='color']):not([type='checkbox']),
+.bc-card label > select,
+.bc-card label > textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+}
+.bc-card input[type='file'] {
+  font-size: 12px;
+  max-width: 100%;
+}
+.bc-card input[type='range'] {
+  accent-color: var(--bc-accent);
+}
+.bc-colours {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bc-colours label {
+  margin: 0 0 10px;
+}
+.bc-colours input {
+  display: block;
+  width: 48px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  margin-top: 5px;
+  cursor: pointer;
+}
+.bc-card small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--bc-muted);
+  margin-top: 10px;
+}
+.bc-actions {
+  max-height: 330px;
+  overflow: auto;
+  margin-top: 12px;
+}
+.bc-actions form {
+  display: grid;
+  grid-template-columns: 24px 1fr 1fr 52px;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid var(--bc-line);
+  padding: 8px 0;
+}
+.bc-actions label {
+  margin: 0;
+  font-size: 10px;
+}
+.bc-actions input {
+  min-width: 0;
+}
+.bc-actions form > button {
+  padding: 7px;
+  margin: 15px 0 0;
+}
+.bc-workbench textarea {
+  resize: vertical;
+  min-height: 150px;
+  font:
+    11px/1.55 ui-monospace,
+    monospace;
+  white-space: pre;
+}
+.bc-workbench summary {
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bc-error {
+  background: #fff0ed;
+  border: 1px solid #edc1b5;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #852e25 !important;
+}
+.bc-status {
+  font-size: 11px !important;
+  min-height: 18px;
+}
+.bc-attachments {
+  margin-top: 24px;
+}
+.bc-attachments label {
+  display: inline-block;
+  max-width: 31%;
+  margin-right: 2%;
+}
+.bc-welcome {
+  padding: 70px 32px;
+  text-align: center;
+  border: 1px solid var(--bc-line);
+  border-radius: 16px;
+  background: linear-gradient(130deg, #f6faf8, #edf4f2);
+}
+.bc-welcome h2 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  margin: 20px 0 12px;
+}
+.bc-welcome p {
+  max-width: 440px;
+  margin: 0 auto 24px;
+}
+.bc-badge {
+  font-size: 12px;
+  color: var(--bc-accent);
+}
+@media (max-width: 900px) {
+  .bc-header {
+    display: block;
+  }
+  .bc-header > .bc-toolbar {
+    margin-top: 18px;
+  }
+  .bc-layout {
+    grid-template-columns: 1fr;
+  }
+  .bc-preview {
+    position: static;
+  }
+  .bc-preview canvas {
+    max-height: min(64vh, 640px);
+  }
+  .bc-attachments label {
+    display: block;
+    max-width: 100%;
+  }
+}
+@media (max-width: 540px) {
+  .bc-workbench {
+    padding: 20px 14px 40px;
+  }
+  .bc-card,
+  .bc-preview {
+    padding: 14px;
+  }
+  .bc-preview-heading {
+    display: block;
+  }
+  .bc-preview-heading span {
+    display: block;
+    margin-top: 6px;
+  }
+  .bc-header h1 {
+    font-size: 26px;
+  }
+  .bc-transport {
+    gap: 6px;
+  }
+  .bc-transport output {
+    font-size: 10px;
+  }
+}

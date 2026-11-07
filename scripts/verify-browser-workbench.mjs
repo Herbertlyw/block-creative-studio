@@ -62,7 +62,7 @@ const probePlugin = {
           "(globalThis as any).__bbProbe?.record({kind:'bb-three',takeId:frame.takeId,frame:frame.frameIndex,canvasWidth:this.canvas.width,canvasHeight:this.canvas.height,stateHash:frame.rules.logicalStateHash,actionId:frame.activeAction?.actionId??null});",
       );
     }
-    if (id.endsWith('/src/exporter/exportBBVideo.ts')) {
+    if (id.endsWith('/src/exporter/exportFrameVideo.ts')) {
       const marker = '  const checkCancelled = () =>';
       assert.ok(code.includes(marker), 'video export probe marker missing');
       return code.replace(

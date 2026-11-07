@@ -1,11 +1,11 @@
 import { expect, it } from 'vitest';
-import { exportBBVideo } from '../src/exporter/exportBBVideo';
+import { exportFrameVideo } from '../src/exporter/exportFrameVideo';
 
 it('rejects an already cancelled export before touching the canvas or encoder', async () => {
   const controller = new AbortController();
   controller.abort();
   await expect(
-    exportBBVideo({
+    exportFrameVideo({
       canvas: {} as HTMLCanvasElement,
       width: 512,
       height: 864,

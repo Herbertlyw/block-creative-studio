@@ -8,7 +8,7 @@ export type PlaybackAudio = {
   startFrame: number;
 };
 
-/** Shared continuous playback clock and audio lifecycle for BB previews. */
+/** Shared continuous playback clock and audio lifecycle for game previews. */
 export function useFramePlayback({
   playing,
   setPlaying,
