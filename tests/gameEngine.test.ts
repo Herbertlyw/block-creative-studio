@@ -9,7 +9,7 @@ import {
   createPieceSet,
   replayActions,
 } from '../src/domain/gameEngine';
-import type { PlacementAction } from '../src/domain/types';
+import type { PlacementAction, TileColor } from '../src/domain/types';
 
 function action(pieceId: string, row: number, col: number): PlacementAction {
   return {
@@ -72,12 +72,15 @@ describe('game engine', () => {
     expect(game.pieces.every((piece) => piece.setIndex === 4)).toBe(true);
   });
 
-  it('keeps every palette color distinct in the board fingerprint', () => {
-    const coral = createEmptyBoard();
-    coral.cells[0]![0] = 'coral';
-    const cyan = createEmptyBoard();
-    cyan.cells[0]![0] = 'cyan';
-    expect(boardFingerprint(coral)).not.toBe(boardFingerprint(cyan));
+  it('keeps all seven observed palette colors distinct in the board fingerprint', () => {
+    const fingerprints = new Set(
+      (['coral', 'amber', 'lime', 'cyan', 'blue', 'violet', 'rose'] satisfies TileColor[]).map((color) => {
+        const board = createEmptyBoard();
+        board.cells[0]![0] = color;
+        return boardFingerprint(board);
+      }),
+    );
+    expect(fingerprints.size).toBe(7);
   });
 
   it('replays deterministically and offers a greedy bot move', () => {

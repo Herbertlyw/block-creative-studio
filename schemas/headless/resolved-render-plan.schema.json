@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative-studio.dev/schemas/headless/resolved-render-plan.schema.json",
+  "title": "BCS Resolved Render Plan v1",
+  "type": "object",
+  "required": [
+    "contract",
+    "contractVersion",
+    "id",
+    "masterId",
+    "variantId",
+    "lockMode",
+    "renderer",
+    "replay",
+    "layoutProfile",
+    "cameraProfile",
+    "lookPack",
+    "slots",
+    "directorOverrides",
+    "output",
+    "seed",
+    "planHash",
+    "warnings"
+  ],
+  "properties": {
+    "contract": {
+      "const": "bcs.resolved-render-plan"
+    },
+    "contractVersion": {
+      "const": "1.0.0"
+    },
+    "id": {
+      "type": "string"
+    },
+    "masterId": {
+      "type": "string"
+    },
+    "variantId": {
+      "type": "string"
+    },
+    "lockMode": {
+      "enum": [
+        "frame-exact",
+        "semantic",
+        "rule-only"
+      ]
+    },
+    "renderer": {
+      "enum": [
+        "reference-2d",
+        "fixed-camera-cinematic",
+        "three-3d"
+      ]
+    },
+    "replay": {
+      "type": "object"
+    },
+    "layoutProfile": {
+      "type": "object"
+    },
+    "cameraProfile": {
+      "type": "object"
+    },
+    "lookPack": {
+      "type": "object"
+    },
+    "slots": {
+      "type": "object"
+    },
+    "directorOverrides": {
+      "type": "object"
+    },
+    "output": {
+      "type": "object"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "planHash": {
+      "type": "string",
+      "pattern": "^fnv1a32:[0-9a-f]{8}$"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "dependencyOrder": {
+      "type": "array",
+      "items": {
+        "$ref": "asset-manifest.schema.json#/$defs/assetRef"
+      }
+    }
+  },
+  "additionalProperties": false
+}

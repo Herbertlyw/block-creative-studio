@@ -1,5 +1,6 @@
 name: export-source
 
+# Snapshot trigger: 2026-09-02 variant workspace integration.
 on:
   push:
     paths:
@@ -13,11 +14,10 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Pack source tree
-        run: |
-          tar --exclude=.git --exclude=node_modules --exclude=dist -czf /tmp/block-creative-studio-source.tar.gz .
-      - uses: actions/upload-artifact@v4
+        run: tar --exclude=.git --exclude=node_modules --exclude=dist -czf /tmp/block-creative-studio-source.tar.gz .
+      - uses: actions/upload-artifact@v7
         with:
           name: block-creative-studio-source
           path: /tmp/block-creative-studio-source.tar.gz

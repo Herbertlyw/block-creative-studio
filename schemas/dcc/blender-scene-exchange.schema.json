@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative.local/schema/dcc/blender-scene-exchange-v1.json",
+  "title": "BCS Blender Scene Exchange V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "contractVersion", "id", "seed", "output", "coordinates", "camera", "stage", "assets", "entities", "tracks", "events"],
+  "properties": {
+    "contract": { "const": "bcs.blender-scene-exchange" },
+    "contractVersion": { "const": "1.0.0" },
+    "id": { "type": "string", "minLength": 3, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]+$" },
+    "seed": { "type": "integer" },
+    "output": { "$ref": "#/$defs/output" },
+    "coordinates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["handedness", "upAxis", "unit", "unitScale"],
+      "properties": {
+        "handedness": { "const": "right" },
+        "upAxis": { "const": "Z" },
+        "unit": { "const": "meter" },
+        "unitScale": { "const": 1 }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "location", "target"],
+      "properties": {
+        "type": { "enum": ["orthographic", "perspective"] },
+        "location": { "$ref": "#/$defs/vector3" },
+        "target": { "$ref": "#/$defs/vector3" },
+        "orthographicScale": { "type": "number", "exclusiveMinimum": 0 },
+        "focalLengthMm": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "orthographic" } } },
+          "then": { "required": ["orthographicScale"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "perspective" } } },
+          "then": { "required": ["focalLengthMm"] }
+        }
+      ]
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backgroundColor", "groundColor"],
+      "properties": {
+        "backgroundColor": { "$ref": "#/$defs/color" },
+        "groundColor": { "$ref": "#/$defs/color" }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/asset" }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entity" }
+    },
+    "tracks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/transformTrack" }
+    },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/matchEvent" }
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    },
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "fps", "frameStart", "frameEnd", "alphaMode"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "fps": { "type": "integer", "minimum": 1 },
+        "frameStart": { "type": "integer", "minimum": 1 },
+        "frameEnd": { "type": "integer", "minimum": 1 },
+        "alphaMode": { "enum": ["straight", "opaque"] }
+      }
+    },
+    "material": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseColor", "roughness", "metallic"],
+      "properties": {
+        "baseColor": { "$ref": "#/$defs/color" },
+        "roughness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "metallic": { "type": "number", "minimum": 0, "maximum": 1 },
+        "emissionStrength": { "type": "number", "minimum": 0 },
+        "emissionColor": { "$ref": "#/$defs/color" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "const": "image" },
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "uri"],
+              "properties": {
+                "type": { "const": "builtin-uri" },
+                "uri": { "type": "string", "pattern": "^/assets/" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "path"],
+              "properties": {
+                "type": { "const": "package-path" },
+                "path": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "hasAlpha": { "type": "boolean" },
+        "contentHash": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" }
+      }
+    },
+    "faceLayer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "transform"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "assetId"],
+              "properties": {
+                "kind": { "const": "image" },
+                "assetId": { "type": "string", "minLength": 1 }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "value"],
+              "properties": {
+                "kind": { "const": "glyph" },
+                "value": { "type": "string", "minLength": 1, "maxLength": 32 }
+              }
+            }
+          ]
+        },
+        "transform": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "scaleX", "scaleY", "rotationDeg", "opacity"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "scaleX": { "type": "number", "not": { "const": 0 } },
+            "scaleY": { "type": "number", "not": { "const": 0 } },
+            "rotationDeg": { "type": "number" },
+            "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "primitive", "position", "rotationEulerDegrees", "scale", "dimensions", "material"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": { "enum": ["tile", "board-part", "large-fragment", "hero-prop"] },
+        "primitive": { "enum": ["rounded-box", "box", "sphere", "plane"] },
+        "position": { "$ref": "#/$defs/vector3" },
+        "rotationEulerDegrees": { "$ref": "#/$defs/vector3" },
+        "scale": { "$ref": "#/$defs/vector3" },
+        "dimensions": { "$ref": "#/$defs/vector3" },
+        "bevelRadius": { "type": "number", "minimum": 0 },
+        "material": { "$ref": "#/$defs/material" },
+        "face": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "maxLength": 32 },
+            "color": { "$ref": "#/$defs/color" },
+            "layers": {
+              "type": "array",
+              "maxItems": 16,
+              "items": { "$ref": "#/$defs/faceLayer" }
+            }
+          }
+        }
+      }
+    },
+    "matchEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "frame", "entityIds", "center", "intensity"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "match" },
+        "frame": { "type": "integer" },
+        "entityIds": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "center": { "$ref": "#/$defs/vector3" },
+        "intensity": { "type": "number", "minimum": 0, "maximum": 2 },
+        "vfx": { "$ref": "#/$defs/matchVfx" }
+      }
+    },
+    "matchVfx": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["style", "durationFrames", "fragmentCount", "fragmentScale", "radialSpread", "gravity", "shockwave", "glowStrength", "palette"],
+      "properties": {
+        "style": { "enum": ["burst", "shatter", "pulse"] },
+        "durationFrames": { "type": "integer", "minimum": 1, "maximum": 120 },
+        "fragmentCount": { "type": "integer", "minimum": 0, "maximum": 96 },
+        "fragmentScale": { "type": "number", "exclusiveMinimum": 0, "maximum": 4 },
+        "radialSpread": { "type": "number", "minimum": 0, "maximum": 8 },
+        "gravity": { "type": "number", "minimum": 0, "maximum": 8 },
+        "shockwave": { "type": "boolean" },
+        "glowStrength": { "type": "number", "minimum": 0, "maximum": 20 },
+        "palette": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/color" }
+        }
+      }
+    },
+    "transformTrack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entityId", "interpolation", "keyframes"],
+      "properties": {
+        "entityId": { "type": "string", "minLength": 1 },
+        "interpolation": { "enum": ["linear", "bezier", "constant"] },
+        "keyframes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["frame", "position", "rotationEulerDegrees", "scale", "visible"],
+            "properties": {
+              "frame": { "type": "integer" },
+              "position": { "$ref": "#/$defs/vector3" },
+              "rotationEulerDegrees": { "$ref": "#/$defs/vector3" },
+              "scale": { "$ref": "#/$defs/vector3" },
+              "visible": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

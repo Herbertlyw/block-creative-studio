@@ -1,0 +1,15 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "endgame.default",
+  "version": "1.0.0",
+  "kind": "ui-theme",
+  "origin": "builtin",
+  "contentHash": "sha256:b2d0ae7da53e8faf975f526a83aabd15317819370e5d47eba83fe7e3a438ad9f",
+  "runtime": {
+    "renderers": [
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true
+  }
+}

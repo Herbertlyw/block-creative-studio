@@ -18,10 +18,12 @@ const sourceFiles = sourceRoots
   .flatMap((directory) => walk(resolve(root, directory)))
   .filter((path) => ['.ts', '.tsx'].includes(extname(path)));
 sourceFiles.push(resolve(root, 'vite.config.ts'));
+const tsc = resolve(root, 'node_modules', 'typescript', 'bin', 'tsc');
 
 const syntax = spawnSync(
-  'tsc',
+  process.execPath,
   [
+    tsc,
     '--noEmit',
     '--noCheck',
     '--jsx',
@@ -70,13 +72,16 @@ if (missing.length > 0) {
 }
 
 const jsonFiles = walk(root).filter((path) => {
-  const normalized = relative(root, path);
-  return extname(path) === '.json' && !normalized.startsWith('.git/') && !normalized.startsWith('.core-dist/');
+  const normalized = relative(root, path).replaceAll('\\', '/');
+  return extname(path) === '.json'
+    && !normalized.startsWith('.git/')
+    && !normalized.startsWith('.core-dist/')
+    && !normalized.startsWith('artifacts/');
 });
 for (const file of jsonFiles) JSON.parse(readFileSync(file, 'utf8'));
 
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
-for (const scriptName of ['check', 'check:core', 'check:source', 'build', 'test']) {
+for (const scriptName of ['check', 'check:core', 'check:source', 'check:reference', 'build', 'test']) {
   if (!packageJson.scripts?.[scriptName]) throw new Error(`Missing package script: ${scriptName}`);
 }
 

@@ -1,0 +1,33 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "camera.fixed",
+  "version": "1.0.0",
+  "kind": "camera-profile",
+  "origin": "builtin",
+  "contentHash": "sha256:742c4944ae662e8e60e6137dedf032b03c43bd1c82c979e5a99cd5ad831a3259",
+  "runtime": {
+    "renderers": [
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true
+  },
+  "metadata": {
+    "projection": "perspective",
+    "allowOrbit": false,
+    "allowTransformAnimation": false,
+    "designResolution": {
+      "width": 1080,
+      "height": 1920
+    },
+    "boardScreenRect": {
+      "x": 78,
+      "y": 332,
+      "width": 924,
+      "height": 924
+    },
+    "maximumScreenZoom": 1.025,
+    "maximumScreenTranslationPx": 8,
+    "maximumScreenRotationDegrees": 0.2
+  }
+}

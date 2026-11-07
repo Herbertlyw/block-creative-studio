@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const ignoredDirectories = new Set(['.git', '.core-dist', 'dist', 'node_modules']);
+const ignoredDirectories = new Set(['.git', '.core-dist', 'artifacts', 'dist', 'node_modules']);
 const files = [];
 
 function walk(path) {

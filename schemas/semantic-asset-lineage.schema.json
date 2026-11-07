@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative.local/schema/semantic-asset-lineage-v2.json",
+  "title": "Block Creative semantic asset lineage",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "profile",
+    "sourceVideoSha256",
+    "vocabularies",
+    "atoms",
+    "summary"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "2.0.0"
+    },
+    "profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceVideoSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "analysisBasis": {
+      "type": "object"
+    },
+    "vocabularies": {
+      "type": "object"
+    },
+    "observedPalette": {
+      "type": "object",
+      "required": [
+        "colorCount",
+        "tokens",
+        "evidence"
+      ],
+      "properties": {
+        "colorCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tokens": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "groupConstraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "policy",
+          "members"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "atoms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/atom"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "atomCount",
+        "observedCount",
+        "inferredCount",
+        "unresolvedCount",
+        "coreRequiredCount",
+        "referenceRequiredCount"
+      ],
+      "properties": {
+        "atomCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observedCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inferredCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolvedCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coreRequiredCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "referenceRequiredCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "requirement": {
+      "type": "object",
+      "required": [
+        "engine",
+        "whenTriggered",
+        "referenceProfile"
+      ],
+      "properties": {
+        "engine": {
+          "enum": [
+            "core-required",
+            "optional"
+          ]
+        },
+        "whenTriggered": {
+          "enum": [
+            "required",
+            "optional",
+            "not-applicable"
+          ]
+        },
+        "referenceProfile": {
+          "enum": [
+            "required",
+            "optional",
+            "capture-only"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "atom": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "category",
+        "kind",
+        "status",
+        "requirement",
+        "trigger",
+        "allowsNone",
+        "replaceability",
+        "spatialRepresentations",
+        "viewDependency",
+        "evidenceSelectors",
+        "dependencies",
+        "implementationStatus"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9.-]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "visual-asset",
+            "vector",
+            "typography",
+            "render-recipe",
+            "motion-recipe",
+            "particle-recipe",
+            "rule-binding",
+            "color-token",
+            "geometry-asset",
+            "audio-asset"
+          ]
+        },
+        "status": {
+          "enum": [
+            "observed",
+            "inferred",
+            "unresolved"
+          ]
+        },
+        "requirement": {
+          "$ref": "#/$defs/requirement"
+        },
+        "trigger": {
+          "type": "string"
+        },
+        "allowsNone": {
+          "type": "boolean"
+        },
+        "replaceability": {
+          "enum": [
+            "independent",
+            "rule-preserving",
+            "rule-bound",
+            "director-controlled"
+          ]
+        },
+        "spatialRepresentations": {
+          "type": "object",
+          "required": [
+            "reference2d",
+            "fixedCameraCinematic",
+            "full3dSandbox"
+          ],
+          "properties": {
+            "reference2d": {
+              "$ref": "#/$defs/spatialRepresentation"
+            },
+            "fixedCameraCinematic": {
+              "$ref": "#/$defs/spatialRepresentation"
+            },
+            "full3dSandbox": {
+              "$ref": "#/$defs/spatialRepresentation"
+            }
+          },
+          "additionalProperties": false
+        },
+        "viewDependency": {
+          "type": "object",
+          "required": [
+            "reference2d",
+            "fixedCameraCinematic"
+          ],
+          "properties": {
+            "reference2d": {
+              "$ref": "#/$defs/viewDependency"
+            },
+            "fixedCameraCinematic": {
+              "$ref": "#/$defs/viewDependency"
+            }
+          },
+          "additionalProperties": false
+        },
+        "evidenceSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "implementationStatus": {
+          "enum": [
+            "implemented",
+            "partial",
+            "not-implemented",
+            "prototype-only"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "spatialRepresentation": {
+      "enum": [
+        "screen-2d",
+        "vector",
+        "bitmap",
+        "procedural-2d",
+        "procedural-screen-vfx",
+        "camera-facing-2d",
+        "layered-2.5d-sprite",
+        "normal-mapped-sprite",
+        "camera-profile-dependent-layout",
+        "shallow-3d",
+        "full-3d",
+        "baked-view-sprite",
+        "baked-transform-3d",
+        "motion-recipe",
+        "nonvisual-rule",
+        "not-applicable",
+        "optional-full-3d"
+      ]
+    },
+    "viewDependency": {
+      "enum": [
+        "none",
+        "camera-profile-dependent",
+        "lighting-profile-dependent",
+        "fully-baked"
+      ]
+    }
+  }
+}

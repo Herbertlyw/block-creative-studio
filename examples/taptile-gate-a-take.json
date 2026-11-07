@@ -1,0 +1,131 @@
+{
+    "id":  "take-2cc8d851-4b20-4aa7-acfe-20f7f3557986",
+    "name":  "真人 Take 1",
+    "createdAt":  "2026-09-02T12:50:57.909Z",
+    "levelHash":  "level-43fad43b",
+    "ruleProfileId":  "taptile-tray-match3-v1",
+    "actions":  [
+                    {
+                        "id":  "tap-1-hourglass-43",
+                        "type":  "tap",
+                        "actor":  "human",
+                        "tileId":  "hourglass-43",
+                        "startedAtFrame":  12,
+                        "durationFrames":  6,
+                        "pointerPath":  [
+                                            {
+                                                "frameOffset":  0,
+                                                "x":  0.6243864346273985,
+                                                "y":  0.4968758366800536
+                                            },
+                                            {
+                                                "frameOffset":  6,
+                                                "x":  0.6243864346273985,
+                                                "y":  0.41687583668005357
+                                            }
+                                        ]
+                    },
+                    {
+                        "id":  "tap-2-hourglass-44",
+                        "type":  "tap",
+                        "actor":  "human",
+                        "tileId":  "hourglass-44",
+                        "startedAtFrame":  28,
+                        "durationFrames":  6,
+                        "pointerPath":  [
+                                            {
+                                                "frameOffset":  0,
+                                                "x":  0.37557637959244383,
+                                                "y":  0.7607647255689424
+                                            },
+                                            {
+                                                "frameOffset":  6,
+                                                "x":  0.37557637959244383,
+                                                "y":  0.6807647255689424
+                                            }
+                                        ]
+                    },
+                    {
+                        "id":  "tap-3-hourglass-45",
+                        "type":  "tap",
+                        "actor":  "human",
+                        "tileId":  "hourglass-45",
+                        "startedAtFrame":  44,
+                        "durationFrames":  6,
+                        "pointerPath":  [
+                                            {
+                                                "frameOffset":  0,
+                                                "x":  0.5,
+                                                "y":  0.7607647255689424
+                                            },
+                                            {
+                                                "frameOffset":  6,
+                                                "x":  0.5,
+                                                "y":  0.6807647255689424
+                                            }
+                                        ]
+                    },
+                    {
+                        "id":  "tap-4-hourglass-46",
+                        "type":  "tap",
+                        "actor":  "human",
+                        "tileId":  "hourglass-46",
+                        "startedAtFrame":  60,
+                        "durationFrames":  6,
+                        "pointerPath":  [
+                                            {
+                                                "frameOffset":  0,
+                                                "x":  0.6243864346273985,
+                                                "y":  0.7607647255689424
+                                            },
+                                            {
+                                                "frameOffset":  6,
+                                                "x":  0.6243864346273985,
+                                                "y":  0.6807647255689424
+                                            }
+                                        ]
+                    },
+                    {
+                        "id":  "tap-5-hourglass-47",
+                        "type":  "tap",
+                        "actor":  "human",
+                        "tileId":  "hourglass-47",
+                        "startedAtFrame":  76,
+                        "durationFrames":  6,
+                        "pointerPath":  [
+                                            {
+                                                "frameOffset":  0,
+                                                "x":  0.43362338241856313,
+                                                "y":  0.9981308567603748
+                                            },
+                                            {
+                                                "frameOffset":  6,
+                                                "x":  0.43362338241856313,
+                                                "y":  0.9181308567603749
+                                            }
+                                        ]
+                    },
+                    {
+                        "id":  "tap-6-hourglass-48",
+                        "type":  "tap",
+                        "actor":  "human",
+                        "tileId":  "hourglass-48",
+                        "startedAtFrame":  92,
+                        "durationFrames":  6,
+                        "pointerPath":  [
+                                            {
+                                                "frameOffset":  0,
+                                                "x":  0.5672690763052208,
+                                                "y":  0.9981308567603748
+                                            },
+                                            {
+                                                "frameOffset":  6,
+                                                "x":  0.5672690763052208,
+                                                "y":  0.9181308567603749
+                                            }
+                                        ]
+                    }
+                ],
+    "result":  "unfinished",
+    "finalStateHash":  "state-c91f0b62"
+}

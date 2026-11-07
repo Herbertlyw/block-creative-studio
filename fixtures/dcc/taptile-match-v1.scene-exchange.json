@@ -1,0 +1,102 @@
+{
+  "contract": "bcs.blender-scene-exchange",
+  "contractVersion": "1.0.0",
+  "id": "taptile-match-v1",
+  "seed": 20260904,
+  "output": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "frameStart": 1,
+    "frameEnd": 60,
+    "alphaMode": "opaque"
+  },
+  "coordinates": {
+    "handedness": "right",
+    "upAxis": "Z",
+    "unit": "meter",
+    "unitScale": 1
+  },
+  "camera": {
+    "type": "orthographic",
+    "location": [0, -18, 1],
+    "target": [0, 0, 1],
+    "orthographicScale": 11.5
+  },
+  "stage": {
+    "backgroundColor": "#102A55",
+    "groundColor": "#224F87"
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "board-back",
+      "role": "board-part",
+      "primitive": "rounded-box",
+      "position": [0, 0.72, 0.15],
+      "rotationEulerDegrees": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": [6.1, 0.24, 10.6],
+      "bevelRadius": 0.26,
+      "material": { "baseColor": "#245E9C", "roughness": 0.38, "metallic": 0.03 }
+    },
+    {
+      "id": "tray-back",
+      "role": "board-part",
+      "primitive": "rounded-box",
+      "position": [0, 0.28, 4.05],
+      "rotationEulerDegrees": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": [5.45, 0.34, 1.15],
+      "bevelRadius": 0.2,
+      "material": { "baseColor": "#071B40", "roughness": 0.52, "metallic": 0.08 }
+    },
+    {
+      "id": "match-tile-a",
+      "role": "tile",
+      "primitive": "rounded-box",
+      "position": [-1.7, -0.12, 4.05],
+      "rotationEulerDegrees": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": [1.42, 0.42, 0.92],
+      "bevelRadius": 0.13,
+      "material": { "baseColor": "#F7F2E7", "roughness": 0.22, "metallic": 0.02 },
+      "face": { "label": "FROG", "color": "#75D94C" }
+    },
+    {
+      "id": "match-tile-b",
+      "role": "tile",
+      "primitive": "rounded-box",
+      "position": [0, -0.12, 4.05],
+      "rotationEulerDegrees": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": [1.42, 0.42, 0.92],
+      "bevelRadius": 0.13,
+      "material": { "baseColor": "#F7F2E7", "roughness": 0.22, "metallic": 0.02 },
+      "face": { "label": "FROG", "color": "#75D94C" }
+    },
+    {
+      "id": "match-tile-c",
+      "role": "tile",
+      "primitive": "rounded-box",
+      "position": [1.7, -0.12, 4.05],
+      "rotationEulerDegrees": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": [1.42, 0.42, 0.92],
+      "bevelRadius": 0.13,
+      "material": { "baseColor": "#F7F2E7", "roughness": 0.22, "metallic": 0.02 },
+      "face": { "label": "FROG", "color": "#75D94C" }
+    }
+  ],
+  "tracks": [],
+  "events": [
+    {
+      "id": "match-001",
+      "type": "match",
+      "frame": 24,
+      "entityIds": ["match-tile-a", "match-tile-b", "match-tile-c"],
+      "center": [0, -0.4, 4.05],
+      "intensity": 1
+    }
+  ]
+}

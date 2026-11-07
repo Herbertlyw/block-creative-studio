@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative-studio.dev/schemas/headless/variant-recipe.schema.json",
+  "title": "BCS Variant Recipe v1",
+  "type": "object",
+  "required": ["contract", "contractVersion", "id", "masterId", "lockMode", "lookPackRef", "seed"],
+  "properties": {
+    "contract": { "const": "bcs.variant-recipe" },
+    "contractVersion": { "const": "1.0.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "masterId": { "type": "string", "minLength": 1 },
+    "lockMode": { "enum": ["frame-exact", "semantic", "rule-only"] },
+    "lookPackRef": { "$ref": "asset-manifest.schema.json#/$defs/assetRef" },
+    "slotOverrides": {
+      "type": "object",
+      "additionalProperties": { "$ref": "asset-manifest.schema.json#/$defs/assetRef" }
+    },
+    "directorOverrides": { "type": "object" },
+    "outputOverrides": {
+      "type": "object",
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "fps": { "type": "number", "exclusiveMinimum": 0 },
+        "quality": { "enum": ["preview", "standard", "cinematic"] }
+      },
+      "additionalProperties": false
+    },
+    "seed": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

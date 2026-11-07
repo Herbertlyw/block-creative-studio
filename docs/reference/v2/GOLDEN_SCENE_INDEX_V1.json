@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceVideoSha256": "7aec0cb6336742247c9f4648e80f0cffd4e373d0eb835bb22848a797f2ed7cba",
+  "assetPolicy": "Only timestamps and expected atoms are committed. Reference frames are generated locally and excluded from the public repository.",
+  "scenes": [
+    {
+      "id": "idle-start",
+      "startFrame": 0,
+      "peakFrame": 20,
+      "endFrame": 60,
+      "purpose": "Initial layout, HUD, empty board and first tray.",
+      "expectedAtoms": [
+        "background.base-gradient",
+        "hud.best-score.crown",
+        "hud.current-score.style",
+        "board.outer-frame",
+        "board.cell-slot.shape",
+        "tray.layout"
+      ]
+    },
+    {
+      "id": "first-pickup-drag",
+      "startFrame": 60,
+      "peakFrame": 88,
+      "endFrame": 120,
+      "purpose": "Rack-to-board scale, lift, shadow and placement.",
+      "expectedAtoms": [
+        "interaction.pickup-scale",
+        "interaction.pickup-lift",
+        "interaction.drag-trajectory",
+        "interaction.valid-ghost"
+      ]
+    },
+    {
+      "id": "first-tray-refresh",
+      "startFrame": 185,
+      "peakFrame": 210,
+      "endFrame": 240,
+      "purpose": "Flower/halo refresh and three new pieces.",
+      "expectedAtoms": [
+        "tray.refresh.flower-outline",
+        "tray.refresh.flower-core",
+        "tray.refresh.halo",
+        "tray.refresh.petals",
+        "tray.refresh.piece-enter"
+      ]
+    },
+    {
+      "id": "placement-thumb-overlap",
+      "startFrame": 340,
+      "peakFrame": 365,
+      "endFrame": 420,
+      "purpose": "Placement thumb/glow persists while next interaction begins.",
+      "expectedAtoms": [
+        "placement.cell-glow",
+        "placement.thumb-badge",
+        "director.vfx-overlap",
+        "interaction.drag-trajectory"
+      ]
+    },
+    {
+      "id": "first-preclear",
+      "startFrame": 515,
+      "peakFrame": 540,
+      "endFrame": 560,
+      "purpose": "Legal ghost and full-row pre-clear fill before release.",
+      "expectedAtoms": [
+        "interaction.valid-ghost",
+        "interaction.preclear-row-fill",
+        "interaction.preclear-intersection"
+      ]
+    },
+    {
+      "id": "first-clear-great-combo",
+      "startFrame": 555,
+      "peakFrame": 600,
+      "endFrame": 675,
+      "purpose": "Horizontal clear, cell 5/9 glyphs, Great and Combo.",
+      "expectedAtoms": [
+        "clear.line-underlay",
+        "clear.sweep.horizontal.body",
+        "clear.cell-glyph.5",
+        "clear.cell-glyph.9",
+        "praise.great.art",
+        "feedback.combo.label"
+      ]
+    },
+    {
+      "id": "amazing",
+      "startFrame": 930,
+      "peakFrame": 970,
+      "endFrame": 1045,
+      "purpose": "Amazing praise art and surrounding feedback.",
+      "expectedAtoms": [
+        "praise.amazing.art",
+        "praise.wing-ornaments",
+        "praise.enter-motion"
+      ]
+    },
+    {
+      "id": "nice",
+      "startFrame": 1180,
+      "peakFrame": 1215,
+      "endFrame": 1265,
+      "purpose": "Nice praise tier.",
+      "expectedAtoms": [
+        "praise.nice.art",
+        "praise.enter-motion"
+      ]
+    },
+    {
+      "id": "unbelievable",
+      "startFrame": 1520,
+      "peakFrame": 1575,
+      "endFrame": 1645,
+      "purpose": "Full-board wash, Unbelievable, +300 and high-intensity particles.",
+      "expectedAtoms": [
+        "praise.unbelievable.art",
+        "praise.unbelievable.bonus-300",
+        "background.clear-flash",
+        "clear.particles.petals"
+      ]
+    },
+    {
+      "id": "fantastic",
+      "startFrame": 2240,
+      "peakFrame": 2285,
+      "endFrame": 2345,
+      "purpose": "Fantastic praise tier.",
+      "expectedAtoms": [
+        "praise.fantastic.art",
+        "praise.enter-motion"
+      ]
+    },
+    {
+      "id": "incredible-multicolumn",
+      "startFrame": 3190,
+      "peakFrame": 3240,
+      "endFrame": 3300,
+      "purpose": "Multi-column light pillars, flower stamps and Incredible art.",
+      "expectedAtoms": [
+        "clear.sweep.vertical.body",
+        "clear.sweep.flower-stamps",
+        "praise.incredible.art",
+        "praise.wing-ornaments"
+      ]
+    },
+    {
+      "id": "new-high-score",
+      "startFrame": 11745,
+      "peakFrame": 11800,
+      "endFrame": 11845,
+      "purpose": "New high score banner overlaps clear and Combo.",
+      "expectedAtoms": [
+        "feedback.new-high-score.banner-bg",
+        "feedback.new-high-score.crown",
+        "feedback.new-high-score.label",
+        "feedback.new-high-score.value",
+        "rule.best-score-update",
+        "director.vfx-overlap"
+      ]
+    },
+    {
+      "id": "endgame-continue",
+      "startFrame": 13448,
+      "peakFrame": 13470,
+      "endFrame": 13545,
+      "purpose": "Dim overlay, final Combo and rewarded continue card.",
+      "expectedAtoms": [
+        "endgame.dim-overlay",
+        "endgame.final-combo-banner",
+        "endgame.continue-card.background",
+        "endgame.continue-card.reward-button"
+      ]
+    }
+  ]
+}

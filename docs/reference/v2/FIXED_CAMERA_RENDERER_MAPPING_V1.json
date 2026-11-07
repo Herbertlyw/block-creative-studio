@@ -1,0 +1,291 @@
+{
+  "schemaVersion": "1.0.0",
+  "rendererId": "fixed-camera-cinematic",
+  "label": "固定机位混合影视渲染器",
+  "sourceOfTruth": "ASSET_LINEAGE_V2.json",
+  "principles": [
+    "Gameplay, replay, score events and clear topology remain renderer-independent.",
+    "The camera transform is locked per CameraProfile; screen-space feedback may add small translate/scale/shake only.",
+    "Tiles and material-consistent large fragments prefer true 3D.",
+    "HUD, praise, combo, score glyphs and endgame UI remain screen-space 2D.",
+    "Pre-clear fills, sweeps, border glow and exposure reactions are shader/render recipes.",
+    "Complex smoke, flowers or hero effects may use baked-view sprites bound to the camera profile."
+  ],
+  "representationDefinitions": {
+    "screen-2d": "Pixel-aligned overlay; unaffected by world depth.",
+    "camera-facing-2d": "Billboard/sprite placed in scene depth but facing the locked camera.",
+    "procedural-screen-vfx": "Shader or render-graph effect evaluated in board/screen coordinates.",
+    "camera-profile-dependent-layout": "A layout contract mapping design pixels to fixed camera/world coordinates.",
+    "normal-mapped-sprite": "Layered sprite with normal/roughness/edge masks for pseudo-volume.",
+    "shallow-3d": "Thin geometry used for frame, slots or panels.",
+    "full-3d": "True geometry with material, depth, occlusion and lighting.",
+    "baked-view-sprite": "Pre-rendered DCC/AE output tied to the fixed camera profile.",
+    "baked-transform-3d": "True geometry whose transforms are precomputed offline.",
+    "motion-recipe": "Renderer-independent timing/spatial curve.",
+    "nonvisual-rule": "Gameplay/director truth; no direct pixels."
+  },
+  "cameraProfileContract": {
+    "requiredFields": [
+      "id",
+      "projection",
+      "designResolution",
+      "boardScreenRect",
+      "pose",
+      "lensOrOrthoScale",
+      "motionPolicy"
+    ],
+    "motionPolicy": {
+      "transformAnimation": false,
+      "orbit": false,
+      "lensAnimation": false,
+      "screenShake": true,
+      "screenZoomMax": 1.03
+    }
+  },
+  "mappingByRepresentation": {
+    "camera-facing-2d": [
+      "background.flower-outline",
+      "background.micro-specks",
+      "clear.cell-glyph.5",
+      "clear.cell-glyph.9",
+      "clear.cell-glyph.thumb",
+      "clear.floating-score",
+      "clear.fragments.small",
+      "clear.intersection-burst",
+      "clear.particles.petals",
+      "clear.particles.square-confetti",
+      "clear.particles.stars",
+      "clear.score-multiplier",
+      "clear.sweep.flower-stamps",
+      "feedback.combo.hero-flower",
+      "placement.micro-sparks",
+      "placement.thumb-badge",
+      "tile.face.daisy",
+      "tile.face.hibiscus",
+      "tile.face.leaf",
+      "tile.face.monstera",
+      "tile.face.rose-outline",
+      "tray.refresh.flower-core",
+      "tray.refresh.flower-outline",
+      "tray.refresh.petals"
+    ],
+    "camera-profile-dependent-layout": [
+      "board.grid-metrics",
+      "tray.layout"
+    ],
+    "full-3d": [
+      "clear.fragments.large",
+      "clear.tile-emission-rise",
+      "interaction.drag-shadow",
+      "interaction.valid-ghost",
+      "tile.base-fill",
+      "tile.bottom-shade",
+      "tile.contact-shadow",
+      "tile.edge-rim",
+      "tile.shape-mask",
+      "tile.top-highlight",
+      "tray.piece-shadow",
+      "tray.piece-small-render"
+    ],
+    "layered-2.5d-sprite": [
+      "background.surface-texture"
+    ],
+    "motion-recipe": [
+      "board.impact-pulse",
+      "clear.cell-glyph.motion",
+      "clear.tile-shrink",
+      "director.vfx-overlap",
+      "endgame.modal-enter",
+      "feedback.combo.enter-motion",
+      "feedback.new-high-score.motion",
+      "hud.current-score.counter-motion",
+      "hud.current-score.pulse",
+      "interaction.drag-easing",
+      "interaction.drag-trajectory",
+      "interaction.pickup-lift",
+      "interaction.pickup-scale",
+      "interaction.release-settle",
+      "interaction.snap-motion",
+      "placement.score-counter-tween",
+      "placement.tile-pop",
+      "praise.enter-motion",
+      "praise.exit-motion",
+      "praise.hold-motion",
+      "tray.refresh.piece-enter",
+      "tray.used-exit"
+    ],
+    "nonvisual-rule": [
+      "audio.clear",
+      "audio.placement",
+      "audio.praise-combo",
+      "clear.tile-destruction",
+      "endgame.board-freeze",
+      "piece.per-cell-color",
+      "piece.per-cell-face",
+      "placement.cell-score-step",
+      "rule.best-score-update",
+      "rule.clear-cell-token",
+      "rule.clear-score-formula",
+      "rule.combo-window",
+      "rule.piece-generation",
+      "rule.praise-thresholds",
+      "rule.tile-face-assignment",
+      "tile.palette.amber",
+      "tile.palette.blue",
+      "tile.palette.coral",
+      "tile.palette.cyan",
+      "tile.palette.lime",
+      "tile.palette.rose",
+      "tile.palette.violet"
+    ],
+    "normal-mapped-sprite": [
+      "board.cell-slot.highlight",
+      "board.cell-slot.inner-shadow"
+    ],
+    "procedural-screen-vfx": [
+      "background.central-halo",
+      "background.clear-flash",
+      "background.combo-aura",
+      "board.border-glow",
+      "board.clip-mask",
+      "clear.background-reaction",
+      "clear.board-reaction",
+      "clear.line-underlay",
+      "clear.sweep.horizontal.body",
+      "clear.sweep.horizontal.head",
+      "clear.sweep.horizontal.trail",
+      "clear.sweep.vertical.body",
+      "clear.sweep.vertical.head",
+      "clear.sweep.vertical.trail",
+      "clear.tile-afterglow",
+      "clear.tile-dissolve",
+      "endgame.dim-overlay",
+      "interaction.invalid-feedback",
+      "interaction.preclear-column-fill",
+      "interaction.preclear-intersection",
+      "interaction.preclear-row-fill",
+      "placement.cell-glow",
+      "tray.refresh.halo"
+    ],
+    "screen-2d": [
+      "background.base-gradient",
+      "capture.debug-session-label",
+      "capture.debug-version-label",
+      "endgame.continue-card.background",
+      "endgame.continue-card.no-thanks",
+      "endgame.continue-card.prompt",
+      "endgame.continue-card.reward-button",
+      "endgame.continue-card.sure-label",
+      "endgame.continue-card.three-blocks",
+      "endgame.continue-card.video-icon",
+      "endgame.final-combo-banner",
+      "feedback.combo.label",
+      "feedback.combo.number",
+      "feedback.combo.tier-style",
+      "feedback.new-high-score.banner-bg",
+      "feedback.new-high-score.crown",
+      "feedback.new-high-score.label",
+      "feedback.new-high-score.value",
+      "hud.best-score.crown",
+      "hud.best-score.value",
+      "hud.current-score.style",
+      "hud.gallery.beta-ribbon",
+      "hud.gallery.icon",
+      "hud.settings.icon",
+      "interaction.pointer-overlay",
+      "praise.amazing.art",
+      "praise.fantastic.art",
+      "praise.great.art",
+      "praise.incredible.art",
+      "praise.nice.art",
+      "praise.star-accent",
+      "praise.unbelievable.art",
+      "praise.unbelievable.bonus-300",
+      "praise.wing-ornaments",
+      "scene.canvas-profile",
+      "tray.empty-slot-state"
+    ],
+    "shallow-3d": [
+      "board.cell-slot.shape",
+      "board.contact-shadow",
+      "board.frame-rim",
+      "board.inner-bed",
+      "board.outer-frame"
+    ]
+  },
+  "migrationOrder": [
+    {
+      "slice": 1,
+      "name": "camera-coordinate-contract",
+      "atoms": [
+        "scene.canvas-profile",
+        "board.grid-metrics",
+        "tray.layout"
+      ]
+    },
+    {
+      "slice": 2,
+      "name": "board-and-slots",
+      "atoms": [
+        "board.outer-frame",
+        "board.inner-bed",
+        "board.cell-slot.shape",
+        "board.contact-shadow"
+      ]
+    },
+    {
+      "slice": 3,
+      "name": "tile-body-and-face",
+      "atoms": [
+        "tile.shape-mask",
+        "tile.base-fill",
+        "tile.edge-rim",
+        "tile.contact-shadow",
+        "tile.face.hibiscus",
+        "tile.face.leaf",
+        "tile.face.monstera",
+        "tile.face.daisy",
+        "tile.face.rose-outline"
+      ]
+    },
+    {
+      "slice": 4,
+      "name": "drag-preview-preclear",
+      "atoms": [
+        "interaction.pickup-scale",
+        "interaction.pickup-lift",
+        "interaction.valid-ghost",
+        "interaction.preclear-row-fill",
+        "interaction.preclear-column-fill",
+        "interaction.snap-motion"
+      ]
+    },
+    {
+      "slice": 5,
+      "name": "clear-cinematic",
+      "atoms": [
+        "clear.line-underlay",
+        "clear.sweep.horizontal.body",
+        "clear.sweep.vertical.body",
+        "clear.tile-destruction",
+        "clear.tile-dissolve",
+        "clear.fragments.large",
+        "clear.fragments.small",
+        "clear.board-reaction",
+        "clear.background-reaction"
+      ]
+    },
+    {
+      "slice": 6,
+      "name": "screen-feedback",
+      "atoms": [
+        "hud.current-score.style",
+        "clear.cell-glyph.5",
+        "clear.cell-glyph.9",
+        "clear.floating-score",
+        "feedback.combo.label",
+        "feedback.combo.number"
+      ]
+    }
+  ]
+}

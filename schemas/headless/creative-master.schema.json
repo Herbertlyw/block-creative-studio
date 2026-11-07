@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative-studio.dev/schemas/headless/creative-master.schema.json",
+  "title": "BCS Creative Master v1",
+  "type": "object",
+  "required": ["contract", "contractVersion", "id", "ruleProfile", "board", "replay", "layoutProfileRef", "cameraProfileRef", "baseOutput"],
+  "properties": {
+    "contract": { "const": "bcs.creative-master" },
+    "contractVersion": { "const": "1.0.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "ruleProfile": { "type": "string", "minLength": 1 },
+    "board": {
+      "type": "object",
+      "required": ["rows", "cols"],
+      "properties": {
+        "rows": { "type": "integer", "minimum": 1 },
+        "cols": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "replay": {
+      "type": "object",
+      "required": ["takeId", "semanticHash", "fps", "totalFrames"],
+      "properties": {
+        "takeId": { "type": "string", "minLength": 1 },
+        "semanticHash": { "type": "string", "minLength": 1 },
+        "frameHash": { "type": "string", "minLength": 1 },
+        "fps": { "type": "number", "exclusiveMinimum": 0 },
+        "totalFrames": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "layoutProfileRef": { "$ref": "asset-manifest.schema.json#/$defs/assetRef" },
+    "cameraProfileRef": { "$ref": "asset-manifest.schema.json#/$defs/assetRef" },
+    "baseOutput": { "$ref": "#/$defs/output" }
+  },
+  "$defs": {
+    "output": {
+      "type": "object",
+      "required": ["width", "height", "fps", "quality"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "fps": { "type": "number", "exclusiveMinimum": 0 },
+        "quality": { "enum": ["preview", "standard", "cinematic"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

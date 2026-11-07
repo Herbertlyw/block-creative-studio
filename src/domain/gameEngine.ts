@@ -36,6 +36,7 @@ const TILE_FINGERPRINT_CODE: Record<TileColor, string> = {
   cyan: '3',
   blue: '4',
   violet: '5',
+  rose: '6',
 };
 
 export function boardFingerprint(board: BoardState): string {

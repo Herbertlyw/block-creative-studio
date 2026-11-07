@@ -1,14 +1,18 @@
 import { boardFingerprint, createGame, replayActions } from './gameEngine';
 import { getShape, TILE_COLORS } from './shapes';
+import { parseMaterialRuntimeDescriptor } from '../headless/materialRuntime';
 import type {
   BoardState,
+  DiagnosticViewId,
   GameSnapshot,
   PieceInstance,
   PlacementAction,
   ProjectSpec,
   Reference2DStyleSpec,
+  ReferencePassId,
   RhythmProfile,
   StyleSpec,
+  ThreeLookDevStyle,
   Take,
   TileColor,
 } from './types';
@@ -21,12 +25,34 @@ export interface StudioBundle {
 }
 
 const MATERIALS = new Set(['glossy-plastic', 'candy-resin', 'crystal-glass']);
-const LIGHTS = new Set(['clean-studio', 'soft-candy', 'neon-contrast']);
+const LIGHTS = new Set(['neutral-lookdev', 'clean-studio', 'soft-candy', 'neon-contrast']);
 const CAMERAS = new Set(['flat-gameplay', 'premium-perspective', 'dynamic-clear']);
+const LOOKDEV_PRESETS = new Set(['neutral-lookdev', 'balanced-cinematic', 'high-energy']);
 const EFFECTS = new Set(['clean-pop', 'crystal-shatter', 'energy-burst']);
 const GEOMETRIES = new Set(['soft-cube', 'premium-beveled', 'candy-rounded']);
 const RHYTHMS = new Set(['human-natural', 'tight-fast', 'suspense-burst', 'combo-rush']);
-const RENDERERS = new Set(['reference-2d', 'three-3d']);
+const RENDERERS = new Set(['reference-2d', 'three-3d', 'fixed-camera-cinematic']);
+const DIAGNOSTIC_VIEWS = new Set([
+  'beauty',
+  'albedo',
+  'world-normal',
+  'roughness',
+  'metalness',
+  'emission',
+  'bloom-contribution',
+  'highlight-clip',
+]);
+const REFERENCE_PASSES = new Set([
+  'background',
+  'board',
+  'tile',
+  'tray',
+  'interaction',
+  'placement',
+  'clear',
+  'feedback',
+  'endgame',
+]);
 const REFERENCE_TILE_MATERIALS = new Set(['soft-bevel', 'flat-matte']);
 const REFERENCE_TILE_FACE_SETS = new Set(['botanical-reference', 'none']);
 const REFERENCE_PREVIEW_FX = new Set(['full-line-tint', 'cells-only']);
@@ -275,14 +301,41 @@ function parseReference2DStyle(value: unknown, path: string): Reference2DStyleSp
   };
 }
 
+const LEGACY_LOOKDEV_STYLE: ThreeLookDevStyle = {
+  id: 'balanced-cinematic',
+  exposure: 0.96,
+  environmentIntensity: 0.72,
+  bloomStrength: 0.1,
+  bloomThreshold: 1.02,
+  bloomRadius: 0.3,
+  clearBloomBoost: 0.16,
+};
+
+function parseLookDevStyle(value: unknown, path: string): ThreeLookDevStyle {
+  if (value === undefined) return { ...LEGACY_LOOKDEV_STYLE };
+  const source = record(value, path);
+  return {
+    id: enumeration(source.id, LOOKDEV_PRESETS, `${path}.id`),
+    exposure: finite(source.exposure, `${path}.exposure`, 0.5, 1.5),
+    environmentIntensity: finite(
+      source.environmentIntensity,
+      `${path}.environmentIntensity`,
+      0,
+      2,
+    ),
+    bloomStrength: finite(source.bloomStrength, `${path}.bloomStrength`, 0, 1.5),
+    bloomThreshold: finite(source.bloomThreshold, `${path}.bloomThreshold`, 0, 2),
+    bloomRadius: finite(source.bloomRadius, `${path}.bloomRadius`, 0, 1),
+    clearBloomBoost: finite(source.clearBloomBoost, `${path}.clearBloomBoost`, 0, 1.5),
+  };
+}
+
 function parseStyle(value: unknown, path: string): StyleSpec {
   const source = record(value, path);
   const geometry = record(source.geometry, `${path}.geometry`);
   const background = string(source.background, `${path}.background`, 32);
   if (!/^#[0-9a-f]{6}$/iu.test(background)) fail(`${path}.background`, '必须是 #RRGGBB。');
-  return {
-    // Bundles exported before the reference-first rebuild had no renderer field.
-    // Preserve their appearance by treating them as the original experimental 3D backend.
+  const style: StyleSpec = {
     renderer: source.renderer === undefined
       ? 'three-3d'
       : enumeration(source.renderer, RENDERERS, `${path}.renderer`),
@@ -297,11 +350,34 @@ function parseStyle(value: unknown, path: string): StyleSpec {
       bevel: finite(geometry.bevel, `${path}.geometry.bevel`, 0, 0.5),
       gap: finite(geometry.gap, `${path}.geometry.gap`, 0, 0.5),
     },
+    lookDev: parseLookDevStyle(source.lookDev, `${path}.lookDev`),
     background,
     showPointer: typeof source.showPointer === 'boolean'
       ? source.showPointer
       : fail(`${path}.showPointer`, '必须是布尔值。'),
   };
+  if (source.diagnosticView !== undefined) {
+    style.diagnosticView = enumeration<DiagnosticViewId>(
+      source.diagnosticView,
+      DIAGNOSTIC_VIEWS,
+      `${path}.diagnosticView`,
+    );
+  }
+  if (source.enabledPasses !== undefined) {
+    if (!Array.isArray(source.enabledPasses)) fail(`${path}.enabledPasses`, '必须是数组。');
+    style.enabledPasses = source.enabledPasses.map((pass, index) =>
+      enumeration<ReferencePassId>(pass, REFERENCE_PASSES, `${path}.enabledPasses[${index}]`),
+    );
+  }
+  if (source.materialRuntime !== undefined) {
+    try {
+      style.materialRuntime = parseMaterialRuntimeDescriptor(source.materialRuntime);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '材质运行时无效。';
+      fail(`${path}.materialRuntime`, `材质运行时无效：${message}`);
+    }
+  }
+  return style;
 }
 
 function parseRhythm(value: unknown, path: string): RhythmProfile {

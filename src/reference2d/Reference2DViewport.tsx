@@ -8,6 +8,8 @@ import type {
   StudioMode,
   StyleSpec,
 } from '../domain/types';
+import type { RuntimeAssetBindings } from '../assets/runtimeAssetBindings';
+import { ReferenceCalibrationOverlay } from './ReferenceCalibrationOverlay';
 import { Reference2DScene } from './Reference2DScene';
 
 interface ClearSignal {
@@ -21,6 +23,7 @@ interface Reference2DViewportProps {
   snapshot: GameSnapshot;
   frame: PresentationFrame | null;
   style: StyleSpec;
+  runtimeAssets: RuntimeAssetBindings;
   fps: number;
   clearSignal: ClearSignal | null;
   onEditCell(cell: GridCell): void;
@@ -50,6 +53,7 @@ export function Reference2DViewport({
   snapshot,
   frame,
   style,
+  runtimeAssets,
   fps,
   clearSignal,
   onEditCell,
@@ -67,6 +71,7 @@ export function Reference2DViewport({
     if (!canvas) return;
     const stage = new Reference2DScene(canvas, { quality: 'interactive' });
     stageRef.current = stage;
+    stage.setRuntimeAssets(runtimeAssets);
     stage.setLiveSnapshot(snapshotRef.current, style);
     stage.start();
 
@@ -90,6 +95,10 @@ export function Reference2DViewport({
   }, []);
 
   useEffect(() => {
+    stageRef.current?.setRuntimeAssets(runtimeAssets);
+  }, [runtimeAssets]);
+
+  useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
     if ((mode === 'replay' || mode === 'render') && frame) stage.setFrame(frame, style);
@@ -104,6 +113,9 @@ export function Reference2DViewport({
       seed: clearSignal.seed,
     });
   }, [clearSignal]);
+
+  const captureCurrentFrame = (): HTMLCanvasElement | null =>
+    stageRef.current?.captureReferenceFrame() ?? null;
 
   const moveDrag = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
     const stage = stageRef.current;
@@ -181,6 +193,10 @@ export function Reference2DViewport({
         onPointerMove={moveDrag}
         onPointerUp={finishDrag}
         onPointerCancel={clearDrag}
+      />
+      <ReferenceCalibrationOverlay
+        frameLabel={`frame-${frame?.frame ?? snapshot.turn}`}
+        captureCurrentFrame={captureCurrentFrame}
       />
       <div className="viewport-badges" aria-hidden="true">
         <span>REFERENCE 2D · 1064×1788</span>

@@ -1,0 +1,16 @@
+export const LEVEL_VALIDATION_CODES = {
+  empty: 'LEVEL_EMPTY',
+  duplicateTileId: 'TILE_ID_DUPLICATE',
+  missingArchetype: 'ARCHETYPE_MISSING',
+  missingMatchKey: 'MATCH_KEY_MISSING',
+  nonIntegerGeometry: 'GEOMETRY_NON_INTEGER',
+  invalidSize: 'GEOMETRY_SIZE_INVALID',
+  outOfBounds: 'GEOMETRY_OUT_OF_BOUNDS',
+  invalidLayer: 'LAYER_INVALID',
+  duplicateOrder: 'ORDER_DUPLICATE',
+  invalidOverride: 'BLOCKER_OVERRIDE_INVALID',
+  forcedDirection: 'BLOCKER_FORCED_DIRECTION',
+  graphCycle: 'BLOCKER_GRAPH_CYCLE',
+  noPlayable: 'NO_INITIAL_PLAYABLE_TILE',
+  missingVisualBinding: 'VISUAL_BINDING_MISSING',
+} as const;

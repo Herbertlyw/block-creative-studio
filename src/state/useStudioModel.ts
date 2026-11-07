@@ -32,7 +32,15 @@ import type {
   TileColor,
 } from '../domain/types';
 import { exportTakeVideo, type RenderProgress } from '../exporter/offlineVideoExporter';
+import { useVariantWorkspace } from './useVariantWorkspace';
 import { DEFAULT_STYLE } from '../renderer/stylePresets';
+import { materialDescriptorKey } from '../headless/materialRuntime';
+import { runtimeTextureResourceKey } from '../renderer/runtimeTextures';
+import {
+  IDLE_MATERIAL_RUNTIME_STATUS,
+  materialRuntimeReadyFor,
+  type MaterialRuntimeStatus,
+} from '../renderer/materialRuntimeStatus';
 import { downloadBlob, safeFileName } from '../utils/download';
 
 interface ClearSignal {
@@ -123,6 +131,7 @@ export function useStudioModel() {
   const [selectedPieceSlot, setSelectedPieceSlot] = useState(0);
   const [clearSignal, setClearSignal] = useState<ClearSignal | null>(null);
   const [exportState, setExportState] = useState<ExportState>({ running: false, progress: null, error: null });
+  const [materialRuntimeStatus, setMaterialRuntimeStatus] = useState<MaterialRuntimeStatus>(IDLE_MATERIAL_RUNTIME_STATUS);
   const exportAbortRef = useRef<AbortController | null>(null);
   const recordingInitialRef = useRef<GameSnapshot | null>(null);
   const recordingActionsRef = useRef<PlacementAction[]>([]);
@@ -176,6 +185,18 @@ export function useStudioModel() {
         : null,
     [compiledTake, playbackFrame, project.rhythm],
   );
+
+  const variantWorkspace = useVariantWorkspace({
+    project,
+    selectedTake,
+    compiledTake,
+    mode,
+    setProject,
+  });
+  const resolvedStyle = variantWorkspace.resolvedStyle;
+  const activeVariantRow = variantWorkspace.activeRow;
+  const runtimeAssets = variantWorkspace.runtimeAssets;
+  const resetVariantToCurrentLook = variantWorkspace.resetToCurrentLook;
 
   useEffect(() => {
     if (!isPlaying || !compiledTake || (mode !== 'replay' && mode !== 'render')) return;
@@ -415,7 +436,8 @@ export function useStudioModel() {
   const setStyle = useCallback((patch: Partial<StyleSpec>): void => {
     if (mode === 'play' || mode === 'render') return;
     setProject((current) => ({ ...current, style: { ...current.style, ...patch } }));
-  }, [mode]);
+    resetVariantToCurrentLook();
+  }, [mode, resetVariantToCurrentLook]);
 
   const setGeometry = useCallback((patch: Partial<StyleSpec['geometry']>): void => {
     if (mode === 'play' || mode === 'render') return;
@@ -423,7 +445,8 @@ export function useStudioModel() {
       ...current,
       style: { ...current.style, geometry: { ...current.style.geometry, ...patch } },
     }));
-  }, [mode]);
+    resetVariantToCurrentLook();
+  }, [mode, resetVariantToCurrentLook]);
 
   const setRhythmPreset = useCallback((presetId: keyof typeof RHYTHM_PRESETS): void => {
     if (mode === 'play' || mode === 'render') return;
@@ -476,7 +499,53 @@ export function useStudioModel() {
 
   const exportVideo = useCallback(async (): Promise<void> => {
     if (!selectedTake || exportState.running || mode === 'play' || mode === 'render') return;
+    if (!activeVariantRow?.plan || !activeVariantRow.quality?.passed) {
+      setExportState({
+        running: false,
+        progress: null,
+        error: '当前 Variant 尚未通过编译和质量门禁，不能进入正式导出。',
+      });
+      return;
+    }
+    if (!activeVariantRow.previewSupported && !activeVariantRow.resolvedStyle.materialRuntime) {
+      setExportState({
+        running: false,
+        progress: null,
+        error: '当前 Look Pack 没有网页渲染绑定。请先实现该资产的 Renderer Adapter，或选择可预览的 Look。',
+      });
+      return;
+    }
+    if (!variantWorkspace.runtimeReady) {
+      setExportState({
+        running: false,
+        progress: null,
+        error: '当前 Render Plan 的本机二进制资产尚未全部解析，不能进入正式导出。',
+      });
+      return;
+    }
+    if (
+      resolvedStyle.renderer !== 'reference-2d'
+      && !materialRuntimeReadyFor(materialRuntimeStatus, {
+        descriptorKey: resolvedStyle.materialRuntime ? materialDescriptorKey(resolvedStyle.materialRuntime) : '',
+        resourceKey: runtimeTextureResourceKey(resolvedStyle.materialRuntime?.maps ?? [], runtimeAssets),
+      })
+    ) {
+      const reason = materialRuntimeStatus.state === 'error'
+        ? `新材质加载失败，当前仍显示上一套材质：${materialRuntimeStatus.error ?? '加载失败'}`
+        : materialRuntimeStatus.state === 'stale'
+          ? '新材质尚未提交，当前仍显示上一套材质，不能进入正式导出。'
+          : materialRuntimeStatus.state === 'ready'
+            ? '三维材质状态与当前 Plan descriptor 不一致，不能进入正式导出。'
+            : '三维材质尚未就绪，不能进入正式导出。';
+      setExportState({
+        running: false,
+        progress: null,
+        error: reason,
+      });
+      return;
+    }
     const exportProjectSnapshot = structuredClone(project);
+    const exportStyleSnapshot = structuredClone(resolvedStyle);
     const exportTakeSnapshot = cloneTake(selectedTake);
     const controller = new AbortController();
     exportAbortRef.current = controller;
@@ -487,9 +556,10 @@ export function useStudioModel() {
       const result = await exportTakeVideo({
         take: exportTakeSnapshot,
         rhythm: exportProjectSnapshot.rhythm,
-        style: exportProjectSnapshot.style,
+        style: exportStyleSnapshot,
         render: exportProjectSnapshot.render,
         projectName: exportProjectSnapshot.name,
+        runtimeAssets,
         signal: controller.signal,
         onProgress: (progress) => setExportState({ running: true, progress, error: null }),
       });
@@ -506,7 +576,7 @@ export function useStudioModel() {
       exportAbortRef.current = null;
       setMode('replay');
     }
-  }, [exportState.running, mode, project, selectedTake]);
+  }, [activeVariantRow, exportState.running, materialRuntimeStatus, mode, project, resolvedStyle, runtimeAssets, selectedTake, variantWorkspace.runtimeReady]);
 
   const cancelExport = useCallback((): void => {
     exportAbortRef.current?.abort();
@@ -551,6 +621,7 @@ export function useStudioModel() {
 
   return {
     project,
+    resolvedStyle,
     mode,
     liveSnapshot,
     takes,
@@ -563,6 +634,9 @@ export function useStudioModel() {
     selectedPieceSlot,
     clearSignal,
     exportState,
+    materialRuntimeStatus,
+    variantWorkspace: variantWorkspace.panel,
+    runtimeAssets,
     recordedActionCount: recordingActionsRef.current.length,
     boardPresets: BOARD_PRESETS,
     setSelectedColor,
@@ -596,5 +670,6 @@ export function useStudioModel() {
     cancelExport,
     exportProject,
     importProject,
+    setMaterialRuntimeStatus,
   };
 }

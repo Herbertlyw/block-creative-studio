@@ -1,0 +1,4490 @@
+{
+  "schemaVersion": "2.0.0",
+  "profile": "block-garden-reference-v1",
+  "sourceVideoSha256": "7aec0cb6336742247c9f4648e80f0cffd4e373d0eb835bb22848a797f2ed7cba",
+  "analysisBasis": {
+    "framesProcessed": 13546,
+    "frameCoveragePercent": 100,
+    "manualReviewPasses": [
+      "whole-video contact sheet at 2s cadence",
+      "80 salience peaks",
+      "dense first-clear",
+      "dense new-high-score",
+      "dense endgame"
+    ],
+    "note": "The catalog describes semantic atoms and renderer representations; it is not a bitmap file list."
+  },
+  "vocabularies": {
+    "kind": [
+      "visual-asset",
+      "vector",
+      "typography",
+      "render-recipe",
+      "motion-recipe",
+      "particle-recipe",
+      "rule-binding",
+      "color-token",
+      "geometry-asset",
+      "audio-asset"
+    ],
+    "engineRequirement": [
+      "core-required",
+      "optional"
+    ],
+    "triggerRequirement": [
+      "required",
+      "optional",
+      "not-applicable"
+    ],
+    "referenceRequirement": [
+      "required",
+      "optional",
+      "capture-only"
+    ],
+    "spatialRepresentation": [
+      "screen-2d",
+      "vector",
+      "bitmap",
+      "procedural-2d",
+      "procedural-screen-vfx",
+      "camera-facing-2d",
+      "layered-2.5d-sprite",
+      "normal-mapped-sprite",
+      "camera-profile-dependent-layout",
+      "shallow-3d",
+      "full-3d",
+      "baked-view-sprite",
+      "baked-transform-3d",
+      "motion-recipe",
+      "nonvisual-rule",
+      "not-applicable",
+      "optional-full-3d"
+    ],
+    "status": [
+      "observed",
+      "inferred",
+      "unresolved"
+    ],
+    "replaceability": [
+      "independent",
+      "rule-preserving",
+      "rule-bound",
+      "director-controlled"
+    ],
+    "viewDependency": [
+      "none",
+      "camera-profile-dependent",
+      "lighting-profile-dependent",
+      "fully-baked"
+    ],
+    "implementationStatus": [
+      "implemented",
+      "partial",
+      "not-implemented",
+      "prototype-only"
+    ]
+  },
+  "observedPalette": {
+    "colorCount": 7,
+    "tokens": [
+      "coral",
+      "amber",
+      "lime",
+      "cyan",
+      "blue",
+      "violet",
+      "rose"
+    ],
+    "evidence": "Full-video stable-cell clustering plus manual review of static frames."
+  },
+  "groupConstraints": [
+    {
+      "id": "placement-confirmation",
+      "policy": "at-least-one",
+      "members": [
+        "placement.tile-pop",
+        "placement.cell-glow",
+        "placement.thumb-badge"
+      ]
+    },
+    {
+      "id": "clear-primary-cue",
+      "policy": "at-least-one",
+      "members": [
+        "clear.sweep.horizontal.body",
+        "clear.sweep.vertical.body",
+        "clear.tile-dissolve"
+      ]
+    },
+    {
+      "id": "clear-destruction-consistency",
+      "policy": "all-required-when-clear",
+      "members": [
+        "clear.tile-destruction",
+        "clear.tile-dissolve"
+      ]
+    },
+    {
+      "id": "reference-praise-family",
+      "policy": "asset-required-when-tier-triggered",
+      "members": [
+        "praise.nice.art",
+        "praise.great.art",
+        "praise.amazing.art",
+        "praise.incredible.art",
+        "praise.fantastic.art",
+        "praise.unbelievable.art"
+      ]
+    }
+  ],
+  "atoms": [
+    {
+      "id": "capture.debug-version-label",
+      "label": "顶部调试版本标识",
+      "category": "capture",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "capture-only"
+      },
+      "trigger": "capture-build-metadata",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented",
+      "notes": "视频顶部中央存在极低对比度版本字符串；不属于正式玩法画面。"
+    },
+    {
+      "id": "capture.debug-session-label",
+      "label": "底部测试/会话标识",
+      "category": "capture",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "capture-only"
+      },
+      "trigger": "capture-session-metadata",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented",
+      "notes": "视频底部存在极低对比度 test/session 字符串；正式导出默认关闭。"
+    },
+    {
+      "id": "scene.canvas-profile",
+      "label": "设计画布与安全区",
+      "category": "scene",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "project-load",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "background.base-gradient",
+      "label": "主绿色渐变背景",
+      "category": "background",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "background.surface-texture",
+      "label": "背景细微纹理/压缩层次",
+      "category": "background",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "bitmap",
+        "fixedCameraCinematic": "layered-2.5d-sprite",
+        "full3dSandbox": "baked-view-sprite"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "background.central-halo",
+      "label": "棋盘后方柔光晕",
+      "category": "background",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "background.micro-specks",
+      "label": "背景微型亮点和彩屑",
+      "category": "background",
+      "kind": "particle-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "ambient-loop",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "background.flower-outline",
+      "label": "候选区附近淡花轮廓",
+      "category": "background",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "ambient-or-tray-transition",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:420-540",
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial",
+      "notes": "有时与候选刷新花朵重叠；语义是否纯环境装饰仍待确认。"
+    },
+    {
+      "id": "background.clear-flash",
+      "label": "强清除背景曝光脉冲",
+      "category": "background",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear-intensity>=high",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "background.combo-aura",
+      "label": "Combo 环境余辉",
+      "category": "background",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "combo>=2",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback.combo"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "hud.best-score.crown",
+      "label": "历史最高分皇冠",
+      "category": "hud",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "hud-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "hud.best-score.value",
+      "label": "历史最高分数字",
+      "category": "hud",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "hud-visible",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [
+        "rule.best-score-update"
+      ],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "rule.best-score-update",
+      "label": "最高分实时更新规则",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "currentScore>previousBest",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-new-high-score-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial",
+      "notes": "Reference 2D HUD 已采用 max(previousBest, currentScore)；首次越线事件和横幅队列仍未建模。"
+    },
+    {
+      "id": "hud.current-score.style",
+      "label": "当前分数字体、描边与阴影",
+      "category": "hud",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "hud-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "hud.current-score.counter-motion",
+      "label": "当前分数逐点跳增",
+      "category": "hud",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "score-delta>0",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "hud.current-score.pulse",
+      "label": "当前分数缩放/亮度脉冲",
+      "category": "hud",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "score-delta>0 or clear",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "hud.gallery.icon",
+      "label": "右上图册图标",
+      "category": "hud",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "hud-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "hud.gallery.beta-ribbon",
+      "label": "图册 Beta 标签",
+      "category": "hud",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "hud-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "hud.settings.icon",
+      "label": "右上设置齿轮",
+      "category": "hud",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "hud-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "feedback.new-high-score.banner-bg",
+      "label": "新最高分横幅底板",
+      "category": "feedback",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "currentScore crosses previousBest",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-new-high-score-0001"
+      ],
+      "dependencies": [
+        "rule.best-score-update"
+      ],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "feedback.new-high-score.crown",
+      "label": "新最高分横幅皇冠",
+      "category": "feedback",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "currentScore crosses previousBest",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-new-high-score-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "feedback.new-high-score.label",
+      "label": "NEW HIGH SCORE 文案",
+      "category": "feedback",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "currentScore crosses previousBest",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-new-high-score-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "feedback.new-high-score.value",
+      "label": "新最高分横幅数字",
+      "category": "feedback",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "currentScore crosses previousBest",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-new-high-score-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "feedback.new-high-score.motion",
+      "label": "新最高分横幅入场、停留与退场",
+      "category": "feedback",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "currentScore crosses previousBest",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-new-high-score-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "board.outer-frame",
+      "label": "棋盘深绿圆角外框",
+      "category": "board",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "shallow-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.frame-rim",
+      "label": "棋盘外框高光边",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "shallow-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "board.contact-shadow",
+      "label": "棋盘与背景接触阴影",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "shallow-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.inner-bed",
+      "label": "64 格后方整体底板",
+      "category": "board",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "shallow-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.cell-slot.shape",
+      "label": "单格凹槽轮廓",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "shallow-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.cell-slot.highlight",
+      "label": "格槽上缘亮度",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "normal-mapped-sprite",
+        "full3dSandbox": "shallow-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.cell-slot.inner-shadow",
+      "label": "格槽内阴影",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "normal-mapped-sprite",
+        "full3dSandbox": "shallow-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.grid-metrics",
+      "label": "8×8 尺寸、间距与像素锚点",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "project-load",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "camera-profile-dependent-layout",
+        "full3dSandbox": "camera-profile-dependent-layout"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "board.clip-mask",
+      "label": "棋盘特效裁切遮罩",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "board-vfx-active",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "board.border-glow",
+      "label": "清除/Combo 边框余辉",
+      "category": "board",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear or combo",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window",
+        "event:type=feedback.combo"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "board.impact-pulse",
+      "label": "高强度反馈的棋盘冲击脉冲",
+      "category": "board",
+      "kind": "motion-recipe",
+      "status": "inferred",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "optional"
+      },
+      "trigger": "clear-intensity>=high",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tile.shape-mask",
+      "label": "方格圆角轮廓",
+      "category": "tile",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-visible",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.base-fill",
+      "label": "方块主色层",
+      "category": "tile",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-visible",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.top-highlight",
+      "label": "方块顶部高光",
+      "category": "tile",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.bottom-shade",
+      "label": "方块底部压暗",
+      "category": "tile",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.edge-rim",
+      "label": "方块边缘/倒角层",
+      "category": "tile",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.contact-shadow",
+      "label": "方块接触阴影",
+      "category": "tile",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-visible",
+      "allowsNone": false,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.coral",
+      "label": "珊瑚橙色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=coral",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.amber",
+      "label": "琥珀黄色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=amber",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.lime",
+      "label": "草绿色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=lime",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.cyan",
+      "label": "青蓝色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=cyan",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.blue",
+      "label": "蓝色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=blue",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.violet",
+      "label": "紫色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=violet",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tile.palette.rose",
+      "label": "玫红色 Token",
+      "category": "tile",
+      "kind": "color-token",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.color=rose",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:480-600",
+        "full-video-cell-cluster"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented",
+      "notes": "整段聚类与清晰静态帧证明紫色与玫红是两种独立颜色；运行时已新增 rose Token 与 2D/3D 调色板。"
+    },
+    {
+      "id": "tile.face.hibiscus",
+      "label": "五瓣扶桑花牌面",
+      "category": "tile-face",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.face=hibiscus",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tile.face.leaf",
+      "label": "单叶牌面",
+      "category": "tile-face",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.face=leaf",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tile.face.monstera",
+      "label": "龟背竹牌面",
+      "category": "tile-face",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.face=monstera",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tile.face.daisy",
+      "label": "多瓣花牌面",
+      "category": "tile-face",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.face=daisy",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tile.face.rose-outline",
+      "label": "玫瑰轮廓牌面",
+      "category": "tile-face",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile.face=rose-outline",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:480-600"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "rule.tile-face-assignment",
+      "label": "颜色到牌面纹样的分配规则",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "tile-created",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "piece.per-cell-color",
+      "label": "Piece 内逐格颜色",
+      "category": "gameplay",
+      "kind": "rule-binding",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece-created",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "piece.per-cell-face",
+      "label": "Piece 内逐格牌面索引",
+      "category": "gameplay",
+      "kind": "rule-binding",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece-created",
+      "allowsNone": true,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "tray.layout",
+      "label": "三个候选槽位布局",
+      "category": "tray",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "scene-visible",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "camera-profile-dependent-layout",
+        "full3dSandbox": "camera-profile-dependent-layout"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tray.piece-small-render",
+      "label": "候选块缩小渲染",
+      "category": "tray",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece unused",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tray.piece-shadow",
+      "label": "候选块偏移阴影",
+      "category": "tray",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "not-applicable",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece unused",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:0-13545"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tray.used-exit",
+      "label": "候选块使用后的消失",
+      "category": "tray",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece committed",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tray.empty-slot-state",
+      "label": "已使用候选槽的空状态",
+      "category": "tray",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece used and set incomplete",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "frame-range:60-220"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "tray.refresh.flower-outline",
+      "label": "候选刷新花朵轮廓",
+      "category": "tray-refresh",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece set exhausted",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=tray-refresh-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tray.refresh.flower-core",
+      "label": "候选刷新彩色花芯",
+      "category": "tray-refresh",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece set exhausted",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=tray-refresh-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tray.refresh.halo",
+      "label": "候选刷新圆形光晕",
+      "category": "tray-refresh",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece set exhausted",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=tray-refresh-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tray.refresh.petals",
+      "label": "候选刷新花瓣/彩屑",
+      "category": "tray-refresh",
+      "kind": "particle-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece set exhausted",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=tray-refresh-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "tray.refresh.piece-enter",
+      "label": "新三块缩放/显现",
+      "category": "tray-refresh",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece set exhausted",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=tray-refresh-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "interaction.pickup-scale",
+      "label": "候选块拾取放大",
+      "category": "interaction",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "pointer-down on piece",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "interaction.pickup-lift",
+      "label": "拖块相对手指上移",
+      "category": "interaction",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "pointer-down on piece",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "interaction.drag-shadow",
+      "label": "拖动状态阴影变化",
+      "category": "interaction",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece dragging",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "interaction.drag-trajectory",
+      "label": "真人/导演拖拽轨迹",
+      "category": "interaction",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece dragging",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "interaction.drag-easing",
+      "label": "拖拽非线性速度曲线",
+      "category": "interaction",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece dragging",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "interaction.valid-ghost",
+      "label": "合法落点逐格半透明预览",
+      "category": "preview",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "drag over legal anchor",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=piece-manipulation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "interaction.invalid-feedback",
+      "label": "非法落点视觉反馈",
+      "category": "preview",
+      "kind": "render-recipe",
+      "status": "inferred",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "optional"
+      },
+      "trigger": "drag over illegal anchor or release invalid",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "unresolved:invalid-drop-not-clearly-observed"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "interaction.preclear-row-fill",
+      "label": "预消除完整行填充",
+      "category": "preview",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "wouldClear.rows.length>0",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:530-570",
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "interaction.preclear-column-fill",
+      "label": "预消除完整列填充",
+      "category": "preview",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "wouldClear.cols.length>0",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "interaction.preclear-intersection",
+      "label": "预消除行列交叉叠加强度",
+      "category": "preview",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "wouldClear rows and cols",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "interaction.snap-motion",
+      "label": "释放后吸附到格位",
+      "category": "interaction",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "legal release",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "interaction.release-settle",
+      "label": "落定轻微回弹",
+      "category": "interaction",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement committed",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "interaction.pointer-overlay",
+      "label": "可选鼠标/手指指示",
+      "category": "interaction",
+      "kind": "visual-asset",
+      "status": "inferred",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "optional"
+      },
+      "trigger": "showPointer and interaction",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "source-video:pointer-not-visible"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "placement.tile-pop",
+      "label": "落子单元弹性反馈",
+      "category": "placement",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement committed",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "placement.cell-glow",
+      "label": "新落格边缘发光",
+      "category": "placement",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement committed",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:350-420"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "placement.thumb-badge",
+      "label": "新落格短暂拇指认可",
+      "category": "placement",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement-quality feedback",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "frame-range:350-420"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "placement.micro-sparks",
+      "label": "落子微型亮点",
+      "category": "placement",
+      "kind": "particle-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "optional"
+      },
+      "trigger": "placement committed",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "placement.cell-score-step",
+      "label": "按新放入单元逐格计分",
+      "category": "placement",
+      "kind": "rule-binding",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement committed",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "placement.score-counter-tween",
+      "label": "顶部放置分逐点动画",
+      "category": "placement",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement points emitted",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.line-underlay",
+      "label": "清除行列彩色底层",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear detected",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "clear.sweep.horizontal.body",
+      "label": "横向扫光主体",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear.rows.length>0",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "clear.sweep.horizontal.head",
+      "label": "横向扫光亮头",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear.rows.length>0",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.sweep.horizontal.trail",
+      "label": "横向扫光拖尾",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear.rows.length>0",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.sweep.vertical.body",
+      "label": "纵向光柱主体",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear.cols.length>0",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window",
+        "review-incredible-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "clear.sweep.vertical.head",
+      "label": "纵向光柱亮头",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear.cols.length>0",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-incredible-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.sweep.vertical.trail",
+      "label": "纵向光柱拖尾",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear.cols.length>0",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-incredible-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.sweep.flower-stamps",
+      "label": "扫光内部花朵印记",
+      "category": "clear",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear sweep active",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-incredible-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "clear.intersection-burst",
+      "label": "横纵交叉爆点",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear rows and cols",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.cell-glyph.5",
+      "label": "清除格内数字 5",
+      "category": "clear-glyph",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear cell token=5",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.cell-glyph.9",
+      "label": "清除格内数字 9",
+      "category": "clear-glyph",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear cell token=9",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.cell-glyph.thumb",
+      "label": "清除格内拇指",
+      "category": "clear-glyph",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear cell token=thumb",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.cell-glyph.motion",
+      "label": "格内数字/拇指的弹入与消失",
+      "category": "clear-glyph",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear cell glyph visible",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.tile-emission-rise",
+      "label": "清除前方块增亮",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear active before destruction",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.tile-destruction",
+      "label": "方块离场语义",
+      "category": "clear",
+      "kind": "rule-binding",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear commit",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "clear.tile-dissolve",
+      "label": "方块渐隐/溶解",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear destruction",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "clear.tile-shrink",
+      "label": "方块清除缩小",
+      "category": "clear",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear destruction",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "clear.tile-afterglow",
+      "label": "方块消失后余辉",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "after clear destruction",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.fragments.large",
+      "label": "材质一致的大碎片",
+      "category": "clear",
+      "kind": "geometry-asset",
+      "status": "inferred",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "optional"
+      },
+      "trigger": "fixed-camera cinematic clear",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "not-applicable",
+        "fixedCameraCinematic": "full-3d",
+        "full3dSandbox": "full-3d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "product-direction:fixed-camera-hybrid"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "clear.fragments.small",
+      "label": "小碎屑/伪深度粒子",
+      "category": "clear",
+      "kind": "particle-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear destruction",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.particles.stars",
+      "label": "清除星形粒子",
+      "category": "clear-particle",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear active",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.particles.square-confetti",
+      "label": "方形彩屑",
+      "category": "clear-particle",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear active",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.particles.petals",
+      "label": "花瓣粒子",
+      "category": "clear-particle",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "high clear active",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.floating-score",
+      "label": "33/66/99/173/222/296/327/393/443/491/981 等浮动数值",
+      "category": "clear-feedback",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear score emitted",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "full-video-peak-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial",
+      "notes": "显示值与顶部总分关系仍未完全解析。"
+    },
+    {
+      "id": "clear.score-multiplier",
+      "label": "清除结果旁 ×2 等倍率提示",
+      "category": "clear-feedback",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "multi-line or combo multiplier",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-incredible-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "clear.board-reaction",
+      "label": "清除对棋盘边框/底板联动",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear active",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "clear.background-reaction",
+      "label": "清除对背景光晕联动",
+      "category": "clear",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear active",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.nice.art",
+      "label": "Nice! 评价字形",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=nice",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=praise.nice"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.great.art",
+      "label": "Great! 评价字形",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=great",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=praise.great"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.amazing.art",
+      "label": "Amazing! 评价字形",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=amazing",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=praise.amazing"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial",
+      "notes": "运行时已能显示该文字标签，但字形资产、装饰和触发阈值仍待 Golden Scene 标定。"
+    },
+    {
+      "id": "praise.incredible.art",
+      "label": "Incredible! 评价字形",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=incredible",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=praise.incredible"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial",
+      "notes": "运行时已能显示该文字标签，但字形资产、装饰和触发阈值仍待 Golden Scene 标定。"
+    },
+    {
+      "id": "praise.fantastic.art",
+      "label": "Fantastic! 评价字形",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=fantastic",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=praise.fantastic"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.unbelievable.art",
+      "label": "Unbelievable! 评价字形",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=unbelievable",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=praise.unbelievable"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.wing-ornaments",
+      "label": "评价词左右翼状装饰",
+      "category": "praise",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praise visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-incredible-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "praise.star-accent",
+      "label": "评价词星形强调符号",
+      "category": "praise",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praise visible",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-peak-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "praise.enter-motion",
+      "label": "评价词弹入超调",
+      "category": "praise",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praise starts",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback-overlay-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.hold-motion",
+      "label": "评价词停留脉冲",
+      "category": "praise",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praise holds",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback-overlay-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.exit-motion",
+      "label": "评价词退场",
+      "category": "praise",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praise ends",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback-overlay-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "praise.unbelievable.bonus-300",
+      "label": "Unbelievable +300",
+      "category": "praise",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praiseTier=unbelievable",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-unbelievable-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "feedback.combo.label",
+      "label": "Combo 文案",
+      "category": "combo",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "combo>=2",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback.combo"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "feedback.combo.number",
+      "label": "Combo 数字",
+      "category": "combo",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "combo>=2",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback.combo"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "feedback.combo.tier-style",
+      "label": "不同 Combo 颜色、描边与亮度",
+      "category": "combo",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "combo>=2",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-peak-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "feedback.combo.hero-flower",
+      "label": "Combo 后方大型花/心形爆发",
+      "category": "combo",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "combo high",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "camera-facing-2d",
+        "full3dSandbox": "camera-facing-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "full-video-peak-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "feedback.combo.enter-motion",
+      "label": "Combo 延迟弹入",
+      "category": "combo",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "combo emitted",
+      "allowsNone": true,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "event:type=feedback.combo"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "rule.praise-thresholds",
+      "label": "评价等级触发规则",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear resolved",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "rule.combo-window",
+      "label": "Combo 延续/中断窗口",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear sequence",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "full-video-contact-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "endgame.board-freeze",
+      "label": "终局棋盘冻结",
+      "category": "endgame",
+      "kind": "rule-binding",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "no legal moves",
+      "allowsNone": false,
+      "replaceability": "rule-preserving",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "endgame.dim-overlay",
+      "label": "终局全屏暗化",
+      "category": "endgame",
+      "kind": "render-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "game-over",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "procedural-screen-vfx",
+        "fixedCameraCinematic": "procedural-screen-vfx",
+        "full3dSandbox": "procedural-screen-vfx"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "endgame.final-combo-banner",
+      "label": "终局 Combo 14 横幅",
+      "category": "endgame",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "game-over",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "endgame.continue-card.background",
+      "label": "继续卡片渐变底板",
+      "category": "endgame",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "endgame.continue-card.prompt",
+      "label": "Continue with 3 small blocks 文案",
+      "category": "endgame",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "endgame.continue-card.three-blocks",
+      "label": "继续卡片三组小方块示意",
+      "category": "endgame",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "procedural-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "endgame.continue-card.reward-button",
+      "label": "绿色 Sure 按钮",
+      "category": "endgame",
+      "kind": "visual-asset",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "endgame.continue-card.video-icon",
+      "label": "激励视频图标",
+      "category": "endgame",
+      "kind": "vector",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "vector",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "endgame.continue-card.sure-label",
+      "label": "Sure 按钮文字",
+      "category": "endgame",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "endgame.continue-card.no-thanks",
+      "label": "No, thanks 文案",
+      "category": "endgame",
+      "kind": "typography",
+      "status": "observed",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "continue offer",
+      "allowsNone": true,
+      "replaceability": "independent",
+      "spatialRepresentations": {
+        "reference2d": "screen-2d",
+        "fixedCameraCinematic": "screen-2d",
+        "full3dSandbox": "screen-2d"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "implemented"
+    },
+    {
+      "id": "endgame.modal-enter",
+      "label": "继续弹窗入场动画",
+      "category": "endgame",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "game-over",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "review-endgame-0001"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "rule.clear-score-formula",
+      "label": "清除奖励准确公式",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear resolved",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=score-animation-window",
+        "full-video-peak-scan"
+      ],
+      "dependencies": [],
+      "implementationStatus": "prototype-only"
+    },
+    {
+      "id": "rule.clear-cell-token",
+      "label": "清除格 5/9/拇指选择规则",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear cell feedback",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=clear-presentation-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "rule.piece-generation",
+      "label": "候选块概率、保底与难度调节",
+      "category": "rules",
+      "kind": "rule-binding",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "piece set exhausted",
+      "allowsNone": false,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "event:type=tray-refresh-window"
+      ],
+      "dependencies": [],
+      "implementationStatus": "prototype-only"
+    },
+    {
+      "id": "director.vfx-overlap",
+      "label": "旧 VFX 与下一次输入异步重叠",
+      "category": "director",
+      "kind": "motion-recipe",
+      "status": "observed",
+      "requirement": {
+        "engine": "core-required",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "new input while prior feedback active",
+      "allowsNone": false,
+      "replaceability": "director-controlled",
+      "spatialRepresentations": {
+        "reference2d": "motion-recipe",
+        "fixedCameraCinematic": "motion-recipe",
+        "full3dSandbox": "motion-recipe"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "camera-profile-dependent"
+      },
+      "evidenceSelectors": [
+        "full-frame-state-index"
+      ],
+      "dependencies": [],
+      "implementationStatus": "partial"
+    },
+    {
+      "id": "audio.placement",
+      "label": "放置音效事件",
+      "category": "audio",
+      "kind": "audio-asset",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "placement committed",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "source-video:audio-track-observed"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented",
+      "notes": "当前轮只审计视觉；音频将使用同一事件时间轴单独拆解。"
+    },
+    {
+      "id": "audio.clear",
+      "label": "清除音效事件",
+      "category": "audio",
+      "kind": "audio-asset",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "clear active",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "source-video:audio-track-observed"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    },
+    {
+      "id": "audio.praise-combo",
+      "label": "评价/Combo 音效事件",
+      "category": "audio",
+      "kind": "audio-asset",
+      "status": "unresolved",
+      "requirement": {
+        "engine": "optional",
+        "whenTriggered": "required",
+        "referenceProfile": "required"
+      },
+      "trigger": "praise or combo",
+      "allowsNone": true,
+      "replaceability": "rule-bound",
+      "spatialRepresentations": {
+        "reference2d": "nonvisual-rule",
+        "fixedCameraCinematic": "nonvisual-rule",
+        "full3dSandbox": "nonvisual-rule"
+      },
+      "viewDependency": {
+        "reference2d": "none",
+        "fixedCameraCinematic": "none"
+      },
+      "evidenceSelectors": [
+        "source-video:audio-track-observed"
+      ],
+      "dependencies": [],
+      "implementationStatus": "not-implemented"
+    }
+  ],
+  "summary": {
+    "atomCount": 149,
+    "observedCount": 136,
+    "inferredCount": 4,
+    "unresolvedCount": 9,
+    "coreRequiredCount": 56,
+    "referenceRequiredCount": 142
+  }
+}

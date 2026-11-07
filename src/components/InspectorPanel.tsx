@@ -1,9 +1,11 @@
 import type {
   CameraPresetId,
   CompiledTake,
+  DiagnosticViewId,
   FxPresetId,
   GeometryPresetId,
   LightingPresetId,
+  LookDevPresetId,
   MaterialPresetId,
   ProjectSpec,
   ReferenceAmbientFxId,
@@ -21,10 +23,12 @@ import type {
 import type { RenderProgress } from '../exporter/offlineVideoExporter';
 import {
   CAMERA_OPTIONS,
+  DIAGNOSTIC_VIEW_OPTIONS,
   FX_OPTIONS,
   GEOMETRY_DEFAULTS,
   GEOMETRY_OPTIONS,
   LIGHTING_OPTIONS,
+  LOOKDEV_OPTIONS,
   MATERIAL_OPTIONS,
   REFERENCE_AMBIENT_OPTIONS,
   REFERENCE_CLEAR_OPTIONS,
@@ -35,8 +39,14 @@ import {
   RENDERER_OPTIONS,
 } from '../renderer/stylePresets';
 import { RHYTHM_PRESET_LIST } from '../director/rhythmPresets';
+import { copyLookDevPreset } from '../renderer/lookDev';
+import { VariantWorkspacePanel, type VariantWorkspacePanelProps } from './VariantWorkspacePanel';
+import type { MaterialRuntimeStatus } from '../renderer/materialRuntimeStatus';
+import { IDLE_MATERIAL_RUNTIME_STATUS, materialRuntimeBlocksExport } from '../renderer/materialRuntimeStatus';
+import { materialDescriptorKey } from '../headless/materialRuntime';
 
 interface InspectorPanelProps {
+  variantWorkspace: Omit<VariantWorkspacePanelProps, 'locked'>;
   style: StyleSpec;
   rhythm: RhythmProfile;
   render: ProjectSpec['render'];
@@ -46,6 +56,7 @@ interface InspectorPanelProps {
   locked: boolean;
   setupEditable: boolean;
   exportState: { running: boolean; progress: RenderProgress | null; error: string | null };
+  materialRuntimeStatus?: MaterialRuntimeStatus;
   onStyle(patch: Partial<StyleSpec>): void;
   onGeometry(patch: Partial<StyleSpec['geometry']>): void;
   onRhythmPreset(id: RhythmPresetId): void;
@@ -118,6 +129,7 @@ function RangeField({
 }
 
 export function InspectorPanel({
+  variantWorkspace,
   style,
   rhythm,
   render,
@@ -127,6 +139,7 @@ export function InspectorPanel({
   locked,
   setupEditable,
   exportState,
+  materialRuntimeStatus,
   onStyle,
   onGeometry,
   onRhythmPreset,
@@ -138,6 +151,7 @@ export function InspectorPanel({
 }: InspectorPanelProps) {
   return (
     <aside className="panel inspector-panel">
+      <VariantWorkspacePanel {...variantWorkspace} locked={locked} />
       <section>
         <div className="section-heading">
           <span>表现基线</span>
@@ -233,10 +247,88 @@ export function InspectorPanel({
               disabled={locked}
               onChange={(material) => onStyle({ material })}
             />
+            <SelectField<DiagnosticViewId>
+              label="材质诊断"
+              value={style.diagnosticView ?? 'beauty'}
+              options={DIAGNOSTIC_VIEW_OPTIONS}
+              disabled={locked}
+              onChange={(diagnosticView) => onStyle({ diagnosticView })}
+            />
             <div className="inline-ranges">
               <RangeField label="厚度" value={style.geometry.depth} min={0.18} max={0.72} step={0.01} disabled={locked} onChange={(depth) => onGeometry({ depth })} />
               <RangeField label="倒角" value={style.geometry.bevel} min={0.04} max={0.24} step={0.01} disabled={locked} onChange={(bevel) => onGeometry({ bevel })} />
               <RangeField label="间隙" value={style.geometry.gap} min={0.04} max={0.18} step={0.01} disabled={locked} onChange={(gap) => onGeometry({ gap })} />
+            </div>
+            <SelectField<LookDevPresetId>
+              label="高光与后处理"
+              value={style.lookDev.id}
+              options={LOOKDEV_OPTIONS}
+              disabled={locked}
+              onChange={(id) => onStyle({
+                lookDev: copyLookDevPreset(id),
+                ...(id === 'neutral-lookdev'
+                  ? { lighting: 'neutral-lookdev' as LightingPresetId }
+                  : style.lighting === 'neutral-lookdev'
+                    ? { lighting: id === 'high-energy' ? 'neon-contrast' : 'clean-studio' }
+                    : {}),
+              })}
+            />
+            <div className="lookdev-status-card">
+              <strong>{style.lookDev.id === 'neutral-lookdev' ? '材质校准模式' : style.lookDev.id === 'high-energy' ? '高能量演出' : '平衡影视模式'}</strong>
+              <span>
+                {style.lookDev.id === 'neutral-lookdev'
+                  ? 'Bloom 已关闭；先检查材质、颜色、粗糙度与接触阴影。'
+                  : '普通镜面高光保持克制，清除峰值通过独立 Bloom Boost 增强。'}
+              </span>
+            </div>
+            <div className="inline-ranges lookdev-ranges">
+              <RangeField
+                label="曝光"
+                value={style.lookDev.exposure}
+                min={0.5}
+                max={1.3}
+                step={0.01}
+                suffix="×"
+                disabled={locked}
+                onChange={(exposure) => onStyle({ lookDev: { ...style.lookDev, exposure } })}
+              />
+              <RangeField
+                label="环境反射"
+                value={style.lookDev.environmentIntensity}
+                min={0}
+                max={1.5}
+                step={0.01}
+                suffix="×"
+                disabled={locked}
+                onChange={(environmentIntensity) => onStyle({ lookDev: { ...style.lookDev, environmentIntensity } })}
+              />
+              <RangeField
+                label="基础 Bloom"
+                value={style.lookDev.bloomStrength}
+                min={0}
+                max={0.7}
+                step={0.01}
+                disabled={locked}
+                onChange={(bloomStrength) => onStyle({ lookDev: { ...style.lookDev, bloomStrength } })}
+              />
+              <RangeField
+                label="Bloom 阈值"
+                value={style.lookDev.bloomThreshold}
+                min={0.5}
+                max={1.5}
+                step={0.01}
+                disabled={locked}
+                onChange={(bloomThreshold) => onStyle({ lookDev: { ...style.lookDev, bloomThreshold } })}
+              />
+              <RangeField
+                label="清除 Bloom"
+                value={style.lookDev.clearBloomBoost}
+                min={0}
+                max={0.8}
+                step={0.01}
+                disabled={locked}
+                onChange={(clearBloomBoost) => onStyle({ lookDev: { ...style.lookDev, clearBloomBoost } })}
+              />
             </div>
             <SelectField<LightingPresetId>
               label="灯光"
@@ -365,12 +457,28 @@ export function InspectorPanel({
           <div><strong>{render.fps} fps</strong><span>固定帧率</span></div>
           <div><strong>{compiled ? (compiled.totalFrames / compiled.fps).toFixed(1) : '—'} s</strong><span>成片时长</span></div>
         </div>
+        {style.renderer !== 'reference-2d' && materialRuntimeStatus && (
+          <p className={materialRuntimeStatus.state === 'ready' ? 'empty-copy' : 'error-copy'}>
+            {materialRuntimeStatus.state === 'ready' && '三维材质已提交，可进入正式导出。'}
+            {materialRuntimeStatus.state === 'loading' && '材质加载中，正式导出已阻止。'}
+            {materialRuntimeStatus.state === 'stale' && '新材质尚未提交，当前仍显示上一套材质。正式导出已阻止。'}
+            {materialRuntimeStatus.state === 'error' && `新材质加载失败${materialRuntimeStatus.showingPrevious ? '，当前仍显示上一套材质' : ''}。正式导出已阻止。`}
+            {materialRuntimeStatus.state === 'idle' && '三维材质尚未完成首次提交。正式导出已阻止。'}
+          </p>
+        )}
         {exportState.running ? (
           <button className="export-button export-button--cancel" onClick={onCancelExport}>
             取消本次渲染
           </button>
         ) : (
-          <button className="export-button" disabled={!take || locked} onClick={() => void onExportVideo()}>
+          <button
+            className="export-button"
+            disabled={!take || locked || (style.renderer !== 'reference-2d' && materialRuntimeBlocksExport(
+              materialRuntimeStatus ?? IDLE_MATERIAL_RUNTIME_STATUS,
+              { descriptorKey: style.materialRuntime ? materialDescriptorKey(style.materialRuntime) : '' },
+            ))}
+            onClick={() => void onExportVideo()}
+          >
             生成 1080P MP4
           </button>
         )}

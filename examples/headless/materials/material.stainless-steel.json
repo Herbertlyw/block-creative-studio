@@ -1,0 +1,97 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "material.stainless-steel",
+  "version": "1.0.0",
+  "kind": "material-pack",
+  "origin": "generated",
+  "label": "Stainless steel",
+  "contentHash": "sha256:98cb21f8697300ff94e94dc4e81bad0b9530581372f691734ef6b2b4f487c195",
+  "runtime": {
+    "renderers": [
+      "three-3d",
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true,
+    "budget": {
+      "textureMemoryMiB": 12
+    }
+  },
+  "appearance": {
+    "baseColor": "#c9d0d8",
+    "roughness": 0.22,
+    "metalness": 0.96,
+    "clearcoat": 0.08,
+    "normalStrength": 0.35,
+    "emission": 0,
+    "textureRefs": {
+      "baseColor": {
+        "id": "tex.steel.basecolor",
+        "version": "1.0.0",
+        "kind": "bitmap",
+        "contentHash": "sha256:ca50477917e22e0f3579872d8e18e3d26ab8b47d08ec94d88104e200a04dd7a9",
+        "uri": "examples/headless/materials/maps/steel-basecolor.png",
+        "channels": "rgb"
+      },
+      "roughness": {
+        "id": "tex.steel.roughness",
+        "version": "1.0.0",
+        "kind": "bitmap",
+        "contentHash": "sha256:cdf0ad08bc6752bfc2675b8f02319397cb316a90d5adcf39591ffeae3ff0042d",
+        "uri": "examples/headless/materials/maps/steel-roughness.png",
+        "channels": "r"
+      },
+      "metallic": {
+        "id": "tex.steel.metallic",
+        "version": "1.0.0",
+        "kind": "bitmap",
+        "contentHash": "sha256:d1d6abfc535c0fdf768ca6f70d3491939ac0a9993d24169789b8466f4b18888d",
+        "uri": "examples/headless/materials/maps/steel-metallic.png",
+        "channels": "r"
+      },
+      "normal": {
+        "id": "tex.steel.normal",
+        "version": "1.0.0",
+        "kind": "bitmap",
+        "contentHash": "sha256:d2c424e1367839e845ca1ffcb1442a8a1f10169fa534832381e56e575502f929",
+        "uri": "examples/headless/materials/maps/steel-normal.png",
+        "channels": "rgb",
+        "normalY": "opengl"
+      },
+      "ao": {
+        "id": "tex.steel.ao",
+        "version": "1.0.0",
+        "kind": "bitmap",
+        "contentHash": "sha256:f5d5e3910ae025b0ea78d4b540a68ee7780d9d1d9c11ce599ee9b3bd0f5ecacc",
+        "uri": "examples/headless/materials/maps/steel-ao.png",
+        "channels": "r"
+      }
+    }
+  },
+  "behavior": {
+    "materialClass": "metal",
+    "density": 0.9,
+    "brittleness": 0.18,
+    "ductility": 0.72,
+    "elasticity": 0.12,
+    "hardness": 0.8,
+    "fractureMode": "chips",
+    "largeFragmentRatio": 0.7,
+    "dustAmount": 0.04,
+    "sparkAmount": 0.42,
+    "dropletAmount": 0,
+    "gravityScale": 1.2,
+    "drag": 0.08
+  },
+  "provenance": {
+    "createdBy": "tool",
+    "generator": "public-fixture-pbr",
+    "sourceUris": [
+      "examples/headless/materials/maps/steel-basecolor.png",
+      "examples/headless/materials/maps/steel-roughness.png",
+      "examples/headless/materials/maps/steel-metallic.png",
+      "examples/headless/materials/maps/steel-normal.png",
+      "examples/headless/materials/maps/steel-ao.png"
+    ]
+  }
+}

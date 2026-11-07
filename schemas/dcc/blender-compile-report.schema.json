@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative.local/schema/dcc/blender-compile-report-v1.json",
+  "title": "BCS Blender Compile Report V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "contractVersion", "packageId", "status", "source", "blender", "render", "metrics", "outputs", "warnings", "errors"],
+  "properties": {
+    "contract": { "const": "bcs.blender-compile-report" },
+    "contractVersion": { "const": "1.0.0" },
+    "packageId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["passed", "failed"] },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "blender": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "engine"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "engine": { "enum": ["BLENDER_EEVEE", "CYCLES"] },
+        "executable": { "type": "string" }
+      }
+    },
+    "render": { "$ref": "blender-scene-exchange.schema.json#/$defs/output" },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objectCount", "meshCount", "materialCount", "triangleCount", "compileDurationMs"],
+      "properties": {
+        "objectCount": { "type": "integer", "minimum": 0 },
+        "meshCount": { "type": "integer", "minimum": 0 },
+        "materialCount": { "type": "integer", "minimum": 0 },
+        "triangleCount": { "type": "integer", "minimum": 0 },
+        "compileDurationMs": { "type": "integer", "minimum": 0 },
+        "eventCount": { "type": "integer", "minimum": 0 },
+        "vfxObjectCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structure", "visual", "resolvedAssetCount", "unresolvedAssetIds", "fallbackFaceEntityIds"],
+      "properties": {
+        "structure": { "enum": ["passed", "failed"] },
+        "visual": { "enum": ["passed", "degraded", "failed"] },
+        "resolvedAssetCount": { "type": "integer", "minimum": 0 },
+        "unresolvedAssetIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fallbackFaceEntityIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "path", "sha256", "byteLength"],
+        "properties": {
+          "role": { "enum": ["scene-exchange", "source-artifact", "normalized-blend", "scene-glb", "preview", "representative-frame"] },
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "byteLength": { "type": "integer", "minimum": 1 },
+          "frame": { "type": "integer" }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" }
+  }
+}

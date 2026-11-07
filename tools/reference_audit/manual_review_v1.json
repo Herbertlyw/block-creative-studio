@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceVideoSha256": "7aec0cb6336742247c9f4648e80f0cffd4e373d0eb835bb22848a797f2ed7cba",
+  "reviewPolicy": "Representative event windows were reviewed from dense frame contact sheets. They supplement, rather than replace, the every-frame machine coverage pass.",
+  "events": [
+    {
+      "id": "review-great-0001",
+      "type": "praise.great",
+      "startFrame": 555,
+      "peakFrame": 570,
+      "endFrame": 640,
+      "note": "Great appears during the first reviewed multi-line clear."
+    },
+    {
+      "id": "review-combo-0001",
+      "type": "feedback.combo",
+      "startFrame": 615,
+      "peakFrame": 635,
+      "endFrame": 675,
+      "note": "Combo overlay follows the first reviewed clear."
+    },
+    {
+      "id": "review-amazing-0001",
+      "type": "praise.amazing",
+      "startFrame": 930,
+      "peakFrame": 970,
+      "endFrame": 1045,
+      "note": "Amazing praise state observed."
+    },
+    {
+      "id": "review-nice-0001",
+      "type": "praise.nice",
+      "startFrame": 1180,
+      "peakFrame": 1215,
+      "endFrame": 1265,
+      "note": "Nice praise state observed."
+    },
+    {
+      "id": "review-unbelievable-0001",
+      "type": "praise.unbelievable",
+      "startFrame": 1520,
+      "peakFrame": 1575,
+      "endFrame": 1645,
+      "note": "Unbelievable appears with +300 and a full-board light wash."
+    },
+    {
+      "id": "review-fantastic-0001",
+      "type": "praise.fantastic",
+      "startFrame": 2240,
+      "peakFrame": 2285,
+      "endFrame": 2345,
+      "note": "Fantastic praise state observed."
+    },
+    {
+      "id": "review-incredible-0001",
+      "type": "praise.incredible",
+      "startFrame": 3190,
+      "peakFrame": 3240,
+      "endFrame": 3300,
+      "note": "Incredible appears with wing ornaments during a multi-column clear."
+    },
+    {
+      "id": "review-new-high-score-0001",
+      "type": "feedback.new-high-score",
+      "startFrame": 11745,
+      "peakFrame": 11800,
+      "endFrame": 11845,
+      "note": "NEW HIGH SCORE banner, crown and value overlap the active clear/Combo stack."
+    },
+    {
+      "id": "review-endgame-0001",
+      "type": "endgame.continue-offer",
+      "startFrame": 13448,
+      "peakFrame": 13470,
+      "endFrame": 13545,
+      "note": "Dim overlay, final Combo 14 header and rewarded continue card."
+    }
+  ],
+  "wholeVideoDiscoveries": {
+    "tileColorTokens": ["coral", "amber", "lime", "cyan", "blue", "violet", "rose"],
+    "tileFaceFamilies": ["hibiscus", "leaf", "monstera", "daisy", "rose-outline"],
+    "praiseTiers": ["nice", "great", "amazing", "incredible", "fantastic", "unbelievable"],
+    "additionalSystems": [
+      "new-high-score-banner",
+      "live-best-score-update",
+      "compound-tray-refresh",
+      "capture-only-debug-labels",
+      "overlapping-input-and-vfx"
+    ]
+  }
+}

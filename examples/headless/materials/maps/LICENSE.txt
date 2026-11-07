@@ -1,0 +1,3 @@
+Synthetic PBR fixture maps generated for Block Creative Studio tests.
+Dedicated to the public domain under CC0 1.0.
+Not derived from the commercial reference video.

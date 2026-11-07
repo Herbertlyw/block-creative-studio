@@ -1,6 +1,7 @@
 import type { TileColor } from '../domain/types';
+import { DESIGN_RESOLUTION } from '../headless/coordinateMapping';
 
-export const REFERENCE_CANVAS = { width: 1064, height: 1788 } as const;
+export const REFERENCE_CANVAS = DESIGN_RESOLUTION;
 
 export const REFERENCE_LAYOUT = {
   hud: {
@@ -77,6 +78,14 @@ export const REFERENCE_TILE_PALETTE: Record<TileColor, ReferenceTilePalette> = {
     edge: '#ad327b',
     motif: '#bd3a88',
     glow: '#ff9cda',
+  },
+  rose: {
+    base: '#e56392',
+    top: '#f47ead',
+    bottom: '#c44375',
+    edge: '#a93663',
+    motif: '#b94270',
+    glow: '#ff9bc0',
   },
 };
 

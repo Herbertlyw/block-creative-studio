@@ -1,6 +1,6 @@
 import type { PieceShape, TileColor } from './types';
 
-export const TILE_COLORS: TileColor[] = ['coral', 'amber', 'lime', 'cyan', 'blue', 'violet'];
+export const TILE_COLORS: TileColor[] = ['coral', 'amber', 'lime', 'cyan', 'blue', 'violet', 'rose'];
 
 export const SHAPES: PieceShape[] = [
   { id: 'single', label: '单格', cells: [[0, 0]] },

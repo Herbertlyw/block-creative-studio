@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 360" role="img" aria-label="Pointing hand">
+  <defs>
+    <linearGradient id="skin" x1="0.18" y1="0.08" x2="0.84" y2="0.92">
+      <stop offset="0" stop-color="#fff6ee"/>
+      <stop offset="0.46" stop-color="#ffd9ca"/>
+      <stop offset="0.78" stop-color="#efad9f"/>
+      <stop offset="1" stop-color="#d98278"/>
+    </linearGradient>
+    <linearGradient id="skinSoft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffdf9" stop-opacity="0.94"/>
+      <stop offset="1" stop-color="#f0a497" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="cuff" x1="0.1" y1="0" x2="0.88" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.58" stop-color="#edf5ff"/>
+      <stop offset="1" stop-color="#b8cbea"/>
+    </linearGradient>
+    <filter id="shadow" x="-35%" y="-25%" width="190%" height="190%">
+      <feDropShadow dx="9" dy="13" stdDeviation="9" flood-color="#071a45" flood-opacity="0.46"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M58 19C42 19 31 31 31 48L31 151L17 137C6 126-8 136 0 152L35 212C47 235 66 253 92 262L119 271L113 299L211 326L228 271C237 240 233 208 221 179L196 114C190 98 172 91 159 103C155 84 135 78 122 91C115 73 94 70 82 85L82 49C82 32 74 19 58 19Z"
+      fill="url(#skin)" stroke="#bd746d" stroke-width="5"
+    />
+    <path d="M82 87L82 157" fill="none" stroke="#d98e82" stroke-width="4" opacity="0.62"/>
+    <path d="M122 93L130 158" fill="none" stroke="#d98e82" stroke-width="4" opacity="0.58"/>
+    <path d="M159 105L168 163" fill="none" stroke="#d98e82" stroke-width="4" opacity="0.55"/>
+    <path d="M196 116L202 171" fill="none" stroke="#d98e82" stroke-width="4" opacity="0.5"/>
+    <path d="M22 148C35 163 48 177 58 197" fill="none" stroke="#ca7c73" stroke-width="4" opacity="0.6"/>
+    <path d="M43 45C44 34 50 29 60 29C69 29 75 36 76 47L76 96C64 91 51 92 38 98L38 49C38 48 40 46 43 45Z" fill="url(#skinSoft)" stroke="none"/>
+    <ellipse cx="58" cy="43" rx="17" ry="12" fill="#fffaf5" opacity="0.5"/>
+    <path d="M45 211C67 226 93 232 119 234" fill="none" stroke="#fff2e8" stroke-width="7" opacity="0.36"/>
+    <path d="M112 267L227 284L218 348L88 318L100 273Z" fill="url(#cuff)" stroke="#7c91bd" stroke-width="5"/>
+    <path d="M102 281L224 300" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.9"/>
+    <path d="M101 307L215 333" fill="none" stroke="#9bb1d6" stroke-width="3" opacity="0.55"/>
+  </g>
+</svg>

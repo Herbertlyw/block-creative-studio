@@ -156,6 +156,15 @@
         "feedbackFx": "praise-combo",
         "ambientFx": "garden-petals",
         "bestScore": 22634
+      },
+      "lookDev": {
+        "id": "balanced-cinematic",
+        "exposure": 0.96,
+        "environmentIntensity": 0.72,
+        "bloomStrength": 0.1,
+        "bloomThreshold": 1.02,
+        "bloomRadius": 0.3,
+        "clearBloomBoost": 0.16
       }
     },
     "rhythm": {

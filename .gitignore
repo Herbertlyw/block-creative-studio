@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 dist/
 .vite/
 *.local
@@ -6,5 +6,33 @@ dist/
 .DS_Store
 coverage/
 .core-dist/
+*.zip
+*.bundle
+# Local full-video audit inputs and generated evidence. Reference footage and
+# extracted frames are intentionally never committed to the public repository.
+.reference-audit-work/
+reference-frames/
+*.npy
+*.npz
+
+__pycache__/
+*.py[cod]
+
+dist-cli/
+
+# Production Pages-base smoke output (CI: PAGES_BASE_PATH=/block-creative-studio/).
+dist-pages-smoke/
+
+# Capture writes this-run evidence here. Git-tracked frames/videos are stale.
+review-package/run/
+artifacts/
+
+# Local review evidence and generated media
+outputs/
+review-package/
+*.mp4
+*.webm
+*.mov
+*.wav
 *.zip
 *.bundle

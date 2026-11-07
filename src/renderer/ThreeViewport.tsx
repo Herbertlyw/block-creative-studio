@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type {
   ClearResult,
   GameSnapshot,
@@ -8,7 +8,14 @@ import type {
   StudioMode,
   StyleSpec,
 } from '../domain/types';
+import type { RuntimeAssetBindings } from '../assets/runtimeAssetBindings';
+import { materialDescriptorKey } from '../headless/materialRuntime';
 import { StudioScene } from './StudioScene';
+import { runtimeTextureResourceKey } from './runtimeTextures';
+import {
+  IDLE_MATERIAL_RUNTIME_STATUS,
+  type MaterialRuntimeStatus,
+} from './materialRuntimeStatus';
 
 interface ClearSignal {
   id: number;
@@ -21,11 +28,13 @@ interface ThreeViewportProps {
   snapshot: GameSnapshot;
   frame: PresentationFrame | null;
   style: StyleSpec;
+  runtimeAssets: RuntimeAssetBindings;
   fps: number;
   clearSignal: ClearSignal | null;
   onEditCell(cell: GridCell): void;
   onPlace(pieceId: string, anchor: GridCell, durationFrames: number, path: PointerSample[]): boolean;
   isPlacementValid(pieceId: string, anchor: GridCell): boolean;
+  onMaterialRuntimeStatus?(status: MaterialRuntimeStatus): void;
 }
 
 interface DragSession {
@@ -37,12 +46,11 @@ interface DragSession {
   valid: boolean;
 }
 
-function normalizedPointer(event: ReactPointerEvent<HTMLCanvasElement>): { x: number; y: number } {
-  const rect = event.currentTarget.getBoundingClientRect();
-  return {
-    x: Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width))),
-    y: Math.max(0, Math.min(1, (event.clientY - rect.top) / Math.max(1, rect.height))),
-  };
+function compositionPointer(
+  stage: StudioScene,
+  event: ReactPointerEvent<HTMLCanvasElement>,
+): { x: number; y: number } | null {
+  return stage.mapClientPointer(event.clientX, event.clientY);
 }
 
 export function ThreeViewport({
@@ -50,23 +58,40 @@ export function ThreeViewport({
   snapshot,
   frame,
   style,
+  runtimeAssets,
   fps,
   clearSignal,
   onEditCell,
   onPlace,
   isPlacementValid,
+  onMaterialRuntimeStatus,
 }: ThreeViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<StudioScene | null>(null);
   const dragRef = useRef<DragSession | null>(null);
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
+  const statusCallbackRef = useRef(onMaterialRuntimeStatus);
+  statusCallbackRef.current = onMaterialRuntimeStatus;
+  const [runtimeStatus, setRuntimeStatus] = useState<MaterialRuntimeStatus>(IDLE_MATERIAL_RUNTIME_STATUS);
+  const hadReadyRef = useRef(false);
+  const lastReadyDescriptorRef = useRef<string | null>(null);
+
+  const reportStatus = (status: MaterialRuntimeStatus): void => {
+    if (status.state === 'ready') {
+      hadReadyRef.current = true;
+      lastReadyDescriptorRef.current = status.descriptorKey;
+    }
+    setRuntimeStatus(status);
+    statusCallbackRef.current?.(status);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const stage = new StudioScene(canvas, { quality: 'interactive' });
     stageRef.current = stage;
+    stage.setRuntimeAssets(runtimeAssets);
     stage.setLiveSnapshot(snapshotRef.current, style);
     stage.start();
 
@@ -80,17 +105,87 @@ export function ThreeViewport({
       observer.disconnect();
       stage.dispose();
       stageRef.current = null;
+      statusCallbackRef.current?.(IDLE_MATERIAL_RUNTIME_STATUS);
     };
     // Scene lifetime is deliberately independent from React renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    stageRef.current?.setRuntimeAssets(runtimeAssets);
+  }, [runtimeAssets]);
+
+  useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    if ((mode === 'replay' || mode === 'render') && frame) stage.setFrame(frame, style);
-    else stage.setLiveSnapshot(snapshot, style);
-  }, [frame, mode, snapshot, style]);
+    let cancelled = false;
+    const apply = (): void => {
+      if (cancelled || stageRef.current !== stage) return;
+      if ((mode === 'replay' || mode === 'render') && frame) stage.setFrame(frame, style);
+      else stage.setLiveSnapshot(snapshot, style);
+    };
+    apply();
+    stage.setRuntimeAssets(runtimeAssets);
+    const maps = style.materialRuntime?.maps ?? [];
+    const resourceKey = runtimeTextureResourceKey(maps, runtimeAssets);
+    const descriptorKey = style.materialRuntime ? materialDescriptorKey(style.materialRuntime) : '';
+    if (hadReadyRef.current && lastReadyDescriptorRef.current === descriptorKey) {
+      void stage.prepareMaterialRuntime(style).then(() => {
+        if (cancelled || stageRef.current !== stage) return;
+        apply();
+      }).catch((error: unknown) => {
+        if (cancelled || stageRef.current !== stage) return;
+        reportStatus({
+          state: 'error',
+          generation: Date.now(),
+          resourceKey,
+          descriptorKey,
+          error: error instanceof Error ? error.message : String(error),
+          showingPrevious: true,
+        });
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+    const showingPrevious = hadReadyRef.current;
+    reportStatus({
+      state: showingPrevious ? 'stale' : 'loading',
+      generation: Date.now(),
+      resourceKey,
+      descriptorKey,
+      error: null,
+      showingPrevious,
+    });
+    void stage.prepareMaterialRuntime(style)
+      .then(() => {
+        if (cancelled || stageRef.current !== stage) return;
+        reportStatus({
+          state: 'ready',
+          generation: Date.now(),
+          resourceKey,
+          descriptorKey,
+          error: null,
+          showingPrevious: false,
+        });
+        apply();
+      })
+      .catch((error: unknown) => {
+        if (cancelled || stageRef.current !== stage) return;
+        reportStatus({
+          state: 'error',
+          generation: Date.now(),
+          resourceKey,
+          descriptorKey,
+          error: error instanceof Error ? error.message : String(error),
+          showingPrevious,
+        });
+        apply();
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [frame, mode, snapshot, style, runtimeAssets]);
 
   useEffect(() => {
     if (!clearSignal) return;
@@ -103,7 +198,13 @@ export function ThreeViewport({
     if (!stage || !session || event.pointerId !== session.pointerId) return;
     const anchor = stage.anchorForPiece(event.clientX, event.clientY, session.pieceId);
     const valid = anchor ? isPlacementValid(session.pieceId, anchor) : false;
-    const pointer = normalizedPointer(event);
+    const pointer = compositionPointer(stage, event);
+    if (!pointer) {
+      session.anchor = null;
+      session.valid = false;
+      stage.setDragPreview(session.pieceId, null);
+      return;
+    }
     const frameOffset = Math.max(0, Math.round(((performance.now() - session.startedAt) / 1_000) * fps));
     const previous = session.path[session.path.length - 1];
     if (!previous || previous.frameOffset < frameOffset) session.path.push({ frameOffset, ...pointer });
@@ -151,7 +252,8 @@ export function ThreeViewport({
           }
           if (mode !== 'play' || snapshot.status === 'game-over' || hit?.kind !== 'piece') return;
           event.currentTarget.setPointerCapture(event.pointerId);
-          const pointer = normalizedPointer(event);
+          const pointer = compositionPointer(stage, event);
+          if (!pointer) return;
           stage.setDragPreview(hit.pieceId, null, pointer);
           dragRef.current = {
             pointerId: event.pointerId,
@@ -167,11 +269,23 @@ export function ThreeViewport({
         onPointerCancel={clearDrag}
       />
       <div className="viewport-badges" aria-hidden="true">
-        <span>THREE.JS GPU</span>
+        <span>{style.renderer === 'fixed-camera-cinematic' ? 'FIXED CAMERA' : 'THREE.JS'} · {style.lookDev.id.toUpperCase()}</span>
         <span>{mode === 'render' ? 'OFFLINE RENDER' : mode.toUpperCase()}</span>
       </div>
       {mode === 'edit' && <div className="viewport-hint">点击格子绘制或擦除牌面</div>}
       {mode === 'play' && <div className="viewport-hint">拖动底部方块，系统只记录 Replay，不录屏</div>}
+      {runtimeStatus.state === 'error' && (
+        <div className="viewport-runtime-error" role="alert">
+          <strong>新材质加载失败</strong>
+          <span>{runtimeStatus.showingPrevious ? '当前仍显示上一套完整材质。正式导出已阻止。' : '当前材质未就绪，正式导出已阻止。'}</span>
+          {runtimeStatus.error && <span>{runtimeStatus.error}</span>}
+        </div>
+      )}
+      {(runtimeStatus.state === 'loading' || runtimeStatus.state === 'stale') && style.materialRuntime && (
+        <div className="viewport-runtime-status">
+          {runtimeStatus.showingPrevious ? '新材质加载中，当前仍显示上一套材质。正式导出已阻止。' : '材质贴图加载中…'}
+        </div>
+      )}
       {snapshot.status === 'game-over' && mode === 'play' && (
         <div className="game-over-card">
           <strong>本次试玩结束</strong>

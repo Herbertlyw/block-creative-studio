@@ -1,0 +1,18 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "background.dark",
+  "version": "1.0.0",
+  "kind": "background",
+  "origin": "builtin",
+  "contentHash": "sha256:27e5cff8abdbcb886db81075a4cc506ccb82cfca63a4b59b63b1b5fc79230230",
+  "runtime": {
+    "renderers": [
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true,
+    "budget": {
+      "textureMemoryMiB": 8
+    }
+  }
+}

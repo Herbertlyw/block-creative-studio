@@ -4,6 +4,7 @@ import type {
   GeometryPresetId,
   GeometryStyle,
   LightingPresetId,
+  LookDevPresetId,
   MaterialPresetId,
   ReferenceAmbientFxId,
   ReferenceClearFxId,
@@ -14,6 +15,7 @@ import type {
   RenderBackendId,
   StyleSpec,
 } from '../domain/types';
+import { copyLookDevPreset } from './lookDev';
 
 export interface NamedPreset<T extends string> {
   id: T;
@@ -27,6 +29,11 @@ export const RENDERER_OPTIONS: Array<NamedPreset<RenderBackendId>> = [
     id: 'reference-2d',
     label: '真机参考 2D',
     description: '按参考视频拆解布局、彩块、预消除、扫光、评价词与 Combo。',
+  },
+  {
+    id: 'fixed-camera-cinematic',
+    label: '固定机位 3D',
+    description: '锁定 9:16 构图与 Shot Profile，接入 LookDev 诊断和 PBR 运行时。',
   },
   {
     id: 'three-3d',
@@ -56,7 +63,7 @@ export const REFERENCE_CLEAR_OPTIONS: Array<NamedPreset<ReferenceClearFxId>> = [
 ];
 
 export const REFERENCE_FEEDBACK_OPTIONS: Array<NamedPreset<ReferenceFeedbackFxId>> = [
-  { id: 'praise-combo', label: '评价词 + Combo', description: 'Nice、Great、Fantastic、Unbelievable 与连击演出。' },
+  { id: 'praise-combo', label: '评价词 + Combo', description: '六级评价词、Combo 与高强度反馈；阈值仍待受控标定。' },
   { id: 'score-only', label: '仅积分', description: '不显示大评价词和 Combo 装饰。' },
 ];
 
@@ -95,15 +102,33 @@ export const MATERIAL_OPTIONS: Array<NamedPreset<MaterialPresetId>> = [
 ];
 
 export const LIGHTING_OPTIONS: Array<NamedPreset<LightingPresetId>> = [
+  { id: 'neutral-lookdev', label: '中性材质校准', description: '低反射、低轮廓光，用于判断材质本身而不是影视发光。' },
   { id: 'clean-studio', label: '清洁棚拍', description: '中性商业光，材质识别最稳定。' },
   { id: 'soft-candy', label: '柔和糖果', description: '暖主光、冷补光、粉色轮廓。' },
   { id: 'neon-contrast', label: '霓虹高对比', description: '冷暖对撞，适合爆发型画面。' },
+];
+
+export const LOOKDEV_OPTIONS: Array<NamedPreset<LookDevPresetId>> = [
+  { id: 'neutral-lookdev', label: '中性 LookDev', description: '关闭 Bloom，降低环境反射，用于材质导入和高光排查。' },
+  { id: 'balanced-cinematic', label: '平衡影视', description: '普通高光保持清晰，只有清除能量获得有限 Bloom。' },
+  { id: 'high-energy', label: '高能量', description: '增强清除峰值和轮廓光，用于 Hero Event，不作为材质校准基线。' },
 ];
 
 export const CAMERA_OPTIONS: Array<NamedPreset<CameraPresetId>> = [
   { id: 'flat-gameplay', label: '正视玩法', description: '规则最清楚，接近标准试玩。' },
   { id: 'premium-perspective', label: '高级微透视', description: '轻俯拍，厚度表现更明显。' },
   { id: 'dynamic-clear', label: '动态消除', description: '消除时推近并增强镜头冲击。' },
+];
+
+export const DIAGNOSTIC_VIEW_OPTIONS: Array<NamedPreset<import('../domain/types').DiagnosticViewId>> = [
+  { id: 'beauty', label: 'Beauty', description: '最终合成。' },
+  { id: 'albedo', label: 'Albedo', description: '读取实际底色/贴图，关闭环境反射。' },
+  { id: 'world-normal', label: 'World Normal (proxy)', description: 'flatShading 代理，不是 world-normal G-buffer。' },
+  { id: 'roughness', label: 'Roughness', description: '粗糙度通道。' },
+  { id: 'metalness', label: 'Metalness', description: '金属度通道。' },
+  { id: 'emission', label: 'Emission', description: '自发光贡献。' },
+  { id: 'bloom-contribution', label: 'Bloom Contribution (proxy)', description: '额外 emissive 代理，不是 bloom 缓冲。' },
+  { id: 'highlight-clip', label: 'Highlight Clip (proxy)', description: 'LDR 近白诊断，不是 HDR highlight-clip 缓冲。' },
 ];
 
 export const FX_OPTIONS: Array<NamedPreset<FxPresetId>> = [
@@ -116,6 +141,7 @@ export const DEFAULT_STYLE: StyleSpec = {
   renderer: 'reference-2d',
   reference2d: { ...DEFAULT_REFERENCE_2D_STYLE },
   geometry: { ...GEOMETRY_PRESETS['premium-beveled'] },
+  lookDev: copyLookDevPreset('balanced-cinematic'),
   material: 'candy-resin',
   lighting: 'soft-candy',
   camera: 'premium-perspective',

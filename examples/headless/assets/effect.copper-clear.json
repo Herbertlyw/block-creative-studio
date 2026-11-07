@@ -1,0 +1,62 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "effect.copper-clear",
+  "version": "1.0.0",
+  "kind": "effect-pack",
+  "origin": "generated",
+  "contentHash": "sha256:7a513be94bf61c0c8cf5c7c154fe4322905e19cc0b79bbee39ef83bcbed0949c",
+  "runtime": {
+    "renderers": [
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true,
+    "budget": {
+      "textureMemoryMiB": 18,
+      "triangleCount": 12000
+    }
+  },
+  "supportedEvents": [
+    "line-clear",
+    "cross-clear",
+    "combo",
+    "all-clear"
+  ],
+  "compatibleMaterialClasses": [
+    "metal"
+  ],
+  "metadata": {
+    "studio": {
+      "stylePatch": {
+        "fx": "crystal-shatter"
+      },
+      "rendererAdapter": "fixed-camera-cinematic"
+    }
+  },
+  "layers": [
+    {
+      "id": "sweep",
+      "role": "energy",
+      "implementation": "shader",
+      "required": true
+    },
+    {
+      "id": "response",
+      "role": "material-response",
+      "implementation": "shader",
+      "required": true
+    },
+    {
+      "id": "fragments",
+      "role": "large-fragments",
+      "implementation": "geometry",
+      "required": true
+    },
+    {
+      "id": "sparks",
+      "role": "particles",
+      "implementation": "sprite",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "material.aurora-shell",
+  "version": "1.0.0",
+  "kind": "material-pack",
+  "origin": "generated",
+  "label": "Aurora shell",
+  "contentHash": "sha256:e34c30ff7ac18998a22aea9582e9d1ccbc92e39075fadcc02aa95c48f51b577d",
+  "runtime": {
+    "renderers": [
+      "three-3d",
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true,
+    "budget": {
+      "textureMemoryMiB": 14
+    }
+  },
+  "appearance": {
+    "baseColor": "#6ad0c8",
+    "roughness": 0.28,
+    "metalness": 0.18,
+    "clearcoat": 0.42,
+    "transmission": 0.12,
+    "ior": 1.46,
+    "normalStrength": 0.2,
+    "emission": 0.04
+  },
+  "behavior": {
+    "materialClass": "custom",
+    "density": 0.4,
+    "brittleness": 0.5,
+    "ductility": 0.3,
+    "elasticity": 0.24,
+    "hardness": 0.5,
+    "fractureMode": "plates",
+    "largeFragmentRatio": 0.5,
+    "dustAmount": 0.1,
+    "sparkAmount": 0.12,
+    "dropletAmount": 0.04,
+    "gravityScale": 0.9,
+    "drag": 0.14
+  },
+  "provenance": {
+    "createdBy": "external-agent",
+    "generator": "arbitrary-id-not-a-preset-name"
+  }
+}

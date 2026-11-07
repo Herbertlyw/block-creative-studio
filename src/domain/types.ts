@@ -1,22 +1,32 @@
+export type { DiagnosticViewId, MaterialBehaviorProfile, MaterialRuntimeDescriptor, ReferencePassId } from '../headless/contracts';
+import type {
+  DiagnosticViewId,
+  MaterialBehaviorProfile,
+  MaterialRuntimeDescriptor,
+  ReferencePassId,
+} from '../headless/contracts';
+
 export const BOARD_SIZE = 8;
 
-export type TileColor = 'coral' | 'amber' | 'lime' | 'cyan' | 'blue' | 'violet';
+export type TileColor = 'coral' | 'amber' | 'lime' | 'cyan' | 'blue' | 'violet' | 'rose';
 export type Actor = 'human' | 'agent';
 export type StudioMode = 'edit' | 'play' | 'replay' | 'render';
 export type GameStatus = 'playing' | 'game-over';
 export type MaterialPresetId = 'glossy-plastic' | 'candy-resin' | 'crystal-glass';
-export type LightingPresetId = 'clean-studio' | 'soft-candy' | 'neon-contrast';
+export type LightingPresetId = 'neutral-lookdev' | 'clean-studio' | 'soft-candy' | 'neon-contrast';
 export type CameraPresetId = 'flat-gameplay' | 'premium-perspective' | 'dynamic-clear';
+export type LookDevPresetId = 'neutral-lookdev' | 'balanced-cinematic' | 'high-energy';
 export type FxPresetId = 'clean-pop' | 'crystal-shatter' | 'energy-burst';
 export type RhythmPresetId = 'human-natural' | 'tight-fast' | 'suspense-burst' | 'combo-rush';
 export type GeometryPresetId = 'soft-cube' | 'premium-beveled' | 'candy-rounded';
-export type RenderBackendId = 'reference-2d' | 'three-3d';
+export type RenderBackendId = 'reference-2d' | 'three-3d' | 'fixed-camera-cinematic';
 export type ReferenceTileMaterialId = 'soft-bevel' | 'flat-matte';
 export type ReferenceTileFaceSetId = 'botanical-reference' | 'none';
 export type ReferencePreviewFxId = 'full-line-tint' | 'cells-only';
 export type ReferenceClearFxId = 'sweep-score-spark' | 'sweep-only';
 export type ReferenceFeedbackFxId = 'praise-combo' | 'score-only';
 export type ReferenceAmbientFxId = 'garden-petals' | 'none';
+export type PraiseTierId = 'nice' | 'great' | 'amazing' | 'incredible' | 'fantastic' | 'unbelievable';
 
 export interface GridCell { row: number; col: number }
 
@@ -113,6 +123,20 @@ export interface GeometryStyle {
   gap: number;
 }
 
+export interface ThreeLookDevStyle {
+  id: LookDevPresetId;
+  /** Multiplier over the lighting preset exposure. */
+  exposure: number;
+  /** Multiplier applied to material environment reflections. */
+  environmentIntensity: number;
+  /** Baseline bloom contribution outside clear events. */
+  bloomStrength: number;
+  bloomThreshold: number;
+  bloomRadius: number;
+  /** Additional bloom added only during a clear event. */
+  clearBloomBoost: number;
+}
+
 
 export interface Reference2DStyleSpec {
   profile: 'block-garden-reference-v1';
@@ -125,6 +149,34 @@ export interface Reference2DStyleSpec {
   bestScore: number;
 }
 
+export interface ShotExecution {
+  cameraProfileId: string;
+  layoutProfileId: string;
+  designResolution: { width: number; height: number };
+  layoutDesignResolution?: { width: number; height: number };
+  compositionAspect: number;
+  boardScreenRect: { x: number; y: number; width: number; height: number };
+  maximumScreenZoom: number;
+  verticalFovDegrees: number;
+  contentWidth: number;
+  contentHeight: number;
+  widthFill: number;
+  heightFill: number;
+  baseDistance: number;
+  lookAt: readonly [number, number, number];
+  cameraOffset: { x: number; y: number };
+  poseSource: 'plan' | 'fallback-fixed-shot';
+  fovSource: 'plan' | 'fallback-fixed-shot';
+  cameraFieldsFromPlan: {
+    designResolution: boolean;
+    boardScreenRect: boolean;
+    maximumScreenZoom: boolean;
+  };
+  layoutFieldsFromPlan: {
+    designResolution: boolean;
+  };
+}
+
 export interface StyleSpec {
   renderer: RenderBackendId;
   reference2d: Reference2DStyleSpec;
@@ -133,8 +185,14 @@ export interface StyleSpec {
   camera: CameraPresetId;
   fx: FxPresetId;
   geometry: GeometryStyle;
+  lookDev: ThreeLookDevStyle;
   background: string;
   showPointer: boolean;
+  diagnosticView?: DiagnosticViewId;
+  enabledPasses?: ReferencePassId[];
+  materialRuntime?: MaterialRuntimeDescriptor;
+  materialBehavior?: MaterialBehaviorProfile;
+  shotExecution?: ShotExecution;
 }
 
 export interface RenderSpec {

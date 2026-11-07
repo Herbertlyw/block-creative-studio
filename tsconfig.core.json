@@ -12,5 +12,5 @@
     "rootDir": "src",
     "esModuleInterop": true
   },
-  "include": ["src/domain/**/*.ts", "src/director/**/*.ts"]
+  "include": ["src/domain/**/*.ts", "src/director/**/*.ts", "src/headless/contracts.ts"]
 }

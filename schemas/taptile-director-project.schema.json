@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://block-creative-studio.local/schemas/taptile-director-project.schema.json",
+  "title": "TapTile Director Project V2",
+  "type": "object",
+  "required": [
+    "format",
+    "schemaVersion",
+    "id",
+    "name",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "ruleProfileId",
+    "stage",
+    "assets",
+    "visuals",
+    "level",
+    "takes",
+    "director",
+    "render",
+    "authoring",
+    "production"
+  ],
+  "properties": {
+    "format": { "const": "taptile-director-project" },
+    "schemaVersion": { "const": "2.0.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "ruleProfileId": { "const": "taptile-tray-match3-v1" },
+    "stage": {
+      "type": "object",
+      "required": ["authoringWidth", "authoringHeight", "exportWidth", "exportHeight", "scale", "fps", "safeAreas"],
+      "properties": {
+        "authoringWidth": { "const": 432 },
+        "authoringHeight": { "const": 768 },
+        "exportWidth": { "const": 1080 },
+        "exportHeight": { "const": 1920 },
+        "scale": { "const": 2.5 },
+        "fps": { "const": 30 },
+        "safeAreas": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "assets": {
+      "type": "object",
+      "required": ["entries"],
+      "properties": { "entries": { "type": "object" } },
+      "additionalProperties": false
+    },
+    "visuals": {
+      "type": "object",
+      "required": ["archetypes", "faceAssemblies", "bodyStyles", "themes", "selectedThemeId", "stageAssemblies", "selectedStageAssemblyId"],
+      "properties": {
+        "archetypes": { "type": "object" },
+        "faceAssemblies": { "type": "object" },
+        "bodyStyles": { "type": "object" },
+        "themes": { "type": "object" },
+        "selectedThemeId": { "type": "string", "minLength": 1 },
+        "stageAssemblies": { "type": "object" },
+        "selectedStageAssemblyId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "level": {
+      "type": "object",
+      "required": ["id", "name", "tileInstances", "blockerPolicy", "blockerOverrides"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "tileInstances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "archetypeId", "geometry", "authoring"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "archetypeId": { "type": "string", "minLength": 1 },
+              "geometry": {
+                "type": "object",
+                "required": ["centerXPx", "centerYPx", "widthPx", "heightPx", "rotationDeg", "layer", "order"],
+                "properties": {
+                  "centerXPx": { "type": "integer" },
+                  "centerYPx": { "type": "integer" },
+                  "widthPx": { "type": "integer", "minimum": 1 },
+                  "heightPx": { "type": "integer", "minimum": 1 },
+                  "rotationDeg": { "type": "number" },
+                  "layer": { "type": "integer", "minimum": 0 },
+                  "order": { "type": "integer" }
+                },
+                "additionalProperties": false
+              },
+              "authoring": {
+                "type": "object",
+                "required": ["editorLocked"],
+                "properties": { "editorLocked": { "type": "boolean" } },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "blockerPolicy": {
+          "type": "object",
+          "required": ["minimumOverlapAreaPx", "minimumOverlapRatio", "epsilonPx"],
+          "properties": {
+            "minimumOverlapAreaPx": { "type": "number", "minimum": 0 },
+            "minimumOverlapRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "epsilonPx": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "blockerOverrides": {
+          "type": "object",
+          "required": ["forced", "ignored"],
+          "properties": {
+            "forced": { "$ref": "#/$defs/blockerEdges" },
+            "ignored": { "$ref": "#/$defs/blockerEdges" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "takes": { "type": "array" },
+    "selectedTakeId": { "type": "string" },
+    "director": { "type": "object" },
+    "render": {
+      "type": "object",
+      "required": ["width", "height", "fps", "quality"],
+      "properties": {
+        "width": { "const": 1080 },
+        "height": { "const": 1920 },
+        "fps": { "const": 30 },
+        "quality": { "enum": ["preview", "standard", "cinematic"] }
+      },
+      "additionalProperties": false
+    },
+    "authoring": { "type": "object" },
+    "production": {
+      "type": "object",
+      "required": ["audioPacks", "cuts", "outros"],
+      "properties": {
+        "audioPacks": { "type": "object", "additionalProperties": { "$ref": "#/$defs/audioPack" } },
+        "selectedAudioPackId": { "type": "string", "minLength": 1 },
+        "cuts": { "type": "object", "additionalProperties": { "$ref": "#/$defs/cutSpec" } },
+        "selectedCutId": { "type": "string", "minLength": 1 },
+        "outros": { "type": "object", "additionalProperties": { "$ref": "#/$defs/outroPack" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "audioCue": {
+      "type": "object",
+      "required": ["assetIds", "volume", "startOffsetMs", "fadeInMs", "fadeOutMs", "delayFrames"],
+      "properties": {
+        "assetIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "volume": { "type": "number", "minimum": 0 },
+        "startOffsetMs": { "type": "number", "minimum": 0 },
+        "fadeInMs": { "type": "number", "minimum": 0 },
+        "fadeOutMs": { "type": "number", "minimum": 0 },
+        "delayFrames": { "type": "integer", "minimum": 0 },
+        "peakLimit": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "audioPack": {
+      "type": "object",
+      "required": ["id", "name", "tap", "traySettle", "match"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "peakLimit": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tap": { "$ref": "#/$defs/audioCue" },
+        "pickup": { "$ref": "#/$defs/audioCue" },
+        "traySettle": { "$ref": "#/$defs/audioCue" },
+        "match": { "$ref": "#/$defs/audioCue" },
+        "shatter": { "$ref": "#/$defs/audioCue" },
+        "warning": { "$ref": "#/$defs/audioCue" },
+        "win": { "$ref": "#/$defs/audioCue" },
+        "outro": { "$ref": "#/$defs/audioCue" }
+      },
+      "additionalProperties": false
+    },
+    "outroPack": {
+      "type": "object",
+      "required": ["id", "name", "durationFrames"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "transitionId": { "type": "string" },
+        "backgroundAssetId": { "type": "string" },
+        "logoAssetId": { "type": "string" },
+        "headline": { "type": "string" },
+        "ctaLabel": { "type": "string" },
+        "durationFrames": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "cutSpec": {
+      "type": "object",
+      "required": ["id", "name", "takeRange"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "takeRange": {
+          "type": "object",
+          "required": ["startActionIndex", "endActionIndex"],
+          "properties": {
+            "startActionIndex": { "type": "integer", "minimum": 0 },
+            "endActionIndex": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "timeWarpSegments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["sourceStartFrame", "sourceEndFrame", "speed"],
+            "properties": {
+              "sourceStartFrame": { "type": "integer", "minimum": 0 },
+              "sourceEndFrame": { "type": "integer", "minimum": 0 },
+              "speed": { "type": "number", "exclusiveMinimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "introFrames": { "type": "integer", "minimum": 0 },
+        "outroPackId": { "type": "string", "minLength": 1 },
+        "targetDurationFrames": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "blockerEdges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["blockerId", "blockedId"],
+        "properties": {
+          "blockerId": { "type": "string", "minLength": 1 },
+          "blockedId": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

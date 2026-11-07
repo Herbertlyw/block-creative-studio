@@ -1,0 +1,15 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "clear.exit",
+  "version": "1.0.0",
+  "kind": "animation-asset",
+  "origin": "builtin",
+  "contentHash": "sha256:98261d0fa497cd4b5b29684629332410fdbdbbfd8bf45dd2b1711b6e37eb9234",
+  "runtime": {
+    "renderers": [
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true
+  }
+}

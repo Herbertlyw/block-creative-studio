@@ -1,0 +1,44 @@
+{
+  "contract": "bcs.asset-manifest",
+  "contractVersion": "1.0.0",
+  "id": "material.copper",
+  "version": "1.0.0",
+  "kind": "material-pack",
+  "origin": "generated",
+  "contentHash": "sha256:4cb42bfbc3881ce23d6072d8764a967172227879f007aed61221e62442939612",
+  "runtime": {
+    "renderers": [
+      "fixed-camera-cinematic"
+    ],
+    "deterministic": true,
+    "budget": {
+      "textureMemoryMiB": 24
+    }
+  },
+  "appearance": {
+    "baseColor": "#b76e45",
+    "roughness": 0.31,
+    "metalness": 0.88,
+    "clearcoat": 0.12,
+    "normalStrength": 0.24
+  },
+  "behavior": {
+    "materialClass": "metal",
+    "density": 0.82,
+    "brittleness": 0.34,
+    "ductility": 0.58,
+    "elasticity": 0.08,
+    "hardness": 0.73,
+    "fractureMode": "chips",
+    "largeFragmentRatio": 0.65,
+    "dustAmount": 0.05,
+    "sparkAmount": 0.36,
+    "dropletAmount": 0,
+    "gravityScale": 1.1,
+    "drag": 0.12
+  },
+  "provenance": {
+    "createdBy": "external-agent",
+    "generator": "example-only"
+  }
+}

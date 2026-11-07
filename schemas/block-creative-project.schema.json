@@ -36,7 +36,8 @@
         "lime",
         "cyan",
         "blue",
-        "violet"
+        "violet",
+        "rose"
       ]
     },
     "cell": {
@@ -364,7 +365,8 @@
         "renderer": {
           "enum": [
             "reference-2d",
-            "three-3d"
+            "three-3d",
+            "fixed-camera-cinematic"
           ]
         },
         "reference2d": {
@@ -379,6 +381,7 @@
         },
         "lighting": {
           "enum": [
+            "neutral-lookdev",
             "clean-studio",
             "soft-candy",
             "neon-contrast"
@@ -407,6 +410,40 @@
         },
         "showPointer": {
           "type": "boolean"
+        },
+        "lookDev": {
+          "$ref": "#/$defs/lookDev"
+        },
+        "diagnosticView": {
+          "enum": [
+            "beauty",
+            "albedo",
+            "world-normal",
+            "roughness",
+            "metalness",
+            "emission",
+            "bloom-contribution",
+            "highlight-clip"
+          ]
+        },
+        "enabledPasses": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "background",
+              "board",
+              "tile",
+              "tray",
+              "interaction",
+              "placement",
+              "clear",
+              "feedback",
+              "endgame"
+            ]
+          }
+        },
+        "materialRuntime": {
+          "type": "object"
         }
       },
       "additionalProperties": false
@@ -642,6 +679,58 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 2147483647
+        }
+      },
+      "additionalProperties": false
+    },
+    "lookDev": {
+      "type": "object",
+      "required": [
+        "id",
+        "exposure",
+        "environmentIntensity",
+        "bloomStrength",
+        "bloomThreshold",
+        "bloomRadius",
+        "clearBloomBoost"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "neutral-lookdev",
+            "balanced-cinematic",
+            "high-energy"
+          ]
+        },
+        "exposure": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        },
+        "environmentIntensity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "bloomStrength": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5
+        },
+        "bloomThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "bloomRadius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "clearBloomBoost": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5
         }
       },
       "additionalProperties": false
