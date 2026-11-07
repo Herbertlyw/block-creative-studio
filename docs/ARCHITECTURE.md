@@ -4,22 +4,27 @@
 
 作品包 → 当前作品会话 → BB 时间线计划 → 逐帧求值 → 绘制、混音与视频导出。
 
+BC 走自己的原生 V2 工程、规则和 2D 帧源。两个游戏复用固定帧播放、素材解析、PCM 混音和 `exportFrameVideo` 编码器，不互相转换玩法或时间合同。
+
 真人录制、机器生成和参考观察是不同的输入方式。它们共享 BB 规则、供给、时间线合同、播放器和导出流程。Take 中的语义动作决定合法放置；拖动和指针轨迹描述表现。
 
 ## 模块职责
 
-| 模块                                    | 职责                                                     |
-| --------------------------------------- | -------------------------------------------------------- |
-| `src/App.tsx`                           | 在首页和当前作品工作台之间切换                           |
-| `src/state/useBBWorkSession.ts`         | 当前作品、所选 Take、修订及异步操作生命周期              |
-| `src/components/`                       | 编辑器、播放器和观察表单；媒体输入组件只接收受控值与回调 |
-| `src/contracts/`                        | 作品包、素材解析、内容哈希和原子编辑校验                 |
-| `src/games/block-placement/planning/`   | 将不同输入规范为 BB 时间线并求值                         |
-| `src/games/block-placement/rendering/`  | 场景及棋盘、牌面、背景等绘制层                           |
-| `src/games/block-placement/calibrated/` | 已标注参考的校准与表现适配                               |
-| `src/exporter/`                         | 视频编码、MP4 封装与音频时间处理                         |
-| `src/nativeReference/`                  | 当前使用的基础规则、合同、素材和运行模块                 |
-| `contracts/bb/`                         | 当前工程 Schema 与工作台扩展合同                         |
+| 模块                                          | 职责                                                     |
+| --------------------------------------------- | -------------------------------------------------------- |
+| `src/App.tsx`                                 | 在首页和当前作品工作台之间切换                           |
+| `src/state/useBBWorkSession.ts`               | 当前作品、所选 Take、修订及异步操作生命周期              |
+| `src/components/`                             | 编辑器、播放器和观察表单；媒体输入组件只接收受控值与回调 |
+| `src/contracts/`                              | 作品包、素材解析、内容哈希和原子编辑校验                 |
+| `src/games/block-placement/planning/`         | 将不同输入规范为 BB 时间线并求值                         |
+| `src/games/block-placement/rendering/`        | 场景及棋盘、牌面、背景等绘制层                           |
+| `src/games/block-placement/calibrated/`       | 已标注参考的校准与表现适配                               |
+| `src/exporter/`                               | 视频编码、MP4 封装与音频时间处理                         |
+| `src/nativeReference/`                        | 当前使用的基础规则、合同、素材和运行模块                 |
+| `src/games/block-crush/`                      | BC 工程会话、原子编辑、外观变体、预览与导出适配          |
+| `src/nativeReference/games/block-crush-drop/` | BC 原生规则、校准帧、碎片、透明序列和 2D 场景            |
+| `contracts/bb/`                               | 当前工程 Schema 与工作台扩展合同                         |
+| `contracts/bc/`                               | 当前 BC 原生 V2 工程 Schema                              |
 
 `bcs-bb-work` 作品包持有工程、素材、来源和指针。任务进度文件 `task.json` 记录创作过程，两者分别保存。
 

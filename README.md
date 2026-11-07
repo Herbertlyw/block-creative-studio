@@ -3,9 +3,9 @@
 [![CI](https://github.com/Herbertlyw/block-creative-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Herbertlyw/block-creative-studio/actions/workflows/ci.yml)
 [MIT License](LICENSE)
 
-在浏览器中创作、复刻和改编 BB 拖消视频。将棋盘、供给和动作保存为可编辑工程，再调整素材、声音与演出，预览并导出 MP4。
+在浏览器中创作、复刻和改编 BB 拖消、BC 落消视频。将棋盘、供给和动作保存为可编辑工程，再调整素材、声音与演出，预览并导出 MP4。
 
-A browser-based studio for editable block-placement videos, reference annotation, and creative variants.
+A browser-based studio for editable BB placement and BC falling-block videos, reference annotation, and creative variants.
 
 ## 能做什么
 
@@ -30,6 +30,8 @@ npm run dev
 1. **已有工程**：导入工程或作品包，等待素材载入后预览、继续编辑或导出。
 2. **从零创作**：新建作品，设置棋盘与供给，录制或生成 Take，再添加外观和音频。
 3. **根据视频复刻**：打开参考视频观察入口，完成标注与校准，生成作品后继续编辑。
+
+BC 从首页的“打开 BC 落消工作台”进入，也可在地址后加 `/#bc`。它使用独立的落消规则与原生 2D 场景，支持导入已有 BC V2 工程、编辑动作和轨迹、换色、换材质、换背景、保留序列效果及有声导出。具体范围见 [BC 工作流](docs/BC_WORKFLOW.md)。
 
 作品和素材在本机处理。保存会发起浏览器下载，请保留原文件并检查下载是否完成。内嵌素材可随作品保存；外部引用需要提供对应素材并通过内容哈希校验。
 
@@ -56,6 +58,7 @@ npm run test:browser:preview-session
 | 文档                                 | 内容                                         |
 | ------------------------------------ | -------------------------------------------- |
 | [BB 工作流](docs/BB_WORKFLOW.md)     | 创作、参考标注、素材、声音和实际限制         |
+| [BC 工作流](docs/BC_WORKFLOW.md)     | 落消工程、外观变体、原生效果、音频与导出     |
 | [架构](docs/ARCHITECTURE.md)         | 作品会话、玩法、时间线、绘制与导出的模块边界 |
 | [贡献指南](CONTRIBUTING.md)          | 开发约定、检查命令和提交范围                 |
 | [Agent 入口](AGENTS.md)              | 复刻与变体 Skill、状态管理和轻量检查         |
