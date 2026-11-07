@@ -30,6 +30,7 @@ import { useBCPlayer } from './useBCPlayer';
 import './workbench.css';
 
 const message = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason));
+const actionKey = (takeId: string, actionId: string) => JSON.stringify([takeId, actionId]);
 
 export function BCWorkbench({ onExit }: { onExit: () => void }) {
   const session = useBCSession(),
@@ -44,11 +45,22 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
     [colours, setColours] = useState<string[]>([]),
     [board, setBoard] = useState(''),
     [tracks, setTracks] = useState('');
+  const [actionDrafts, setActionDrafts] = useState<
+    Record<string, { column: string; seconds: string }>
+  >({});
   const [sources, setSources] = useState<BrowserAssetSources>({});
   const input = useRef<HTMLInputElement>(null),
     pendingFile = useRef<File | null>(null);
   const take = project?.takes.find((item) => item.takeId === takeId);
   const locked = busy || player.exporting;
+  function resetDrafts(current: BCProject) {
+    setName(current.name);
+    setBoard(bcBoardText(current));
+    setColours(bcColours(current));
+    setTracks(JSON.stringify(bcCalibration(current).pieceTracks ?? [], null, 2));
+    setActionDrafts({});
+    setDrafts(new Set());
+  }
   useEffect(() => {
     if (!project) return;
     setTakeId((current) =>
@@ -56,12 +68,7 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
         ? current
         : (project.takes[0]?.takeId ?? ''),
     );
-    setName(project.name);
-    setBoard(bcBoardText(project));
-    const calibration = bcCalibration(project);
-    setColours(bcColours(project));
-    setTracks(JSON.stringify(calibration.pieceTracks ?? [], null, 2));
-    setDrafts(new Set());
+    resetDrafts(project);
   }, [project]);
   useEffect(() => {
     if (!drafts.size) return;
@@ -193,7 +200,10 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
             <button
               disabled={!project || locked}
               onClick={() => {
-                if (allow()) session.save();
+                if (allow()) {
+                  if (project) resetDrafts(project);
+                  session.save();
+                }
               }}
             >
               保存 JSON{session.dirty ? ' ·' : ''}
@@ -286,6 +296,7 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
                     disabled={locked}
                     onChange={(event) => {
                       if (allow()) {
+                        resetDrafts(project);
                         player.pause();
                         setTakeId(event.target.value);
                       }
@@ -468,21 +479,24 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
                 <div className="bc-actions">
                   {take?.actions.map((entry, index) => {
                     const action = entry.action as { release: { x: number }; impactTick: number };
+                    const key = actionKey(take.takeId, entry.id);
+                    const draft = actionDrafts[key] ?? {
+                      column: String(action.release.x),
+                      seconds: String(action.impactTick / 30),
+                    };
                     return (
                       <form
-                        key={`${take.takeId}-${entry.id}-${action.release.x}-${action.impactTick}`}
-                        onChange={() => markDraft(`action-${index}`)}
+                        key={key}
                         onSubmit={(event) => {
                           event.preventDefault();
-                          const data = new FormData(event.currentTarget);
                           void run(
                             (base) =>
                               changeBCAction(
                                 base,
                                 takeId,
                                 index,
-                                Number(data.get('column')),
-                                Number(data.get('seconds')),
+                                Number(draft.column),
+                                Number(draft.seconds),
                               ),
                             `action-${index}`,
                           );
@@ -494,7 +508,15 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
                           <input
                             name="column"
                             type="number"
-                            defaultValue={action.release.x}
+                            value={draft.column}
+                            onChange={(event) => {
+                              const column = event.target.value;
+                              setActionDrafts((current) => ({
+                                ...current,
+                                [key]: { ...draft, column },
+                              }));
+                              markDraft(`action-${index}`);
+                            }}
                             min={0}
                             max={project.game.config.data.columns - 1}
                             disabled={locked}
@@ -507,7 +529,15 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
                             type="number"
                             step={1 / 30}
                             min={0}
-                            defaultValue={action.impactTick / 30}
+                            value={draft.seconds}
+                            onChange={(event) => {
+                              const seconds = event.target.value;
+                              setActionDrafts((current) => ({
+                                ...current,
+                                [key]: { ...draft, seconds },
+                              }));
+                              markDraft(`action-${index}`);
+                            }}
                             disabled={locked}
                           />
                         </label>

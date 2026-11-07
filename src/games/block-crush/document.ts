@@ -6,6 +6,8 @@ import { parseProductionDirection } from '../../nativeReference/agent-director/c
 import type { AgentAssetExtensionV1 } from '../../nativeReference/agent-assets/contracts';
 import { blockCrushDropDefinition as definition } from '../../nativeReference/games/block-crush-drop/definition';
 import type { ClearEffectLibrary } from '../../nativeReference/games/block-crush-drop/presentation/clearEffectLibrary';
+import { readClearEffectLibrary } from '../../nativeReference/games/block-crush-drop/presentation/clearEffectLibrary';
+import { blockCrushDropDirectorProfileFromProject } from '../../nativeReference/games/block-crush-drop/render/projectRenderDriver';
 import type {
   BlockCrushDropConfig,
   BlockCrushDropState,
@@ -87,6 +89,19 @@ export function readBCProject(value: unknown): BCProject {
     throw new Error('此 BC 工程含尚未接入的 production 镜头、额外时序或后期配置，不能静默忽略。');
   bcCalibration(project);
   replayBCTakes(project);
+  // Validate effect identities, targets and their merged director plans before
+  // this document can become the current session, even without saved clips.
+  const library = readClearEffectLibrary(project);
+  for (const takeId of new Set(library.bindings.map((binding) => binding.takeId))) {
+    const take = project.takes.find((item) => item.takeId === takeId)!;
+    try {
+      blockCrushDropDirectorProfileFromProject(project, take);
+    } catch (error) {
+      throw new Error(
+        `Take「${takeId}」的消除效果计划无效：${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
   return project;
 }
 

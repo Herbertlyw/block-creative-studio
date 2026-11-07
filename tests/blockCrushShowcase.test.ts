@@ -6,6 +6,7 @@ import {
   bcCalibration,
   bcColours,
   bcProduction,
+  bcStyle,
   editBCProject,
   readBCProject,
   replayBCTakes,
@@ -23,6 +24,7 @@ import {
 import { compileBCPlayback, mixBCAudio } from '../src/games/block-crush/timeline';
 import { importBCProject } from '../src/games/block-crush/assets';
 import { createBrowserAssetRefReader } from '../src/contracts/browserAssetReferences';
+import { makeClearEffect } from '../src/nativeReference/games/block-crush-drop/presentation/clearEffectLibrary';
 
 describe('BC showcase native workflow', () => {
   it('uses the current BC V2 structural contract for the editable example', () => {
@@ -77,6 +79,77 @@ describe('BC showcase native workflow', () => {
     expect(result.takes[0]!.actions[0]!.action).toMatchObject({ release: { x: 5 } });
     expect(replayBCTakes(result)[0]!.actions).toBe(3);
     expect(project.takes[0]!.actions[0]!.action).toMatchObject({ release: { x: 4 } });
+  });
+
+  it('rejects an edit that removes a bound clear without clips, preserving the renderable original', () => {
+    const project = createBCDemo();
+    project.direction!.style = {
+      ...bcStyle(project),
+      clearEffectLibrary: {
+        version: '1.0.0',
+        effects: [makeClearEffect('first-clear', {})],
+        bindings: [{ effectId: 'first-clear', takeId: 'demo', actionIndex: 0, cycleIndex: 0 }],
+      },
+    };
+    const before = JSON.stringify(project);
+    expect(bcProduction(project).clips).toBeUndefined();
+    expect(() => compileBCPlayback(project, 'demo', true)).not.toThrow();
+    expect(() => changeBCAction(project, 'demo', 0, 5, 1)).toThrow(
+      /first-clear.*demo.*第 1 步.*CLEAR_EFFECT_TARGET_HAS_NO_CLEAR/,
+    );
+    expect(JSON.stringify(project)).toBe(before);
+    expect(() => compileBCPlayback(project, 'demo', true)).not.toThrow();
+  });
+
+  it('rejects a corrupt effect hash before accepting a document', () => {
+    const project = createBCDemo();
+    const effect = makeClearEffect('bad-hash', {});
+    effect.contentHash = 'fnv1a32:00000000';
+    project.direction!.style = {
+      ...bcStyle(project),
+      clearEffectLibrary: {
+        version: '1.0.0',
+        effects: [effect],
+        bindings: [{ effectId: effect.id, takeId: 'demo', actionIndex: 0 }],
+      },
+    };
+    expect(() => readBCProject(project)).toThrow(/CLEAR_EFFECT_VERSION_OR_HASH_MISMATCH: bad-hash/);
+  });
+
+  it('checks effect Take, action and clear cycle targets during document validation', () => {
+    const project = createBCDemo();
+    const effect = makeClearEffect('target-check', {});
+    const library = {
+      version: '1.0.0' as const,
+      effects: [effect],
+      bindings: [{ effectId: effect.id, takeId: 'demo', actionIndex: 0, cycleIndex: 0 }],
+    };
+    project.direction!.style = { ...bcStyle(project), clearEffectLibrary: library };
+    expect(() => readBCProject(project)).not.toThrow();
+    library.bindings[0]!.takeId = 'missing';
+    expect(() => readBCProject(project)).toThrow(
+      /target-check.*missing.*CLEAR_EFFECT_TAKE_MISSING/,
+    );
+    library.bindings[0]!.takeId = 'demo';
+    library.bindings[0]!.actionIndex = 99;
+    expect(() => readBCProject(project)).toThrow(/target-check.*CLEAR_EFFECT_ACTION_INVALID/);
+    library.bindings[0]!.actionIndex = 0;
+    library.bindings[0]!.cycleIndex = 31;
+    expect(() => readBCProject(project)).toThrow(/target-check.*CLEAR_EFFECT_TARGET_HAS_NO_CLEAR/);
+  });
+
+  it('checks the bound Take director plan even without clips', () => {
+    const project = createBCDemo();
+    project.direction!.style = {
+      ...bcStyle(project),
+      clearEffectLibrary: {
+        version: '1.0.0',
+        effects: [makeClearEffect('plan-check', {})],
+        bindings: [{ effectId: 'plan-check', takeId: 'demo', actionIndex: 0 }],
+      },
+    };
+    project.direction!.rhythm = { phaseScale: 0 };
+    expect(() => readBCProject(project)).toThrow(/demo.*消除效果计划无效.*phaseScale/);
   });
 
   it('changes saved colours while keeping actions, output clocks and audio', async () => {

@@ -149,7 +149,7 @@ export function readClearEffectLibrary(document: StudioProjectDocumentV2): Clear
       e.model !== parsed.model ||
       e.contentHash !== parsed.contentHash
     )
-      throw new Error('CLEAR_EFFECT_VERSION_OR_HASH_MISMATCH');
+      throw new Error(`CLEAR_EFFECT_VERSION_OR_HASH_MISMATCH: ${parsed.id}`);
     return parsed;
   });
   if (new Set(effects.map((e) => e.id)).size !== effects.length)
@@ -159,8 +159,14 @@ export function readClearEffectLibrary(document: StudioProjectDocumentV2): Clear
     exact(r, ['effectId', 'takeId', 'actionIndex', 'cycleIndex']);
     const b = { ...r, effectId: clearEffectId(r.effectId) } as unknown as ClearEffectBinding;
     if (!effects.some((e) => e.id === b.effectId))
-      throw new Error('CLEAR_EFFECT_BINDING_REFERENCE_MISSING');
-    validateClearEffectTarget(document, b);
+      throw new Error(`CLEAR_EFFECT_BINDING_REFERENCE_MISSING: ${b.effectId}`);
+    try {
+      validateClearEffectTarget(document, b);
+    } catch (error) {
+      throw new Error(
+        `消除效果「${b.effectId}」Take「${b.takeId}」${b.actionIndex === undefined ? '全部动作' : `第 ${b.actionIndex + 1} 步`}${b.cycleIndex === undefined ? '' : ` 第 ${b.cycleIndex + 1} 波`}：${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
     return b;
   });
   if (new Set(bindings.map(clearEffectTargetKey)).size !== bindings.length)

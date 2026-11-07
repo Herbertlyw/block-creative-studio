@@ -66,6 +66,8 @@ npm run build
 npm run test:browser:bc
 ```
 
+只检查消除绑定的编辑拒绝和草稿丢弃、恢复行为时，可运行 `npm run test:browser:bc:edits`；该检查不导出视频。
+
 浏览器检查需要本机 Chrome、FFmpeg 和 FFprobe，生成物写入忽略的 `outputs/`。设置 `BC_REAL_PROJECT` 可额外检查本机的完整内嵌 BC 工程；设置 `BC_OUTPUT_DIR` 可指定本机证据目录。测试素材均为程序构造，不上传历史作品、视频、音乐或源素材。
 
 技术测试只覆盖实际执行的示例、资源和编码环境，不等同全部历史作品验收或用户视觉、听感认可。
