@@ -13,6 +13,8 @@
     "test:bc": "vitest run tests/blockCrushShowcase.test.ts",
     "test:browser:bc": "node scripts/verify-bc-workbench.mjs",
     "test:browser:bc:edits": "node scripts/verify-bc-edit-drafts.mjs",
+    "test:browser:bc:usability": "node scripts/verify-bc-usability.mjs",
+    "test:browser:bc:lifecycle": "node scripts/verify-bc-player-lifecycle.mjs",
     "test:browser:observation": "node scripts/verify-blank-observation.mjs",
     "test:watch": "vitest",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
