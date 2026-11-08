@@ -142,7 +142,8 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
           playback.source.fps,
         );
       else await context.close();
-      setPlaying(true);
+      // A silent preview also yields while closing its unused audio context.
+      if (ticket === generation.current) setPlaying(true);
     } catch (reason) {
       if (context && context.state !== 'closed') await context.close();
       if (ticket === generation.current)

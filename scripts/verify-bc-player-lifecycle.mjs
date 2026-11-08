@@ -193,6 +193,46 @@ try {
   assert.equal((await snapshot()).playing, false);
   checks.push('old preview failure cannot poison a replacement project');
 
+  // Closing an unused context is also asynchronous for a silent project.
+  await page.evaluate(() => {
+    bcTest.holdMix = false;
+    bcTest.holdClose = true;
+    bcTest.closes = [];
+    const NativeAudioContext = window.AudioContext;
+    window.AudioContext = class extends NativeAudioContext {
+      close() {
+        const closed = super.close();
+        return bcTest.holdClose
+          ? closed.then(() => new Promise((resolve) => bcTest.closes.push(resolve)))
+          : closed;
+      }
+    };
+    const silent = structuredClone(bcTest.project);
+    delete silent.direction.production.audio;
+    bcTest.setProject(silent);
+  });
+  await page.waitForFunction(() => bcTest.player.ready);
+  await page.evaluate(() => {
+    void bcTest.player.play();
+  });
+  await page.waitForFunction(() => bcTest.closes.length === 1);
+  await page.evaluate(async () => {
+    const { createBCDemo } = await import('/src/games/block-crush/demo.ts');
+    bcTest.setProject(createBCDemo());
+  });
+  await page.waitForFunction(() => bcTest.player.ready);
+  await page.evaluate(() => {
+    bcTest.holdClose = false;
+    bcTest.closes[0]();
+  });
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  assert.equal(
+    (await snapshot()).playing,
+    false,
+    'late silent preview completion must not start the replacement project',
+  );
+  checks.push('late silent-preview completion cannot start a replacement project');
+
   await page.evaluate(
     async (png) => {
       const { imageAsset } = await import('/src/games/block-crush/assets.ts');
