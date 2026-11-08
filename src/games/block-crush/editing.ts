@@ -36,6 +36,7 @@ export function changeBCAction(
   column: number,
   impactSeconds: number,
 ) {
+  validateBCActionNumbers(column, impactSeconds, project.game.config.data.columns);
   const result = editBCProject(project, (draft) => {
     const take = draft.takes.find((item) => item.takeId === takeId);
     const entry = take?.actions[index];
@@ -67,6 +68,29 @@ export function changeBCAction(
       }
   });
   return refreshBCClips(result);
+}
+
+function validateBCActionNumbers(column: number, seconds: number, columns: number) {
+  if (!Number.isInteger(column) || column < 0 || column >= columns)
+    throw new Error(`列号必须是 0 到 ${columns - 1} 之间的整数。`);
+  if (!Number.isFinite(seconds) || seconds < 0) throw new Error('落位秒数必须是有限、非负的数字。');
+}
+
+/** Keep empty drafts distinct from the valid numeric value zero. */
+export function parseBCActionDraft(draft: { column: string; seconds: string }, columns: number) {
+  const read = (raw: string, field: string) => {
+    const text = raw.trim();
+    if (!text) throw new Error(`${field}不能为空，请填写数字。`);
+    if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(text))
+      throw new Error(`${field}必须是有效数字。`);
+    const value = Number(text);
+    if (!Number.isFinite(value)) throw new Error(`${field}必须是有限数字。`);
+    return value;
+  };
+  const column = read(draft.column, '列号'),
+    seconds = read(draft.seconds, '落位秒数');
+  validateBCActionNumbers(column, seconds, columns);
+  return { column, seconds };
 }
 
 export function changeBCBoard(project: BCProject, rows: readonly string[]) {

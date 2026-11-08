@@ -22,6 +22,7 @@ import {
   changeBCMaterial,
   changeBCClearGeometry,
   generateBCTake,
+  parseBCActionDraft,
   refreshBCClips,
 } from './editing';
 import { createBCDemo } from './demo';
@@ -487,19 +488,19 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
                     return (
                       <form
                         key={key}
+                        noValidate
                         onSubmit={(event) => {
                           event.preventDefault();
-                          void run(
-                            (base) =>
-                              changeBCAction(
-                                base,
-                                takeId,
-                                index,
-                                Number(draft.column),
-                                Number(draft.seconds),
-                              ),
-                            `action-${index}`,
-                          );
+                          void run((base) => {
+                            const values = parseBCActionDraft(draft, base.game.config.data.columns);
+                            return changeBCAction(
+                              base,
+                              takeId,
+                              index,
+                              values.column,
+                              values.seconds,
+                            );
+                          }, `action-${index}`);
                         }}
                       >
                         <strong>{index + 1}</strong>

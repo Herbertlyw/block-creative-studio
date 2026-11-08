@@ -20,6 +20,7 @@ import {
   changeBCClearGeometry,
   changeBCMaterial,
   generateBCTake,
+  parseBCActionDraft,
 } from '../src/games/block-crush/editing';
 import { compileBCPlayback, mixBCAudio } from '../src/games/block-crush/timeline';
 import { importBCProject } from '../src/games/block-crush/assets';
@@ -27,6 +28,46 @@ import { createBrowserAssetRefReader } from '../src/contracts/browserAssetRefere
 import { makeClearEffect } from '../src/nativeReference/games/block-crush-drop/presentation/clearEffectLibrary';
 
 describe('BC showcase native workflow', () => {
+  it.each([
+    ['', '1', /列号.*不能为空/],
+    ['4', '  ', /落位秒数.*不能为空/],
+    ['-1', '1', /列号/],
+    ['10', '1', /列号/],
+    ['1.5', '1', /列号/],
+    ['4', '-0.001', /落位秒数/],
+    ['NaN', '1', /列号/],
+    ['4', 'Infinity', /落位秒数/],
+    ['4', '1e999', /落位秒数/],
+    ['0x4', '1', /列号/],
+    ['4', 'oops', /落位秒数/],
+  ])(
+    'rejects invalid action drafts (%s, %s) without changing the document',
+    (column, seconds, error) => {
+      const project = createBCDemo(),
+        before = JSON.stringify(project);
+      expect(() => {
+        const values = parseBCActionDraft({ column, seconds }, 10);
+        changeBCAction(project, 'demo', 0, values.column, values.seconds);
+      }).toThrow(error);
+      expect(JSON.stringify(project)).toBe(before);
+    },
+  );
+
+  it('accepts explicit zero and corrected inputs under the existing 30 Hz contract', () => {
+    const project = createBCDemo();
+    const zero = parseBCActionDraft({ column: '0', seconds: '0' }, 10);
+    const result = changeBCAction(project, 'demo', 0, zero.column, zero.seconds);
+    expect(result.takes[0]!.actions[0]!.action).toMatchObject({ release: { x: 0 }, impactTick: 0 });
+    const fixed = parseBCActionDraft({ column: '4', seconds: '1.01' }, 10);
+    expect(
+      changeBCAction(project, 'demo', 0, fixed.column, fixed.seconds).takes[0]!.actions[0]!.action,
+    ).toMatchObject({ release: { x: 4 }, impactTick: 30 });
+    expect(project.takes[0]!.actions[0]!.action).toMatchObject({
+      release: { x: 4 },
+      impactTick: 30,
+    });
+    expect(() => changeBCAction(project, 'demo', 0, 4, -0.001)).toThrow(/落位秒数/);
+  });
   it('uses the current BC V2 structural contract for the editable example', () => {
     const validate = new Ajv2020({ strict: false, validateFormats: false }).compile(projectSchema);
     expect(validate(createBCDemo()), JSON.stringify(validate.errors)).toBe(true);
