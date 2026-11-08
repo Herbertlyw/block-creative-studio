@@ -10,6 +10,7 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
   const canvas = useRef<HTMLCanvasElement>(null),
     scene = useRef<Awaited<ReturnType<typeof prepareBCScene>> | null>(null);
   const audio = useRef<PlaybackAudio | null>(null),
+    preparingAudio = useRef<AudioContext | null>(null),
     generation = useRef(0),
     controller = useRef<AbortController | null>(null);
   const [frame, setFrame] = useState(0),
@@ -19,7 +20,8 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     [ready, setReady] = useState(false),
     [error, setError] = useState('');
   const [exporting, setExporting] = useState(false),
-    [progress, setProgress] = useState('');
+    [progress, setProgress] = useState(''),
+    [exportError, setExportError] = useState('');
   const compiled = useMemo(() => {
     if (!project) return { playback: null, error: '' };
     try {
@@ -41,18 +43,29 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     generationRef: generation,
     clockKey: playback,
   });
+  const closePreparingAudio = useCallback(() => {
+    const context = preparingAudio.current;
+    preparingAudio.current = null;
+    if (context && context.state !== 'closed') void context.close().catch(() => {});
+  }, []);
   const pause = useCallback(() => {
     generation.current++;
+    closePreparingAudio();
     setPlaying(false);
-  }, []);
+  }, [closePreparingAudio]);
   useEffect(() => {
+    closePreparingAudio();
     setReady(false);
     setError('');
+    setExportError('');
+    setProgress('');
+    setExporting(false);
     const viewKey = playback ? `${playback.project.id}:${playback.takeId}:${playback.start}` : '';
     const sameView = viewKey === previousView.current;
     previousView.current = viewKey;
     setFrame((current) => (sameView && playback ? Math.min(current, playback.totalFrames - 1) : 0));
     controller.current?.abort();
+    controller.current = null;
     scene.current?.dispose();
     scene.current = null;
     if (!playback || !canvas.current) return;
@@ -72,11 +85,13 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
       });
     return () => {
       cancelled = true;
+      closePreparingAudio();
       scene.current?.dispose();
       scene.current = null;
       controller.current?.abort();
+      controller.current = null;
     };
-  }, [playback]);
+  }, [playback, closePreparingAudio]);
   useEffect(() => {
     if (!ready || !scene.current) return;
     try {
@@ -100,12 +115,19 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     }
     if (!playback || !ready) return;
     const ticket = ++generation.current;
-    const context = new AudioContext({ sampleRate: 48_000 });
+    closePreparingAudio();
+    let context: AudioContext | undefined;
     try {
+      context = new AudioContext({ sampleRate: 48_000 });
+      preparingAudio.current = context;
       await context.resume();
+      if (ticket !== generation.current) {
+        if (context.state !== 'closed') await context.close();
+        return;
+      }
       const mix = await mixBCAudio(playback);
       if (ticket !== generation.current) {
-        await context.close();
+        if (context.state !== 'closed') await context.close();
         return;
       }
       const start = frameRef.current >= playback.totalFrames - 1 ? 0 : frameRef.current;
@@ -122,14 +144,26 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
       else await context.close();
       setPlaying(true);
     } catch (reason) {
-      await context.close();
-      setError(reason instanceof Error ? reason.message : String(reason));
+      if (context && context.state !== 'closed') await context.close();
+      if (ticket === generation.current)
+        setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      if (preparingAudio.current === context) preparingAudio.current = null;
     }
-  }, [playing, playback, ready, pause]);
+  }, [playing, playback, ready, pause, closePreparingAudio]);
   const exportVideo = useCallback(async () => {
-    if (!playback || exporting || !ready || !canvas.current || !scene.current) return;
+    if (
+      !playback ||
+      controller.current ||
+      !ready ||
+      compiled.error ||
+      error ||
+      !canvas.current ||
+      !scene.current
+    )
+      return;
     pause();
-    setError('');
+    setExportError('');
     setExporting(true);
     setProgress('准备素材与音频…');
     const abort = new AbortController();
@@ -138,28 +172,53 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     // sequences are not decoded a second time into another renderer.
     const surface = canvas.current,
       renderer = scene.current;
+    const ownsExport = () => controller.current === abort;
+    let preparationFailed = true;
+    let renderFailed = false;
     try {
       const mix = await mixBCAudio(playback);
+      abort.signal.throwIfAborted();
+      preparationFailed = false;
       const blob = await exportFrameVideo({
         canvas: surface,
         width: playback.project.production.output.width,
         height: playback.project.production.output.height,
         fps: playback.source.fps,
         totalFrames: playback.totalFrames,
-        render: (index) => renderer.render(index),
+        render: (index) => {
+          abort.signal.throwIfAborted();
+          try {
+            renderer.render(index);
+          } catch (reason) {
+            renderFailed = true;
+            throw reason;
+          }
+        },
         audio: mix ? { pcm: mix.track.data, channels: mix.track.numberOfChannels } : null,
         signal: abort.signal,
-        onProgress: (done, total) =>
-          setProgress(`${Math.round((done / total) * 100)}% · ${done}/${total} 帧`),
+        onProgress: (done, total) => {
+          if (ownsExport() && !abort.signal.aborted)
+            setProgress(`${Math.round((done / total) * 100)}% · ${done}/${total} 帧`);
+        },
       });
-      if (abort.signal.aborted) throw new DOMException('工程已改变，导出已取消。', 'AbortError');
+      abort.signal.throwIfAborted();
+      if (!ownsExport()) return;
       downloadBlob(blob, `${playback.project.name.replace(/[\\/:*?"<>|]/g, '-')}-${takeId}.mp4`);
       setProgress('视频下载已发起');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-      setProgress('');
+      if (ownsExport()) {
+        if (abort.signal.aborted) setProgress('已取消，可重新导出。');
+        else {
+          const detail = reason instanceof Error ? reason.message : String(reason);
+          // Invalid audio/assets or frame rendering block the project. Encoder
+          // failures are scoped to this attempt and can be retried unchanged.
+          if (preparationFailed || renderFailed) setError(detail);
+          else setExportError(`导出失败：${detail}。可重新点击导出重试。`);
+          setProgress('');
+        }
+      }
     } finally {
-      if (scene.current === renderer) {
+      if (ownsExport() && scene.current === renderer) {
         try {
           renderer.render(frameRef.current);
         } catch (reason) {
@@ -167,10 +226,12 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
           setError(reason instanceof Error ? reason.message : String(reason));
         }
       }
-      if (controller.current === abort) controller.current = null;
-      setExporting(false);
+      if (ownsExport()) {
+        controller.current = null;
+        setExporting(false);
+      }
     }
-  }, [playback, exporting, ready, pause, takeId]);
+  }, [playback, ready, pause, takeId, compiled.error, error]);
   return {
     canvas,
     frame,
@@ -181,6 +242,7 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     playback,
     ready,
     error: compiled.error || error,
+    exportError,
     exporting,
     exportVideo,
     progress,

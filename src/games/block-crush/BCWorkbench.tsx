@@ -234,9 +234,9 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
             />
           </div>
         </header>
-        {(error || player.error) && (
+        {(error || player.error || player.exportError) && (
           <p className="bc-error" role="alert">
-            {error || player.error}
+            {error || player.error || player.exportError}
           </p>
         )}
         {!project ? (
