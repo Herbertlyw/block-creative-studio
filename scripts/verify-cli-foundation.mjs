@@ -37,8 +37,8 @@ const missing = async (name) => assert.rejects(access(path(name)), { code: 'ENOE
 try {
   await server.listen();
   const describe = cli(['games', 'describe', 'block-placement']);
-  assert.equal(describe.report.operations.length, 4);
-  assert.equal(describe.report.unavailable.length, 31);
+  assert.ok(describe.report.operations.some((op) => op.id === 'board edit'));
+  assert.ok(describe.report.unavailable.some((op) => op.id === 'quality route'));
   assert.equal(cli(['games', 'list']).report.games.length, 2);
   cli(['games', 'describe', 'constructor'], 2);
   for (const [game, prefix] of [

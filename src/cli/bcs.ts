@@ -19,6 +19,7 @@ import {
   validateProductionAudioAsset,
 } from '../nativeReference/agent-director/audioMix';
 import { blockPlacementAgentAdapter } from '../nativeReference/games/block-placement/agent';
+import { runTake, takeOperations } from './takes';
 import {
   AGENT_RESULT_SCHEMA,
   GameAgentRegistry,
@@ -126,6 +127,8 @@ const ops: Record<Game, Operation[]> = {
     },
   ],
 };
+ops['block-placement'].push(...takeOperations('block-placement'));
+ops['block-crush-drop'].push(...takeOperations('block-crush-drop'));
 class UsageError extends Error {
   constructor(
     message: string,
@@ -282,8 +285,14 @@ async function main(args: string[]) {
       })),
     );
   const inputPath = flags['--input'] as string | undefined;
+  if (id === 'take import')
+    options.file = resolve(
+      dirname(resolve(flags['--options-file'] as string)),
+      options.file as string,
+    );
   let original = inputPath ? await readJSON(inputPath) : undefined;
   let result: unknown;
+  let extraReport: Record<string, unknown> = {};
   if (game === 'block-placement') {
     if (id === 'project create') result = await createNativeWork();
     else {
@@ -301,6 +310,14 @@ async function main(args: string[]) {
           options.color as string | null,
         );
         result = isPackage ? edited : edited.project;
+      } else if (id!.startsWith('take ') || id === 'action edit') {
+        const executed = await runTake(game, id!, work, options);
+        extraReport = executed.report;
+        result = executed.document
+          ? isPackage
+            ? executed.document
+            : (executed.document as any).project
+          : work;
       } else result = work;
     }
   } else {
@@ -327,16 +344,21 @@ async function main(args: string[]) {
         await verifyProductionAudioAssets(audio);
         for (const asset of Object.values(audio.assets ?? {})) validateProductionAudioAsset(asset);
       }
-      result =
-        id === 'action edit'
-          ? changeBCAction(
-              project,
-              options.takeId as string,
-              options.index as number,
-              options.column as number,
-              options.seconds as number,
-            )
-          : project;
+      if (id!.startsWith('take ')) {
+        const executed = await runTake(game, id!, project, options);
+        extraReport = executed.report;
+        result = executed.document ?? project;
+      } else
+        result =
+          id === 'action edit'
+            ? changeBCAction(
+                project,
+                options.takeId as string,
+                options.index as number,
+                options.column as number,
+                options.seconds as number,
+              )
+            : project;
     }
   }
   if (op.output) await writeNew(flags['--out'] as string, result, inputPath);
@@ -353,6 +375,7 @@ async function main(args: string[]) {
       format: !op.output && original ? original.format : (result as any).format,
       name: project.name,
       takes: project.takes.map((take: any) => take.takeId),
+      ...extraReport,
       ...(id === 'board edit'
         ? {
             changed: { row: options.row, column: options.column },
