@@ -5,6 +5,7 @@ import {
   hasStudioAssetReferences,
 } from '../contracts/browserAssetReferences';
 import { prepareCalibratedRenderer } from '../contracts/calibratedRenderer';
+import { createObservedBBStage } from '../contracts/bbRenderStage';
 import {
   compileNativeProductionAudio,
   describeProductionMixWarnings,
@@ -214,31 +215,7 @@ export function ObservedPreviewSettings({
         };
       },
       async createStage(canvas, width, height, _purpose, _initialFrame, scale) {
-        canvas.width = width;
-        canvas.height = height;
-        const staging = scale === 1 ? canvas : window.document.createElement('canvas');
-        const stage = prepared.backend.createStage(staging);
-        stage.resize(width, height, scale);
-        try {
-          await stage.warmup();
-          return {
-            draw(index: number) {
-              stage.renderAt(source.evaluate(index));
-              if (staging !== canvas) {
-                const context = canvas.getContext('2d');
-                if (!context) throw new Error('无法创建输出画布。');
-                context.clearRect(0, 0, width, height);
-                context.drawImage(staging, 0, 0, width, height);
-              }
-            },
-            dispose() {
-              stage.dispose();
-            },
-          };
-        } catch (error) {
-          stage.dispose();
-          throw error;
-        }
+        return createObservedBBStage(canvas, width, height, scale, prepared);
       },
     };
   }, [prepared, resolved, document, mode]);

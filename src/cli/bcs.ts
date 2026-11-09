@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { dirname, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import Ajv from 'ajv';
 import { createNativeWork, setNativeWorkBoardCell } from '../contracts/nativeWorkAuthor';
 import { importBBWorkDocument, openBBWorkPackage } from '../contracts/bbWorkPackage';
@@ -21,6 +23,8 @@ import { runTake, takeOperations } from './takes';
 import { audioOperations, runAudio } from './audio';
 import { assetOperations, runAsset } from './assets';
 import { readJSON, writeNew } from './files';
+import { mediaOperations } from './mediaContract';
+import { runMedia, MediaCancelled } from './media';
 import {
   AGENT_RESULT_SCHEMA,
   GameAgentRegistry,
@@ -128,6 +132,8 @@ const ops: Record<Game, Operation[]> = {
     },
   ],
 };
+ops['block-placement'].push(...mediaOperations());
+ops['block-crush-drop'].push(...mediaOperations());
 ops['block-placement'].push(...takeOperations('block-placement'));
 ops['block-crush-drop'].push(...takeOperations('block-crush-drop'));
 ops['block-placement'].push(...audioOperations());
@@ -142,6 +148,10 @@ class UsageError extends Error {
     super(message);
   }
 }
+let mediaInterrupted = false;
+const earlyMediaSignal = () => {
+  mediaInterrupted = true;
+};
 const ajv = new Ajv({ allErrors: true, strict: false });
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 function parseFlags(args: string[]) {
@@ -222,20 +232,35 @@ async function main(args: string[]) {
               properties: { project: { type: 'object' }, options: op.schema },
               additionalProperties: false,
             },
-            outputSchema: AGENT_RESULT_SCHEMA,
+            outputSchema: op.id.endsWith(' render')
+              ? { type: 'object', description: '媒体输出的尺寸、范围、路径、字节数及 SHA-256' }
+              : AGENT_RESULT_SCHEMA,
+            outputType:
+              op.id === 'preview render'
+                ? 'image/png'
+                : op.id === 'video render'
+                  ? 'video/mp4'
+                  : 'application/json',
             formats:
               id === 'block-placement'
                 ? ['bcs-bb-work', 'bcs-studio-project']
                 : ['bcs-studio-project'],
             status: 'available',
             runtime:
+              op.id.endsWith(' render') ||
               op.id === 'asset import' ||
               op.id === 'asset bind' ||
               (id === 'block-placement' && op.id === 'asset unbind')
                 ? 'node+chrome'
                 : 'node',
-            restrictions:
-              op.id === 'board edit'
+            restrictions: op.id.endsWith(' render')
+              ? [
+                  'local Chrome with AVC and, when needed, AAC; inline assets only',
+                  'clips require matching Take and frame-source hashes; crop is unsupported',
+                  'video rejects unsupported production camera, timing and effects',
+                  ...(id === 'block-crush-drop' ? ['BC uses 30fps reference-2d only'] : []),
+                ]
+              : op.id === 'board edit'
                 ? ['source, pointer, calibrated tracks and saved clips are rejected']
                 : op.id === 'action edit' && id === 'block-crush-drop'
                   ? ['saved clips and shared reference tracks across multiple Takes are rejected']
@@ -260,6 +285,7 @@ async function main(args: string[]) {
   if (!Object.hasOwn(ops, game)) throw new UsageError(`未知游戏：${game}`);
   const op = ops[game].find((item) => item.id === id);
   if (!op) throw new UsageError(`未接入的操作：${id}`);
+  if (id === 'preview render' || id === 'video render') process.on('SIGINT', earlyMediaSignal);
   const flags = parseFlags(remaining);
   if (op.requiresInput !== (typeof flags['--input'] === 'string'))
     throw new UsageError(op.requiresInput ? '需要 --input。' : '此操作不接受 --input。');
@@ -284,7 +310,16 @@ async function main(args: string[]) {
       dirname(resolve(flags['--options-file'] as string)),
       options.file as string,
     );
-  let original = inputPath ? await readJSON(inputPath) : undefined;
+  const mediaInput =
+    inputPath && (id === 'preview render' || id === 'video render')
+      ? await readFile(inputPath)
+      : undefined;
+  const mediaInputHash = mediaInput ? createHash('sha256').update(mediaInput).digest('hex') : '';
+  let original = mediaInput
+    ? JSON.parse(mediaInput.toString('utf8').replace(/^\uFEFF/, ''))
+    : inputPath
+      ? await readJSON(inputPath)
+      : undefined;
   let result: unknown;
   let extraReport: Record<string, unknown> = {};
   if (game === 'block-placement') {
@@ -294,6 +329,26 @@ async function main(args: string[]) {
       const work = isPackage
         ? await openBBWorkPackage(original)
         : await importBBWorkDocument(original);
+      if (id === 'preview render' || id === 'video render') {
+        if (mediaInterrupted) throw new MediaCancelled();
+        return {
+          ok: true,
+          report: {
+            gameId: game,
+            operation: id,
+            ...(await runMedia(
+              game,
+              id,
+              work,
+              options,
+              inputPath!,
+              flags['--out'] as string,
+              mediaInputHash,
+              () => mediaInterrupted,
+            )),
+          },
+        };
+      }
       if (id === 'board edit') {
         if ((work.project as any).direction?.production?.clips?.length)
           throw new Error('工程含已保存片段；棋盘修改尚不能安全同步片段来源，请保留原工程。');
@@ -346,6 +401,26 @@ async function main(args: string[]) {
       if (audio) {
         await verifyProductionAudioAssets(audio);
         for (const asset of Object.values(audio.assets ?? {})) validateProductionAudioAsset(asset);
+      }
+      if (id === 'preview render' || id === 'video render') {
+        if (mediaInterrupted) throw new MediaCancelled();
+        return {
+          ok: true,
+          report: {
+            gameId: game,
+            operation: id,
+            ...(await runMedia(
+              game,
+              id,
+              project,
+              options,
+              inputPath!,
+              flags['--out'] as string,
+              mediaInputHash,
+              () => mediaInterrupted,
+            )),
+          },
+        };
       }
       if (id!.startsWith('take ') || id!.startsWith('audio ') || id!.startsWith('asset ')) {
         const executed = id!.startsWith('audio ')
@@ -411,20 +486,31 @@ main(process.argv.slice(2))
     process.stdout.write(JSON.stringify(result) + '\n');
   })
   .catch((error) => {
+    if (mediaInterrupted) error = new MediaCancelled();
     process.stdout.write(
       JSON.stringify({
         ok: false,
         report: {
           error: {
             code:
-              error instanceof UsageError
-                ? 'INVALID_ARGUMENT'
-                : (message(error).match(/\b[A-Z][A-Z0-9_]{3,}(?=:)/)?.[0] ?? 'OPERATION_FAILED'),
+              error instanceof MediaCancelled
+                ? 'CANCELLED'
+                : error instanceof UsageError
+                  ? 'INVALID_ARGUMENT'
+                  : (message(error).match(/\b[A-Z][A-Z0-9_]{3,}(?=:)/)?.[0] ?? 'OPERATION_FAILED'),
             message: message(error),
             ...(error instanceof UsageError && error.issues ? { issues: error.issues } : {}),
           },
         },
       }) + '\n',
     );
-    process.exitCode = error instanceof UsageError ? 2 : 1;
+    process.exitCode =
+      error instanceof MediaCancelled
+        ? 130
+        : error instanceof UsageError || /FRAME_RANGE_INVALID:/.test(message(error))
+          ? 2
+          : 1;
+  })
+  .finally(() => {
+    process.off('SIGINT', earlyMediaSignal);
   });

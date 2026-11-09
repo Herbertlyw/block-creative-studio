@@ -18,7 +18,6 @@ import {
   listNativePreviewLooks,
 } from '../contracts/nativeVariants';
 import type { NativeRuntimeAudit } from '../contracts/inspectNativeRuntime';
-import { BBScene2D } from '../games/block-placement/rendering/BBScene2D';
 import { sha256Blob, contentHashToAssetUri } from '../nativeReference/assets/browserAssetStore';
 import {
   createRuntimeAssetBindings,
@@ -35,14 +34,7 @@ import {
   resolvePreviewVariant,
   type PreviewVariantSelection,
 } from '../contracts/previewVariant';
-import {
-  parseWorkbenchView,
-  paintWorkbenchView,
-  hitWorkbenchView,
-} from '../contracts/reference2dView';
-import { readBBFrame } from '../games/block-placement/planning/timelineFrameSource';
-import type { CompiledFrameSource } from '../nativeReference/game-runtime/frameSource';
-import type { BBThreeScene } from '../renderer/BBThreeScene';
+import { parseWorkbenchView, hitWorkbenchView } from '../contracts/reference2dView';
 import type { BBPreviewConfiguration } from './useBBTimelinePlayer';
 import { BBTimelinePlayerProvider, useBBPlayerConfiguration } from './BBTimelinePlayerContext';
 import { BBPlaybackControls } from './BBPlaybackControls';
@@ -50,18 +42,12 @@ import { readWorkbenchBackground } from '../contracts/workbenchBackground';
 import { BB_EXPORT_QUALITY, readBBExportQuality } from '../contracts/bbExportQuality';
 import { readBBTestAudio } from '../contracts/bbSyntheticAudio';
 
+import { createAuthoredBBStage } from '../contracts/bbRenderStage';
+import { readBBFrame } from '../games/block-placement/planning/timelineFrameSource';
+import type { CompiledFrameSource } from '../nativeReference/game-runtime/frameSource';
+
 function authoredFrame(source: CompiledFrameSource, index: number) {
   return readBBFrame(source.evaluate(index));
-}
-type PreviewScene = BBScene2D | BBThreeScene;
-async function createPreviewScene(
-  canvas: HTMLCanvasElement,
-  mode: '2d' | '3d',
-  solidBackground: string | null,
-): Promise<PreviewScene> {
-  if (mode === '2d') return new BBScene2D(canvas, { quality: 'cinematic', solidBackground });
-  const { BBThreeScene } = await import('../renderer/BBThreeScene');
-  return new BBThreeScene(canvas);
 }
 
 const ObservedPreviewSettings = lazy(() =>
@@ -326,36 +312,20 @@ function AuthoredPreviewSettings({
         return null;
       },
       async createStage(target, width, height, purpose, initialFrame, scale) {
-        target.width = width;
-        target.height = height;
-        const staging =
-          purpose === 'preview' || view || scale !== 1
-            ? window.document.createElement('canvas')
-            : target;
-        const scene = await createPreviewScene(staging, visualMode, solidBackground);
-        try {
-          scene.resize(width, height, scale);
-          if (effectiveAssets && scene instanceof BBScene2D)
-            scene.setRuntimeAssets(effectiveAssets);
-          await scene.warmup(authoredFrame(frameSource, initialFrame), style);
-          return {
-            draw(index: number) {
-              scene.renderAt(authoredFrame(frameSource, index), style);
-              if (view) paintWorkbenchView(staging, target, view, index);
-              else if (staging !== target) {
-                const context = target.getContext('2d');
-                if (!context) throw new Error('无法创建预览画布。');
-                context.drawImage(staging, 0, 0, width, height);
-              }
-            },
-            dispose() {
-              scene.dispose();
-            },
-          };
-        } catch (error) {
-          scene.dispose();
-          throw error;
-        }
+        return createAuthoredBBStage({
+          target,
+          width,
+          height,
+          purpose,
+          initialFrame,
+          scale,
+          visualMode,
+          solidBackground,
+          assets: effectiveAssets,
+          source: frameSource,
+          style,
+          view,
+        });
       },
     };
   }, [preview, embedded, effectiveAssets, visualMode, withProductionAudio, withTestAudio]);
