@@ -23,6 +23,7 @@ export async function exportFrameVideo({
   onProgress,
   signal,
   bitrate = 8_000_000,
+  shortAudioProbe = false,
 }: {
   canvas: HTMLCanvasElement;
   width: number;
@@ -34,6 +35,8 @@ export async function exportFrameVideo({
   onProgress?: (frame: number, total: number) => void;
   signal?: AbortSignal;
   bitrate?: number;
+  /** Use the existing independent encoder probe when content is too short to correlate. */
+  shortAudioProbe?: boolean;
 }): Promise<Blob> {
   const checkCancelled = () => {
     if (signal?.aborted)
@@ -91,9 +94,9 @@ export async function exportFrameVideo({
       } finally {
         await context.close();
       }
-      if (audio.channels === 1)
+      if (audio.channels === 1 || shortAudioProbe)
         delay = await measureAudioCodecDelay(audioCodec, sampleRate, {
-          numberOfChannels: 1,
+          numberOfChannels: audio.channels,
           bitrate,
         });
     }
@@ -123,7 +126,7 @@ export async function exportFrameVideo({
     await mux.finalize();
     if (!target.buffer) throw new Error('视频输出为空。');
     const duration = totalFrames / fps;
-    if (audio?.channels === 2) {
+    if (audio?.channels === 2 && !shortAudioProbe) {
       const result = await alignAacPriming(
         new Blob([target.buffer], { type: 'video/mp4' }),
         { data: audio.pcm, sampleRate: 48_000, numberOfChannels: 2 },

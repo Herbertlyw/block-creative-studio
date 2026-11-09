@@ -92,7 +92,7 @@ npm run --silent bcs -- game block-crush-drop 'video render' --input bc.json --o
 
 省略 scope 时使用完整 Take，省略 audio 时使用工程音频。范围首尾都包含：30fps 的 0–89 帧为 90 帧、3 秒。视频从零开始播放，画面和混音取原 Take 的同一时间窗口；不会受工作台上次选中的片段影响。`silent` 不输出音轨，不修改工程；`project` 在工程没有音频时保持无声，不添加测试音效。
 
-片段必须属于指定 Take，来源 Take 和帧源哈希必须匹配；过期片段或含裁切的片段会拒绝，不自动刷新。额外的 production 镜头、时序和后期特效未接入，会拒绝视频输出。BB 已保存的 2D 外观、工作台视图和质量设置以及观察作品的指针按现有消费者处理；BC 只支持现有 30fps reference-2d。编码器当前限制偶数尺寸、宽高不超过 1920、最多 18000 帧。正式输出不覆盖既有文件；失败或 Ctrl+C 取消不会发布半成品，取消后可直接重试相同路径。进度输出到 stderr，stdout 仅输出最终 JSON；成功报告包含帧范围、尺寸、输入及输出 SHA-256 和混音提示。
+片段必须属于指定 Take，来源 Take 和帧源哈希必须匹配；过期片段或含裁切的片段会拒绝，不自动刷新。BB 观察作品的指针同时绑定工程内容：CLI 会先核验真实指针，并接受移除片段元数据后按原有算法计算的帧源身份；无法核对的旧身份仍会拒绝。工作台的观察渲染入口保留原有片段限制。额外的 production 镜头、时序和后期特效未接入，会拒绝视频输出。BB 已保存的 2D 外观、工作台视图和质量设置以及观察作品的指针按现有消费者处理；BC 只支持现有 30fps reference-2d。小于 1 秒的有声音频窗口使用现有独立 AAC 编码器探针校准，结果会在报告中注明；较长音频保留内容校准。编码器当前限制偶数尺寸、宽高不超过 1920、最多 18000 帧。正式输出不覆盖既有文件；失败或 Ctrl+C 取消不会发布半成品，取消后可直接重试相同路径。进度输出到 stderr，stdout 仅输出最终 JSON；成功报告包含帧范围、尺寸、输入及输出 SHA-256 和混音提示。
 
 ## 验证
 
@@ -102,6 +102,7 @@ npm run test:cli:smoke
 node scripts/test-cli-takes.mjs
 node scripts/test-cli-audio.mjs
 node scripts/test-cli-media.mjs
+node scripts/verify-cli-media-review.mjs  # 需要 Chrome、FFmpeg 和 FFprobe
 node scripts/test-cli-assets.mjs
 npm run test:cli
 ```

@@ -26,8 +26,9 @@ export function prepareCalibratedRenderer(
   document: unknown,
   takeId: string,
   pointer?: VerifiedPointerOverlay | null,
+  settings?: { allowClipMetadata?: boolean },
 ): CalibratedPrepared {
-  const options = validateCalibratedRequest(document, takeId, pointer);
+  const options = validateCalibratedRequest(document, takeId, pointer, settings);
   if (
     extension.id !== 'bcs.workbench.block-placement.calibrated-state' ||
     extension.version !== '1.0.0'

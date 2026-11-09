@@ -90,7 +90,7 @@ export async function openBBWorkPackage(value: unknown): Promise<BBWorkPackage> 
     for (const take of doc.takes) {
       if (!take.actions.length) continue;
       try {
-        compileBBTimeline(doc, take.takeId);
+        compileBBTimeline(doc, take.takeId, { allowClipMetadata: true });
       } catch (error) {
         throw new Error(
           `Take ${take.takeId} 音频核验失败：${error instanceof Error ? error.message : String(error)}`,

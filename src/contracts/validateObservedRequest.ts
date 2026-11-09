@@ -7,6 +7,7 @@ import { selectWorkbenchCalibration } from './workbenchCalibration';
 import type { VerifiedPointerOverlay } from './observedPointer';
 import { readBBExportQuality } from './bbExportQuality';
 import { readBBTestAudio } from './bbSyntheticAudio';
+import { parseProductionDirection } from '../nativeReference/agent-director/contracts';
 
 /** Calibration allows extension keys in the source schema. Refuse unknown keys
  * instead of claiming that the current renderer consumed future extensions. */
@@ -56,6 +57,7 @@ export function validateCalibratedRequest(
   document: unknown,
   takeId: string,
   pointer?: VerifiedPointerOverlay | null,
+  options?: { allowClipMetadata?: boolean },
 ) {
   const original = document as {
     direction?: { style?: { workbenchCalibrationV2?: unknown } };
@@ -88,11 +90,16 @@ export function validateCalibratedRequest(
     throw new Error(
       `观察画面尚未消费素材槽：${unsupportedBindings.join('、')}；不能忽略这些绑定。`,
     );
+  const allowedProduction = options?.allowClipMetadata
+    ? ['version', 'audio', 'clips', 'selectedClipId']
+    : ['version', 'audio'];
   const productionUnknown = Object.keys(doc?.direction?.production ?? {}).filter(
-    (key) => !['version', 'audio'].includes(key),
+    (key) => !allowedProduction.includes(key),
   );
   if (productionUnknown.length)
     throw new Error(`校准渲染尚未接入 production 字段：${productionUnknown.join('、')}。`);
+  if (options?.allowClipMetadata && doc?.direction?.production)
+    parseProductionDirection(doc.direction.production);
   if (!isValidPlacementContract(document))
     throw new Error('V2 工程 Schema 未通过，不能使用校准渲染器。');
   const audit = inspectNativeRuntime(document);

@@ -5,6 +5,7 @@ import {
 } from '../contracts/browserAssetReferences';
 import { resolveEmbeddedAssets } from '../contracts/embeddedAssets';
 import { verifyObservedPointer } from '../contracts/observedPointer';
+import { observedPreClipSourceHash } from '../contracts/observedClipIdentity';
 import { prepareCalibratedRenderer } from '../contracts/calibratedRenderer';
 import { compileNativeTake } from '../contracts/compileNativeTake';
 import { compileNativePreviewLook, compileNativeV2PlanLook } from '../contracts/nativeVariants';
@@ -23,7 +24,7 @@ import {
 } from '../nativeReference/agent-director/audioMix';
 import { describeProductionMixWarnings } from '../contracts/nativeProductionAudio';
 import { exportFrameVideo } from '../exporter/exportFrameVideo';
-import { mediaWindow } from './mediaContract';
+import { mediaWindow, needsShortAudioProbe } from './mediaContract';
 
 let current: AbortController | null = null;
 let pendingCancel = false;
@@ -54,7 +55,8 @@ export async function run(
       playback: any,
       prepared: any,
       quality = { bitrate: 8_000_000, scale: 1 },
-      resolved: any;
+      resolved: any,
+      equivalentSourceHashes: string[] = [];
     if (game === 'block-placement') {
       resolved = (
         await inlineBrowserStudioReferences(project, { project: [], cas: [], library: [] })
@@ -62,8 +64,15 @@ export async function run(
       quality = BB_EXPORT_QUALITY[readBBExportQuality(resolved)];
       if (hasReferenceCalibration(resolved)) {
         const pointer = work.pointer ? await verifyObservedPointer(resolved, work.pointer) : null;
-        prepared = prepareCalibratedRenderer(resolved, options.takeId, pointer);
+        prepared = prepareCalibratedRenderer(resolved, options.takeId, pointer, {
+          allowClipMetadata: true,
+        });
         source = prepared.frameSource;
+        if (pointer && operation === 'video render' && options.scope === 'clip') {
+          equivalentSourceHashes = [
+            await observedPreClipSourceHash(resolved, pointer, options.takeId),
+          ];
+        }
         stage = await createObservedBBStage(
           canvas,
           output.width,
@@ -142,7 +151,14 @@ export async function run(
             take,
             source.frameSourceHash,
           )
-        : mediaWindow(options, source.totalFrames, take, source.frameSourceHash, production?.clips);
+        : mediaWindow(
+            options,
+            source.totalFrames,
+            take,
+            source.frameSourceHash,
+            production?.clips,
+            equivalentSourceHashes,
+          );
     if (game === 'block-crush-drop') {
       playback = {
         ...playback,
@@ -190,6 +206,8 @@ export async function run(
         }
       }
       hasAudioTrack = !!audio;
+      const shortAudioProbe = needsShortAudioProbe(window.totalFrames, source.fps, !!audio);
+      if (shortAudioProbe) warning += '短片段音轨使用独立 AAC 编码器探针校准。';
       signal.throwIfAborted();
       progress('渲染和编码');
       blob = await exportFrameVideo({
@@ -200,6 +218,7 @@ export async function run(
         totalFrames: window.totalFrames,
         bitrate: quality.bitrate,
         audio,
+        shortAudioProbe,
         signal,
         render: (index) => stage!.draw(window.startFrame + index),
         onProgress: (done, total) => progress(`渲染和编码 ${done}/${total}`),

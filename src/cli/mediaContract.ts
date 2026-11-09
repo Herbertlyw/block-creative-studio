@@ -46,6 +46,10 @@ export const videoSchema = {
     },
   ],
 };
+/** Very short audio cannot reliably calibrate by correlating its own content. */
+export function needsShortAudioProbe(totalFrames: number, fps: number, hasAudio: boolean): boolean {
+  return hasAudio && totalFrames / fps < 1;
+}
 export function mediaOperations() {
   return [
     {
@@ -72,6 +76,7 @@ export function mediaWindow(
   take: unknown,
   sourceHash: string,
   clips: readonly any[] = [],
+  equivalentSourceHashes: readonly string[] = [],
 ) {
   const scope = (options.scope ?? 'take') as string;
   let start = 0,
@@ -85,7 +90,10 @@ export function mediaWindow(
     if (!clip) throw new Error('CLIP_NOT_FOUND: 指定片段不存在。');
     if (clip.takeId !== options.takeId) throw new Error('CLIP_TAKE_MISMATCH: 片段属于其他 Take。');
     if (clip.crop) throw new Error('CLIP_CROP_UNSUPPORTED: 片段裁切尚未接入。');
-    if (clip.source?.takeHash !== stableHash(take) || clip.source?.frameSourceHash !== sourceHash)
+    if (
+      clip.source?.takeHash !== stableHash(take) ||
+      ![sourceHash, ...equivalentSourceHashes].includes(clip.source?.frameSourceHash)
+    )
       throw new Error('CLIP_SOURCE_STALE: 片段的 Take 或帧源已变化。');
     start = clip.startFrame;
     end = clip.endFrame;

@@ -6,13 +6,17 @@ import { prepareObservedTake } from '../games/block-placement/calibrated/prepare
 import type { StudioProjectDocumentV2 } from '../nativeReference/game-runtime/projectEnvelope';
 
 /** Input selection only; both adapters return the same actual rule/event timeline. */
-export function compileBBTimeline(document: unknown, takeId: string) {
+export function compileBBTimeline(
+  document: unknown,
+  takeId: string,
+  options?: { allowClipMetadata?: boolean },
+) {
   // Input-specific validation produces the common rule, motion and event
   // plan; both paths use createBBTimelineSource for actual frame evaluation.
   if (hasReferenceCalibration(document)) {
     const prepared = prepareObservedTake(
       document as StudioProjectDocumentV2,
-      validateCalibratedRequest(document, takeId),
+      validateCalibratedRequest(document, takeId, null, options),
     );
     return {
       plan: prepared.plan,
