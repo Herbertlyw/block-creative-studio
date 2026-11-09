@@ -101,7 +101,8 @@ export function audioOperations() {
 }
 export async function runAudio(game: Game, operation: string, work: Work, options: Options) {
   const project: any = game === 'block-placement' ? (work as BBWorkPackage).project : work;
-  const audio: any = structuredClone(project.direction?.production?.audio ?? {});
+  const originalAudio = project.direction?.production?.audio;
+  const audio: any = structuredClone(originalAudio ?? {});
   if (operation === 'audio catalog')
     return {
       report: {
@@ -145,6 +146,13 @@ export async function runAudio(game: Game, operation: string, work: Work, option
         },
       },
     };
+  // Adding an asset or BGM to a previously silent project must not activate
+  // the mixer's default SFX. Existing audio keeps its original default semantics.
+  if (
+    originalAudio === undefined &&
+    (operation === 'audio import' || operation === 'audio bgm edit')
+  )
+    audio.sfxEnabled = false;
   let changes: Record<string, unknown> = {};
   if (operation === 'audio import') {
     const bytes = await readFile(options.file as string);
