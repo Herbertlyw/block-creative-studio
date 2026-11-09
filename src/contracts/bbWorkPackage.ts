@@ -17,9 +17,7 @@ import { decodeBase64Image, inspectImageBytes } from '../nativeReference/agent-a
 import { compileBBTimeline } from './compileBBTimeline';
 import { productionFromDocument } from '../nativeReference/agent-director/contracts';
 import {
-  BUILTIN_AUDIO_IDS,
-  productionAudioCatalog,
-  productionBgm,
+  validateProductionAudioReferences,
   validateProductionAudioAsset,
   verifyProductionAudioAssets,
 } from '../nativeReference/agent-director/audioMix';
@@ -88,19 +86,7 @@ export async function openBBWorkPackage(value: unknown): Promise<BBWorkPackage> 
     await verifyProductionAudioAssets(production.audio);
     for (const asset of Object.values(production.audio.assets ?? {}))
       validateProductionAudioAsset(asset);
-    if (
-      !productionAudioCatalog().some(
-        (pack) => pack.id === (production.audio!.selectedPackId ?? 'arcade-clean-v1'),
-      )
-    )
-      throw new Error('不支持的音频预设。');
-    const referenced = [
-      ...(production.audio.cues ?? []).map((cue) => cue.assetId),
-      productionBgm(production.audio)?.assetId,
-    ].filter((id): id is string => !!id);
-    for (const id of referenced)
-      if (!BUILTIN_AUDIO_IDS.has(id) && !production.audio.assets?.[id])
-        throw new Error(`AUDIO_ASSET_UNKNOWN: ${id}`);
+    validateProductionAudioReferences(production.audio);
     for (const take of doc.takes) {
       if (!take.actions.length) continue;
       try {

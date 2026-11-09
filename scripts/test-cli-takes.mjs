@@ -33,6 +33,11 @@ try {
     edit(game, 'take generate', `${prefix}.json`, 'generate.json', `${prefix}-new.json`);
     const made = JSON.parse(await readFile(path(`${prefix}-new.json`), 'utf8'));
     const project = game === 'block-placement' ? made.project : made;
+    const original = JSON.parse(await readFile(path(`${prefix}.json`), 'utf8'));
+    const before = game === 'block-placement' ? original.project : original;
+    assert.deepEqual(project.game, before.game);
+    assert.deepEqual(project.production, before.production);
+    assert.deepEqual(project.direction, before.direction);
     const generated = project.takes.find((t) => t.takeId === 'new');
     assert.ok(generated.actions.length);
     if (game === 'block-placement') {
@@ -81,6 +86,22 @@ try {
     await option('range.json', { takeId: 'other', count: 999 });
     edit(game, 'take generate', `${prefix}.json`, 'range.json', `${prefix}-bad.json`, 2);
   }
+  await option('two.json', { takeId: 'two', count: 2 });
+  edit('block-placement', 'take generate', 'bb.json', 'two.json', 'bb-two.json');
+  const two = JSON.parse(await readFile(path('bb-two.json'), 'utf8'));
+  const target = two.project.takes[0].actions[1].action.anchor;
+  await option('later.json', { takeId: 'two', index: 0, row: target.row, column: target.col });
+  const rejected = edit(
+    'block-placement',
+    'action edit',
+    'bb-two.json',
+    'later.json',
+    'bb-later.json',
+    1,
+  );
+  assert.match(rejected.report.error.message, /第 2 步/);
+  assert.deepEqual(JSON.parse(await readFile(path('bb-two.json'), 'utf8')), two);
+  await assert.rejects(access(path('bb-later.json')), { code: 'ENOENT' });
   console.log('CLI Take workflows passed');
 } finally {
   await rm(dir, { recursive: true, force: true });

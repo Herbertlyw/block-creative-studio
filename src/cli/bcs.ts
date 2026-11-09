@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-import { readFile, realpath, open, link, unlink } from 'node:fs/promises';
-import { basename, dirname, resolve, join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { dirname, resolve } from 'node:path';
 import Ajv from 'ajv';
 import { createNativeWork, setNativeWorkBoardCell } from '../contracts/nativeWorkAuthor';
 import { importBBWorkDocument, openBBWorkPackage } from '../contracts/bbWorkPackage';
@@ -20,6 +18,9 @@ import {
 } from '../nativeReference/agent-director/audioMix';
 import { blockPlacementAgentAdapter } from '../nativeReference/games/block-placement/agent';
 import { runTake, takeOperations } from './takes';
+import { audioOperations, runAudio } from './audio';
+import { assetOperations, runAsset } from './assets';
+import { readJSON, writeNew } from './files';
 import {
   AGENT_RESULT_SCHEMA,
   GameAgentRegistry,
@@ -129,6 +130,10 @@ const ops: Record<Game, Operation[]> = {
 };
 ops['block-placement'].push(...takeOperations('block-placement'));
 ops['block-crush-drop'].push(...takeOperations('block-crush-drop'));
+ops['block-placement'].push(...audioOperations());
+ops['block-crush-drop'].push(...audioOperations());
+ops['block-placement'].push(...assetOperations());
+ops['block-crush-drop'].push(...assetOperations());
 class UsageError extends Error {
   constructor(
     message: string,
@@ -153,31 +158,6 @@ function parseFlags(args: string[]) {
     }
   }
   return result;
-}
-async function readJSON(path: string) {
-  return JSON.parse((await readFile(path, 'utf8')).replace(/^\uFEFF/, ''));
-}
-async function writeNew(path: string, value: unknown, input?: string) {
-  const dest = resolve(path),
-    parent = await realpath(dirname(dest));
-  const actual = join(parent, basename(dest));
-  if (input && actual === (await realpath(input))) throw new Error('输出路径不能与输入相同。');
-  const temp = join(parent, `.bcs-${randomUUID()}.tmp`);
-  let created = false;
-  try {
-    const file = await open(temp, 'wx', 0o600);
-    created = true;
-    try {
-      await file.writeFile(JSON.stringify(value, null, 2) + '\n');
-      await file.sync();
-    } finally {
-      await file.close();
-    }
-    // link is atomic and fails when the target already exists, including symlinks.
-    await link(temp, actual);
-  } finally {
-    if (created) await unlink(temp).catch(() => {});
-  }
 }
 async function main(args: string[]) {
   if (!args.length || (args.length === 1 && args[0] === '--help'))
@@ -233,7 +213,11 @@ async function main(args: string[]) {
                 Array.isArray(op.schema.required) &&
                 op.schema.required.length
                   ? ['options']
-                  : []),
+                  : 'minProperties' in op.schema &&
+                      typeof op.schema.minProperties === 'number' &&
+                      op.schema.minProperties > 0
+                    ? ['options']
+                    : []),
               ],
               properties: { project: { type: 'object' }, options: op.schema },
               additionalProperties: false,
@@ -244,12 +228,22 @@ async function main(args: string[]) {
                 ? ['bcs-bb-work', 'bcs-studio-project']
                 : ['bcs-studio-project'],
             status: 'available',
+            runtime:
+              op.id === 'asset import' ||
+              op.id === 'asset bind' ||
+              (id === 'block-placement' && op.id === 'asset unbind')
+                ? 'node+chrome'
+                : 'node',
             restrictions:
               op.id === 'board edit'
                 ? ['source, pointer, calibrated tracks and saved clips are rejected']
-                : op.id === 'action edit'
+                : op.id === 'action edit' && id === 'block-crush-drop'
                   ? ['saved clips and shared reference tracks across multiple Takes are rejected']
-                  : [],
+                  : op.kind === 'edit' && (op.id.startsWith('take ') || op.id === 'action edit')
+                    ? [
+                        'gameplay changes reject protected source, pointer, calibrated tracks and referenced targets',
+                      ]
+                    : [],
           })),
           unavailable,
         },
@@ -285,7 +279,7 @@ async function main(args: string[]) {
       })),
     );
   const inputPath = flags['--input'] as string | undefined;
-  if (id === 'take import')
+  if (id === 'take import' || id === 'audio import' || id === 'asset import')
     options.file = resolve(
       dirname(resolve(flags['--options-file'] as string)),
       options.file as string,
@@ -310,8 +304,17 @@ async function main(args: string[]) {
           options.color as string | null,
         );
         result = isPackage ? edited : edited.project;
-      } else if (id!.startsWith('take ') || id === 'action edit') {
-        const executed = await runTake(game, id!, work, options);
+      } else if (
+        id!.startsWith('take ') ||
+        id === 'action edit' ||
+        id!.startsWith('audio ') ||
+        id!.startsWith('asset ')
+      ) {
+        const executed = id!.startsWith('audio ')
+          ? await runAudio(game, id!, work, options)
+          : id!.startsWith('asset ')
+            ? await runAsset(game, id!, work, options)
+            : await runTake(game, id!, work, options);
         extraReport = executed.report;
         result = executed.document
           ? isPackage
@@ -344,8 +347,12 @@ async function main(args: string[]) {
         await verifyProductionAudioAssets(audio);
         for (const asset of Object.values(audio.assets ?? {})) validateProductionAudioAsset(asset);
       }
-      if (id!.startsWith('take ')) {
-        const executed = await runTake(game, id!, project, options);
+      if (id!.startsWith('take ') || id!.startsWith('audio ') || id!.startsWith('asset ')) {
+        const executed = id!.startsWith('audio ')
+          ? await runAudio(game, id!, project, options)
+          : id!.startsWith('asset ')
+            ? await runAsset(game, id!, project, options)
+            : await runTake(game, id!, project, options);
         extraReport = executed.report;
         result = executed.document ?? project;
       } else
@@ -376,6 +383,12 @@ async function main(args: string[]) {
       name: project.name,
       takes: project.takes.map((take: any) => take.takeId),
       ...extraReport,
+      ...(op.output && (id!.startsWith('asset ') || id!.startsWith('audio '))
+        ? { affectedTakeIds: project.takes.map((take: any) => take.takeId) }
+        : {}),
+      ...(op.output && id!.startsWith('take ')
+        ? { affectedTakeIds: [extraReport.changedTakeId] }
+        : {}),
       ...(id === 'board edit'
         ? {
             changed: { row: options.row, column: options.column },
@@ -403,7 +416,10 @@ main(process.argv.slice(2))
         ok: false,
         report: {
           error: {
-            code: error instanceof UsageError ? 'INVALID_ARGUMENT' : 'OPERATION_FAILED',
+            code:
+              error instanceof UsageError
+                ? 'INVALID_ARGUMENT'
+                : (message(error).match(/\b[A-Z][A-Z0-9_]{3,}(?=:)/)?.[0] ?? 'OPERATION_FAILED'),
             message: message(error),
             ...(error instanceof UsageError && error.issues ? { issues: error.issues } : {}),
           },

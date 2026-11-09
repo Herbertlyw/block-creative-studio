@@ -75,7 +75,7 @@ const BUILTIN_PACKS = {
 } as const;
 export const BUILTIN_AUDIO_IDS = new Set(['builtin:soft-hit', 'builtin:tight-hit', 'builtin:clear', 'builtin:outcome', 'builtin:error', 'builtin:warning', 'builtin:bgm-tense', 'builtin:bgm-calm']);
 export function productionSoundLibrary(){return [...BUILTIN_AUDIO_IDS].map(id=>({id,kind:id.includes(':bgm-')?'bgm':'sfx',name:({'builtin:soft-hit':'轻触','builtin:tight-hit':'落槽','builtin:clear':'消除','builtin:outcome':'完成','builtin:error':'错误点击','builtin:warning':'容量提醒','builtin:bgm-tense':'紧张脉冲','builtin:bgm-calm':'轻快木琴'} as Record<string,string>)[id]}));}
-export function productionDefaultCues(packId='arcade-clean-v1'):NonNullable<ProductionAudio['cues']>{const pack=BUILTIN_PACKS[packId as keyof typeof BUILTIN_PACKS];if(!pack)throw new Error(`AUDIO_PACK_UNSUPPORTED: ${packId}`);return pack.cues.map(c=>({...c}));}
+export function productionDefaultCues(packId='arcade-clean-v1'):NonNullable<ProductionAudio['cues']>{if(!Object.hasOwn(BUILTIN_PACKS,packId))throw new Error(`AUDIO_PACK_UNSUPPORTED: ${packId}`);const pack=BUILTIN_PACKS[packId as keyof typeof BUILTIN_PACKS];return pack.cues.map(c=>({...c}));}
 
 export function productionBgm(audio:ProductionAudio):ProductionAudio['bgm'] { return audio.bgm ?? (audio.selectedPackId==='tense-pulse-v1'?{assetId:'builtin:bgm-tense',gain:.2,loop:true}:undefined); }
 

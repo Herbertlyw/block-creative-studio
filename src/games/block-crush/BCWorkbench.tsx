@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BrowserAssetSources } from '../../contracts/browserAssetReferences';
-import { encodeBase64Bytes, sha256Hex } from '../../nativeReference/agent-assets/image';
-import { validateProductionAudioAsset } from '../../nativeReference/agent-director/audioMix';
-import type { ProductionAudioAsset } from '../../nativeReference/agent-director/contracts';
+import { createWavAsset } from '../../contracts/audioAsset';
 import {
   bcCalibration,
   bcColours,
@@ -145,16 +143,7 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
   async function uploadBgm(file: File) {
     await run(async (base) => {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const asset: ProductionAudioAsset = {
-        id: 'bc-edited-bgm',
-        kind: 'audio',
-        encoding: 'base64',
-        mimeType: 'audio/wav',
-        data: encodeBase64Bytes(bytes),
-        sourceName: file.name,
-        sha256: await sha256Hex(bytes),
-      };
-      validateProductionAudioAsset(asset);
+      const asset = await createWavAsset(bytes, 'bc-edited-bgm', file.name);
       return editBCProject(base, (draft) => {
         const production = bcProduction(draft),
           audio = production.audio ?? {};

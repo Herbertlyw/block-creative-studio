@@ -89,7 +89,7 @@ export function takeOperations(game: Game) {
 function projectOf(game: Game, work: Work): any {
   return game === 'block-placement' ? (work as BBWorkPackage).project : work;
 }
-function dependencies(project: any, id: string) {
+function dependencies(project: any, id: string, work?: Work) {
   const clips = (project.direction?.production?.clips ?? [])
     .filter((clip: any) => clip.takeId === id)
     .map((clip: any) => clip.id);
@@ -101,7 +101,22 @@ function dependencies(project: any, id: string) {
     project.game?.config?.data?.presentation?.referenceCalibration?.pieceTracks?.length
       ? ['referenceCalibration']
       : [];
-  return { clips, effects, calibration };
+  const bb = work && 'project' in work ? (work as BBWorkPackage) : undefined;
+  const ids = new Set(
+    (project.takes.find((take: any) => take.takeId === id)?.actions ?? []).map(
+      (action: any) => action.id,
+    ),
+  );
+  const pointerActions = (bb?.pointer?.tracks ?? [])
+    .map((track) => track.actionId)
+    .filter((actionId) => ids.has(actionId));
+  return {
+    clips,
+    effects,
+    calibration,
+    source: bb?.source ? 'project-bound' : null,
+    pointerActions,
+  };
 }
 function item(project: any, id: string) {
   const take = project.takes.find((value: any) => value.takeId === id);
@@ -141,7 +156,7 @@ export async function runTake(game: Game, operation: string, work: Work, options
     actionCount: take.actions.length,
     interactionCount: take.interactions.length,
     actors: [...new Set(take.actions.map((action: any) => action.actor))],
-    dependencies: dependencies(project, take.takeId),
+    dependencies: dependencies(project, take.takeId, work),
     valid: true,
   });
   if (operation === 'take list') return { report: { takes: project.takes.map(summarize) } };
@@ -238,6 +253,17 @@ export async function runTake(game: Game, operation: string, work: Work, options
             ? projectOf(game, result).takes.at(-1).takeId
             : id,
       invalidated: ['compiled-plans', 'render-artifacts'],
+      ...(operation === 'take generate'
+        ? {
+            requestedCount: options.count,
+            generatedActionCount: projectOf(game, result).takes.find(
+              (take: any) => take.takeId === id,
+            ).actions.length,
+            exhausted:
+              projectOf(game, result).takes.find((take: any) => take.takeId === id).actions.length <
+              (options.count as number),
+          }
+        : {}),
     },
   };
 }
