@@ -67,8 +67,10 @@ export async function runMedia(
   let page: Awaited<ReturnType<NonNullable<typeof browser>['newPage']>> | undefined;
   let cancelled = isCancelled(),
     lastProgress = 0;
+  let rejectDownloadWait: ((error: Error) => void) | undefined;
   const onSignal = () => {
     cancelled = true;
+    rejectDownloadWait?.(new MediaCancelled());
     if (page)
       void page
         .evaluate(async () => {
@@ -123,7 +125,22 @@ export async function runMedia(
       { game, operation, work, options },
     );
     if (cancelled) throw new MediaCancelled();
-    const download = await pending;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const failedDownload = new Promise<never>((_, reject) => {
+      rejectDownloadWait = reject;
+      timer = setTimeout(
+        () => reject(new Error('DOWNLOAD_TIMEOUT: 浏览器未交付渲染文件。')),
+        30_000,
+      );
+    });
+    let download;
+    try {
+      if (cancelled) throw new MediaCancelled();
+      download = await Promise.race([pending, failedDownload]);
+    } finally {
+      rejectDownloadWait = undefined;
+      clearTimeout(timer);
+    }
     const temporaryFile = join(temp, operation === 'preview render' ? 'frame.png' : 'video.mp4');
     await download.saveAs(temporaryFile);
     if (cancelled) throw new MediaCancelled();
