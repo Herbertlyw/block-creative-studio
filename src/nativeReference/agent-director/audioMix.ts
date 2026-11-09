@@ -89,6 +89,17 @@ export function productionAudioCatalog() {
   }));
 }
 
+/** Validate references without allocating or rendering a PCM track. */
+export function validateProductionAudioReferences(audio: ProductionAudio): void {
+  productionDefaultCues(audio.selectedPackId);
+  const ids = [productionBgm(audio)?.assetId, ...(audio.cues ?? []).map(cue => cue.assetId)];
+  for (const id of ids) {
+    if (!id) continue;
+    if (id.startsWith('builtin:') ? !BUILTIN_AUDIO_IDS.has(id) : !Object.hasOwn(audio.assets ?? {}, id))
+      throw new Error(`AUDIO_ASSET_UNKNOWN: ${id}`);
+  }
+}
+
 export async function verifyProductionAudioAssets(audio: ProductionAudio): Promise<void> {
   for (const asset of Object.values(audio.assets ?? {})) {
     const bytes = base64Bytes(requireInlineProductionAudio(asset).data);
@@ -190,6 +201,7 @@ function hashPcm(data: Float32Array): string {
 }
 
 export function compileProductionAudio(frameSource: CompiledFrameSource, audio: ProductionAudio, sampleRate = 48_000, frameWindow?: { startFrame: number; endFrame: number }): CompiledProductionAudio {
+  validateProductionAudioReferences(audio);
   const firstFrame = frameWindow?.startFrame ?? 0;
   const lastFrame = frameWindow?.endFrame ?? frameSource.totalFrames - 1;
   if (frameWindow && (!Number.isInteger(firstFrame) || !Number.isInteger(lastFrame) || firstFrame < 0 || lastFrame < firstFrame || lastFrame >= frameSource.totalFrames)) throw new Error('AUDIO_FRAME_WINDOW_INVALID');

@@ -34,6 +34,7 @@ jobs:
       - run: npm test -- --maxWorkers=2
       - run: npm run build
       - run: npm run build:cli
+      - run: npm run test:cli:smoke
       - name: Check CLI discovery
         run: |
           node dist-cli/bcs.js games list --json > /tmp/bcs-games.json

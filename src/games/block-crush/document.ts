@@ -3,6 +3,7 @@ import { validateStudioProjectDocumentV2 } from '../../nativeReference/game-runt
 import type { StudioProjectDocumentV2 } from '../../nativeReference/game-runtime/projectEnvelope';
 import type { ProductionDirectionV1 } from '../../nativeReference/agent-director/contracts';
 import { parseProductionDirection } from '../../nativeReference/agent-director/contracts';
+import { validateProductionAudioReferences } from '../../nativeReference/agent-director/audioMix';
 import type { AgentAssetExtensionV1 } from '../../nativeReference/agent-assets/contracts';
 import { blockCrushDropDefinition as definition } from '../../nativeReference/games/block-crush-drop/definition';
 import type { ClearEffectLibrary } from '../../nativeReference/games/block-crush-drop/presentation/clearEffectLibrary';
@@ -85,6 +86,7 @@ export function readBCProject(value: unknown): BCProject {
   if ((bcStyle(project).renderer ?? 'reference-2d') !== 'reference-2d')
     throw new Error('当前 BC 入口只接入 reference-2d，不会替换工程指定的其他渲染器。');
   const production = bcProduction(project);
+  if (production.audio) validateProductionAudioReferences(production.audio);
   if (production.camera || production.presentation || production.effects)
     throw new Error('此 BC 工程含尚未接入的 production 镜头、额外时序或后期配置，不能静默忽略。');
   bcCalibration(project);

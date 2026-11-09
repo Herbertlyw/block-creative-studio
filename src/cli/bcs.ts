@@ -224,7 +224,14 @@ async function main(args: string[]) {
             version: '1.0.0',
             inputSchema: {
               type: 'object',
-              ...(op.requiresInput ? { required: ['project'] } : {}),
+              required: [
+                ...(op.requiresInput ? ['project'] : []),
+                ...('required' in op.schema &&
+                Array.isArray(op.schema.required) &&
+                op.schema.required.length
+                  ? ['options']
+                  : []),
+              ],
               properties: { project: { type: 'object' }, options: op.schema },
               additionalProperties: false,
             },

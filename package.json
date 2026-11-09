@@ -36,7 +36,8 @@
     "test:repository": "node --test scripts/repository-cleanliness.test.mjs",
     "build:cli": "vite build --ssr src/cli/bcs.ts --outDir dist-cli",
     "bcs": "node dist-cli/bcs.js",
-    "test:cli": "node scripts/verify-cli-foundation.mjs"
+    "test:cli": "node scripts/verify-cli-foundation.mjs",
+    "test:cli:smoke": "node scripts/test-cli-smoke.mjs"
   },
   "dependencies": {
     "ajv": "8.17.1",
