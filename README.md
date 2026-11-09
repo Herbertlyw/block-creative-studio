@@ -59,6 +59,7 @@ npm run test:browser:preview-session
 | ------------------------------------ | -------------------------------------------- |
 | [BB 工作流](docs/BB_WORKFLOW.md)     | 创作、参考标注、素材、声音和实际限制         |
 | [BC 工作流](docs/BC_WORKFLOW.md)     | 落消工程、外观变体、原生效果、音频与导出     |
+| [CLI 基础入口](docs/CLI_WORKFLOW.md) | 工程查询、安全编辑、另存和当前能力限制       |
 | [架构](docs/ARCHITECTURE.md)         | 作品会话、玩法、时间线、绘制与导出的模块边界 |
 | [贡献指南](CONTRIBUTING.md)          | 开发约定、检查命令和提交范围                 |
 | [Agent 入口](AGENTS.md)              | 复刻与变体 Skill、状态管理和轻量检查         |

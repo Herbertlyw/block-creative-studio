@@ -33,3 +33,8 @@ jobs:
       - run: npm run format:check
       - run: npm test -- --maxWorkers=2
       - run: npm run build
+      - run: npm run build:cli
+      - name: Check CLI discovery
+        run: |
+          node dist-cli/bcs.js games list --json > /tmp/bcs-games.json
+          node -e "const r = require('/tmp/bcs-games.json'); if (!r.ok || r.report.games.length !== 2) process.exit(1)"

@@ -36,3 +36,5 @@ examples/generated/
 *.tar
 *.tar.gz
 *.tgz
+
+dist-cli/
