@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm, link, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Ajv from 'ajv';
@@ -21,6 +21,10 @@ try {
   ]) {
     const desc = run(['games', 'describe', game]).report.operations.find((op) => op.id === edit);
     assert.equal(ajv.compile(desc.inputSchema)({ project: {} }), false);
+    for (const op of run(['games', 'describe', game]).report.operations) {
+      if (!ajv.compile(op.schema)({}))
+        assert.equal(ajv.compile(op.inputSchema)({ project: {} }), false, op.id);
+    }
     run(['game', game, 'project create', '--out', file(`${game}.json`)]);
     run(
       ['game', game, edit, '--input', file(`${game}.json`), '--out', file(`${game}-bad.json`)],
@@ -43,10 +47,31 @@ try {
     file('edited.json'),
   ]);
   run(['game', 'block-crush-drop', 'project validate', '--input', file('edited.json')]);
+  const originalBytes = await readFile(file('block-crush-drop.json'));
+  await link(file('block-crush-drop.json'), file('hard.json'));
+  await symlink(file('block-crush-drop.json'), file('symbolic.json'));
+  for (const name of ['hard.json', 'symbolic.json']) {
+    run(
+      [
+        'game',
+        'block-crush-drop',
+        'action edit',
+        '--input',
+        file('block-crush-drop.json'),
+        '--options-file',
+        file('options.json'),
+        '--out',
+        file(name),
+      ],
+      1,
+    );
+    assert.deepEqual(await readFile(file('block-crush-drop.json')), originalBytes);
+  }
   const original = JSON.parse(await readFile(file('block-crush-drop.json'), 'utf8'));
   for (const [field, value, error] of [
     ['bgm', { assetId: 'not-present' }, 'AUDIO_ASSET_UNKNOWN: not-present'],
     ['selectedPackId', 'not-a-real-pack', 'AUDIO_PACK_UNSUPPORTED: not-a-real-pack'],
+    ['selectedPackId', 'toString', 'AUDIO_PACK_UNSUPPORTED: toString'],
     ['cues', [{ eventType: 'x', assetId: 'missing-cue' }], 'AUDIO_ASSET_UNKNOWN: missing-cue'],
   ]) {
     const broken = structuredClone(original);

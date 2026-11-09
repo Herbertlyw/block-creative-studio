@@ -5,7 +5,7 @@ import { mkdtemp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
-import { syntheticWav } from './fixtures/syntheticMedia.mjs';
+import { syntheticPng, syntheticWav } from './fixtures/syntheticMedia.mjs';
 
 await mkdir('outputs', { recursive: true });
 const output = await mkdtemp(resolve('outputs/cli-foundation-test-'));
@@ -191,6 +191,24 @@ try {
   assert.match(invalid.report.error.message, /first-clear.*CLEAR_EFFECT_TARGET_HAS_NO_CLEAR/);
   assert.equal(await digest('bound.json'), boundHash);
   await missing('bound-edit.json');
+  await save('delete-bound-options.json', { takeId: 'demo' });
+  const deleteBound = cli(
+    [
+      'game',
+      'block-crush-drop',
+      'take delete',
+      '--input',
+      path('bound.json'),
+      '--options-file',
+      path('delete-bound-options.json'),
+      '--out',
+      path('bound-deleted.json'),
+    ],
+    1,
+  );
+  assert.match(deleteBound.report.error.message, /demo.*first-clear/);
+  assert.equal(await digest('bound.json'), boundHash);
+  await missing('bound-deleted.json');
   const clipped = await read('bc.json');
   clipped.direction.production.clips = [
     {
@@ -239,6 +257,84 @@ try {
   );
   assert.match(audioError.report.error.message, /AUDIO_ASSET_HASH_MISMATCH/);
   checks.push('source and pointer protection and BC bound clear rejection retain the originals');
+  await writeFile(path('picture.png'), syntheticPng([35, 80, 120], 32, 32));
+  await writeFile(path('music.wav'), syntheticWav(220));
+  let observedCurrent = 'observed.json';
+  for (const [operation, options, next] of [
+    ['asset import', { id: 'new-image', file: 'picture.png' }, 'observed-image.json'],
+    ['asset bind', { assetId: 'new-image', slotId: 'background.base' }, 'observed-bound.json'],
+    ['audio import', { id: 'new-audio', file: 'music.wav' }, 'observed-audio.json'],
+    ['audio bgm edit', { assetId: 'new-audio', gain: 0.25 }, 'observed-final.json'],
+  ]) {
+    await save('observed-options.json', options);
+    cli([
+      'game',
+      'block-placement',
+      operation,
+      '--input',
+      path(observedCurrent),
+      '--options-file',
+      path('observed-options.json'),
+      '--out',
+      path(next),
+    ]);
+    observedCurrent = next;
+  }
+  const originalObserved = await read('observed.json');
+  const editedObserved = await read('observed-final.json');
+  assert.deepEqual(editedObserved.pointer.tracks, originalObserved.pointer.tracks);
+  assert.deepEqual(editedObserved.source.observation, originalObserved.source.observation);
+  cli(['game', 'block-placement', 'project validate', '--input', path('observed-final.json')]);
+  checks.push('BB source and pointer remain valid after image and audio edits');
+  for (const [game, prefix, slot] of [
+    ['block-placement', 'bb', 'background.base'],
+    ['block-crush-drop', 'bc', 'world.background'],
+  ]) {
+    let current = `${prefix}-edit.json`;
+    const step = async (operation, options, name) => {
+      await save(`${prefix}-step.json`, options);
+      const next = `${prefix}-${name}.json`;
+      cli([
+        'game',
+        game,
+        operation,
+        '--input',
+        path(current),
+        '--options-file',
+        path(`${prefix}-step.json`),
+        '--out',
+        path(next),
+      ]);
+      current = next;
+    };
+    await step('take generate', { takeId: 'new', count: 1 }, 'take');
+    await save(`${prefix}-import-seed-options.json`, { takeId: 'new', newTakeId: 'imported' });
+    cli([
+      'game',
+      game,
+      'take clone',
+      '--input',
+      path(current),
+      '--options-file',
+      path(`${prefix}-import-seed-options.json`),
+      '--out',
+      path(`${prefix}-import-seed.json`),
+    ]);
+    const seedWork = await read(`${prefix}-import-seed.json`);
+    const seedProject = game === 'block-placement' ? seedWork.project : seedWork;
+    await save(
+      `${prefix}-replay.json`,
+      seedProject.takes.find((take) => take.takeId === 'imported'),
+    );
+    await step('take clone', { takeId: 'new', newTakeId: 'copy' }, 'clone');
+    await step('take import', { file: `${prefix}-replay.json` }, 'imported');
+    await step('asset import', { id: 'picture', file: 'picture.png' }, 'picture');
+    await step('asset bind', { assetId: 'picture', slotId: slot }, 'bound-image');
+    await step('audio import', { id: 'music', file: 'music.wav' }, 'audio');
+    await step('audio bgm edit', { assetId: 'music', gain: 0.25, loop: true }, 'bgm');
+    await step('audio sfx edit', { index: 0, gain: 0.4 }, 'final');
+    cli(['game', game, 'project validate', '--input', path(current)]);
+  }
   browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await browser.newPage({ acceptDownloads: true });
   const errors = [];
@@ -247,19 +343,50 @@ try {
   await page.goto(base);
   const chooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '导入项目', exact: true }).click();
-  await (await chooser).setFiles(path('bb-edit.json'));
+  await (await chooser).setFiles(path('bb-final.json'));
   await page.getByRole('button', { name: '保存作品', exact: true }).waitFor();
+  await page.getByLabel('创作 Take').selectOption('new');
+  await page.getByRole('button', { name: '打开 2D 测试预览' }).click();
+  await page.getByLabel('V2 参考 2D 测试画面').waitFor();
+  await page.getByLabel('V2 参考 2D 测试画面').screenshot({ path: path('bb-preview.png') });
+  assert.equal(await page.getByLabel('使用工程 production.audio（WAV）').isChecked(), true);
+  await page.getByRole('button', { name: '播放 V2 预览' }).click();
+  await page.getByRole('button', { name: '暂停 V2 预览' }).waitFor();
+  await page.waitForFunction(
+    () => Number(document.querySelector('input[aria-label="V2 预览帧"]')?.value) > 0,
+  );
+  await page.getByRole('button', { name: '暂停 V2 预览' }).click();
   const dlBB = page.waitForEvent('download');
   await page.getByRole('button', { name: '保存作品', exact: true }).click();
   await (await dlBB).saveAs(path('bb-browser.json'));
-  assert.deepEqual((await read('bb-browser.json')).project, (await read('bb-edit.json')).project);
+  assert.deepEqual((await read('bb-browser.json')).project, (await read('bb-final.json')).project);
+  await page.goto(`${base}/?bb-reopen=1`);
+  const reopen = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: '导入项目', exact: true }).click();
+  await (await reopen).setFiles(path('bb-browser.json'));
+  await page.getByRole('button', { name: '保存作品', exact: true }).waitFor();
   await page.goto(`${base}/?cli-bc=1#bc`);
-  await page.locator('input[accept="application/json,.json"]').setInputFiles(path('bc-edit.json'));
+  await page.locator('input[accept="application/json,.json"]').setInputFiles(path('bc-final.json'));
   await page.waitForFunction(() => document.querySelector('canvas[data-ready="true"]'));
+  await page.getByLabel('BC Take').selectOption('new');
+  await page.waitForFunction(() => document.querySelector('canvas[data-ready="true"]'));
+  await page.getByLabel('BC 视频画面').screenshot({ path: path('bc-preview.png') });
+  await page.getByRole('button', { name: '播放', exact: true }).click();
+  await page.getByRole('button', { name: '暂停', exact: true }).waitFor();
+  await page.waitForFunction(
+    () => Number(document.querySelector('canvas[data-ready="true"]')?.dataset.frame) > 0,
+  );
+  await page.getByRole('button', { name: '暂停', exact: true }).click();
   const dlBC = page.waitForEvent('download');
   await page.getByRole('button', { name: /保存 JSON/ }).click();
   await (await dlBC).saveAs(path('bc-browser.json'));
-  assert.deepEqual(await read('bc-browser.json'), await read('bc-edit.json'));
+  assert.deepEqual(await read('bc-browser.json'), await read('bc-final.json'));
+  await page.goto(`${base}/?bc-reopen=1#bc`);
+  await page
+    .locator('input[accept="application/json,.json"]')
+    .setInputFiles(path('bc-browser.json'));
+  await page.waitForFunction(() => document.querySelector('canvas[data-ready="true"]'));
+  await page.getByLabel('BC Take').selectOption('copy');
   assert.deepEqual(errors, []);
   checks.push('actual BB and BC workbenches reopen and save CLI output unchanged');
   await save('result.json', { passed: true, checks });

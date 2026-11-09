@@ -1,8 +1,6 @@
-# BB / BC CLI 基础入口
+# BB / BC CLI 使用说明
 
-本入口面向本仓库开发环境。先使用 `npm ci` 安装包含开发依赖的依赖，再执行 `npm run build:cli`。构建后可用 `node dist-cli/bcs.js` 或 `npm run --silent bcs --` 调用；最后一种写法的 `--silent` 让 npm 本身不向 stdout 输出命令横幅。`package.json` 也声明了 `bcs` bin，指向构建产物；独立打包发布与生产环境安装尚未验收。
-
-命令结果是一行 JSON，成功退出码为 0、操作错误为 1、参数或操作选项错误为 2。JSON 的 `ok` 和 `report` 沿用现有 Agent 结果结构。输出路径的目录须已存在；写操作必须指定不存在的新文件，拒绝覆盖输入或已有文件。
+本入口面向本仓库开发环境。使用 `npm ci` 安装依赖后执行 `npm run build:cli`，之后可运行 `node dist-cli/bcs.js` 或 `npm run --silent bcs --`。`--silent` 避免 npm 在 JSON stdout 前打印横幅。`package.json` 的 `bcs` bin 指向构建产物；独立安装发布尚未验收。
 
 ```sh
 npm run build:cli
@@ -11,41 +9,71 @@ npm run --silent bcs -- games describe block-placement --json
 npm run --silent bcs -- games describe block-crush-drop --json
 npm run --silent bcs -- game block-placement 'project create' --out bb.json --json
 npm run --silent bcs -- game block-crush-drop 'project create' --out bc.json --json
-npm run --silent bcs -- game block-placement 'project inspect' --input bb.json --json
 npm run --silent bcs -- game block-crush-drop 'project validate' --input bc.json --json
 ```
 
-两个游戏的 `project inspect` 和 `project validate` 均执行工程验证；前者同时返回名称、格式和 Take 列表。`project create` 不接收输入文件，生成可编辑的 BB 作品包或 BC 示例。编辑参数通过 `--options-file` 指向 JSON 文件：
+每次输出一行 JSON；成功退出 0，工程或操作失败退出 1，参数错误退出 2。发现结果列出参数 Schema、执行环境和限制；标记 `not-exposed` 的 BB 原生操作不能直接调用。查询仅返回 report，不输出工程中的 Base64 媒体。
 
-```json
-{ "row": 0, "column": 0, "color": "coral" }
-```
+`--input`、`--out` 和 `--options-file` 相对当前工作目录。options JSON 中的 `file` 相对该 options 文件所在目录；也可使用绝对路径。所有写操作必须指定不存在的新输出文件，不能覆盖输入、已有文件或路径别名。候选完成验证后才原子发布；不会删除磁盘素材。
 
-```sh
-npm run --silent bcs -- game block-placement 'board edit' --input bb.json --options-file bb-options.json --out bb-edited.json --json
-```
+## 当前操作
 
-BC 示例第一步将列号改为 5，落位时间保持 1 秒：
+以下操作均通过 `game <游戏 ID> '<操作名>'` 调用。BB 的游戏 ID 为 `block-placement`；BC 为 `block-crush-drop`。有选项的操作使用 `--options-file`，写操作还需 `--out`。
+
+| 操作                                   | 选项 JSON                                            | 说明                                                                      |
+| -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- |
+| `project create`                       | 无                                                   | 创建 BB 作品包或 BC 可编辑示例                                            |
+| `project inspect` / `project validate` | 无                                                   | 验证并汇总工程或作品包                                                    |
+| `board edit`                           | `{"row":0,"column":0,"color":"coral"}`               | BB 初始棋盘单格；颜色可为 null                                            |
+| `action edit`（BB）                    | `{"takeId":"new","index":0,"row":0,"column":0}`      | 修改 BB 动作锚点并重验后续动作                                            |
+| `action edit`（BC）                    | `{"takeId":"demo","index":0,"column":5,"seconds":1}` | 修改 BC 列与秒数，沿用 30Hz 取整                                          |
+| `take list`                            | 无                                                   | 列出 Take、动作／交互数量、演员及依赖                                     |
+| `take inspect` / `take validate`       | `{"takeId":"new"}`                                   | 查询动作与交互，或验证真实回放                                            |
+| `take generate`                        | `{"takeId":"new","count":1}`                         | 新增机器 Take；BB 数量 1–100，BC 1–24；报告实际生成数量                   |
+| `take clone`                           | `{"takeId":"new","newTakeId":"copy"}`                | 复制语义动作与交互，不复制专属绑定                                        |
+| `take import`                          | `{"file":"replay.json"}`                             | 导入原生 replay，核对游戏、版本、初始哈希与回放；不改 ID                  |
+| `take delete`                          | `{"takeId":"new"}`                                   | 删除指定 Take；受引用或受保护时拒绝                                       |
+| `asset catalog`                        | 无                                                   | 列出本工程素材和本入口支持的图片槽                                        |
+| `asset inspect`                        | `{"assetId":"image"}`                                | 查询元数据、绑定和引用，不输出图片正文                                    |
+| `asset import`                         | `{"id":"image","file":"image.png"}`                  | 真实解码 PNG/JPEG 并内嵌；同 ID 异内容拒绝                                |
+| `asset bind`                           | `{"assetId":"image","slotId":"world.background"}`    | 绑定图片；可选 `fit`、`opacity`、`blendMode`、`inset`                     |
+| `asset unbind`                         | `{"slotId":"world.background"}`                      | 仅解除绑定，保留素材                                                      |
+| `asset prune`                          | 无                                                   | 保守删除没有引用的图片条目，不删除音频或磁盘文件                          |
+| `audio catalog` / `audio inspect`      | 无                                                   | 查询内置声音、预设、素材，或区分显式与生效设置                            |
+| `audio import`                         | `{"id":"music","file":"music.wav"}`                  | 导入 PCM WAV；仅导入，不自动绑定                                          |
+| `audio bgm edit`                       | `{"assetId":"music","gain":0.25,"loop":true}`        | 仅修改给出的 BGM 字段                                                     |
+| `audio sfx edit`                       | `{"index":0,"gain":0.4}`                             | 按 cue 索引编辑 `gain`、`offsetSeconds`、`assetId`；默认 cue 会先显式展开 |
+| `audio edit`                           | `{"masterGain":0,"sfxEnabled":false}`                | 修改 `masterGain`、`sfxGain`、`sfxEnabled`、`mastering` 的指定字段        |
+
+BGM 还支持 `enabled`、`startSeconds`、`sourceOffsetSeconds`、`fadeInSeconds`、`fadeOutSeconds`。合法的数字 0 会保留。更详细的范围与必填字段以 `games describe` 的 Schema 为准；例如：
 
 ```json
 { "takeId": "demo", "index": 0, "column": 5, "seconds": 1 }
 ```
 
 ```sh
-npm run --silent bcs -- game block-crush-drop 'action edit' --input bc.json --options-file bc-options.json --out bc-edited.json --json
+npm run --silent bcs -- game block-crush-drop 'action edit' --input bc.json --options-file change.json --out bc-edited.json --json
 ```
 
-BB 棋盘使用现有工作台服务，带来源、指针、校准轨道或已保存片段的玩法编辑会拒绝，原作品保持不变。BC 动作沿用原生规则、30Hz 时间取整和效果绑定校验；当前有已保存片段、或多 Take 共享参考轨迹时拒绝编辑，避免擅自改写依赖。非法数字、越界和失效消除绑定也会拒绝。报告标记受影响 Take 及需要重新编译的计划和渲染结果。
+## 素材、声音与保护
 
-本版只接受已内嵌素材的文件，不提供外部素材目录参数。BB 使用现有作品包校验；BC 检查工程、动作回放、效果绑定和已绑定素材／音频的哈希。CLI 校验不是浏览器完整渲染或解码验收，不能据此声称所有画面和声音都经过预览。
+BB 图片槽为 `background.base`、`tile.face`、`board.atlas`；BC 为 `world.background`、`tile.palette`。导入和绑定使用本机 Chrome 真实解码。BC 调色板支持符合颜色数的 PNG 横向图集；正方形原图通过工作台已有逻辑生成图集。已有透明序列可以保留和查询，本入口不提供新序列导入器。
 
-`games describe block-placement` 中可调用项只有 4 项。BB 原始适配器其余 31 项列为 `not-exposed`，其用途和失效信息供后续接入审核，不可作为本版文件写操作调用。BC 本版也只有 4 项；没有提供预览、渲染、批量、完整素材操作或与来源 CLI 的全面兼容。源端盘点的原始证据与构建版本尚待取得，不能将其计为已验收。
+声音输入为当前解码器支持的 PCM WAV，单文件最多 16 MiB。导入、BGM 和 cue 是独立操作；BGM 修改保留其他 cue，cue 修改保留 BGM。音频预设、所有显式 cue、BGM 引用、真实字节和哈希均会检查；默认预设及 cue 保持原合同语义。
 
-回归验证：
+BB 含来源、指针或校准轨道时，不能直接修改玩法 Take；图片和音频使用作品包更新校验并保留这些关联。删除被片段或效果引用的 Take 会指出依赖并拒绝。BC 的共享逐步参考轨迹以及已保存片段在部分玩法／图片编辑时仍受保护；不会自动解绑效果或删除片段以消除错误。
+
+当前仍不支持外部素材目录参数、CLI 预览／视频渲染、BC 3D、主题序列生成、持久批处理或全量来源 CLI 操作。源端原始盘点文件和构建版本未取得，不宣称与来源 CLI 全部兼容。
+
+## 验证
 
 ```sh
 npm run build:cli
+npm run test:cli:smoke
+node scripts/test-cli-takes.mjs
+node scripts/test-cli-audio.mjs
+node scripts/test-cli-assets.mjs
 npm run test:cli
 ```
 
-测试需要本机 Chrome。它通过真实 CLI 子进程检查输入、输出与拒绝行为，并在 BB、BC 工作台中分别重新打开和保存 CLI 输出；生成物写入忽略的 `outputs/`。
+前面三项测试在 Node 子进程中运行；图片测试和最后的工作台重开测试需要本机 Chrome。浏览器检查使用程序生成图片和 WAV，不进行视频导出。检查覆盖的样例不等于全部历史工程或跨平台验收。
