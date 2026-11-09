@@ -37,6 +37,7 @@ jobs:
       - run: npm run test:cli:smoke
       - run: node scripts/test-cli-takes.mjs
       - run: node scripts/test-cli-audio.mjs
+      - run: node scripts/test-cli-media.mjs
       - name: Check CLI discovery
         run: |
           node dist-cli/bcs.js games list --json > /tmp/bcs-games.json
