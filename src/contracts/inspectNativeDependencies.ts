@@ -43,6 +43,15 @@ export function inspectNativeDependencies(value: unknown): NativeDependency[] {
       if (typeof cue?.assetId === 'string')
         refs.push({ path: `direction.production.audio.cues[${index}].assetId`, id: cue.assetId });
     });
+  if (Array.isArray(audio?.voices))
+    audio.voices.forEach((value, index) => {
+      const voice = record(value);
+      if (typeof voice?.assetId === 'string')
+        refs.push({
+          path: `direction.production.audio.voices[${index}].assetId`,
+          id: voice.assetId,
+        });
+    });
   for (const ref of refs) {
     const asset = record(assets?.[ref.id]);
     if (ref.id.startsWith('builtin:'))

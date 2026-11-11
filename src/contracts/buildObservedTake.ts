@@ -114,7 +114,7 @@ export async function buildObservedTake(
     timing: Array<Record<string, unknown>> = [];
   let lastRelease = -1;
   for (const [index, entry] of input.actions.entries()) {
-    const prefix = `第 ${index + 1} 步`;
+    const prefix = `Take「observed-take」第 ${index + 1} 步 · ${entry?.id ?? '无 ID'}`;
     keys(
       entry,
       [

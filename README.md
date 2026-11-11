@@ -51,6 +51,8 @@ npm run build
 npm run test:browser:preview-session
 ```
 
+本轮分轨混音、保存重开、观察编辑与实际 BB/BC 有声出片检查为 `npm run test:browser:improvements`（先 build，再设置 `BCS_TEST_PRODUCTION=1` 可检查生产构建）。原生 AAC 不可用时按需使用官方软件 AAC，故障/取消/同页重试检查为 `npm run test:browser:aac-fallback`。`npm run test:browser:game-audio-endurance -- <上一步生成的目录>` 实际检查 BB 126.9 秒和 BC 121.167 秒合成有声工程的取消、重试、完整解码和事件时间；不代表真实作品或全高清压力验收。`npm run test:browser:export-endurance` 是独立的 120 秒合成无声检查。Chrome 不在默认路径时设置 `BCS_CHROME_PATH`。具体证据与限制见 [开发记录](docs/WORKBENCH_IMPROVEMENTS.md)。
+
 浏览器检查额外需要本机 Chrome、FFmpeg 和 FFprobe。日常工程编辑只检查相关结果；开发测试与历史媒体全量验收分别进行。
 
 ## 文档
@@ -59,6 +61,7 @@ npm run test:browser:preview-session
 | ------------------------------------ | -------------------------------------------- |
 | [BB 工作流](docs/BB_WORKFLOW.md)     | 创作、参考标注、素材、声音和实际限制         |
 | [BC 工作流](docs/BC_WORKFLOW.md)     | 落消工程、外观变体、原生效果、音频与导出     |
+| [声音混音](docs/AUDIO_MIX.md)        | BGM、事件 cue、人声、压低和默认兼容          |
 | [CLI 基础入口](docs/CLI_WORKFLOW.md) | 工程查询、安全编辑、另存和当前能力限制       |
 | [架构](docs/ARCHITECTURE.md)         | 作品会话、玩法、时间线、绘制与导出的模块边界 |
 | [贡献指南](CONTRIBUTING.md)          | 开发约定、检查命令和提交范围                 |

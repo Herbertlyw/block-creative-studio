@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp } from 'node:fs/promises';
@@ -56,7 +57,7 @@ try {
     headless: true,
     ...(process.env.BB_CHROME_PATH
       ? { executablePath: process.env.BB_CHROME_PATH }
-      : { channel: 'chrome' }),
+      : chromeOptions()),
     args: ['--no-sandbox'],
   });
   const baseUrl = `http://127.0.0.1:${server.httpServer.address().port}/`;

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { observedFramePosition } from '../contracts/observedDraftReview';
+import type { ReferenceMeasurement } from '../contracts/referenceMeasurement';
 
 const colors = ['coral', 'amber', 'lime', 'cyan', 'blue', 'violet', 'rose'];
 type Props = {
@@ -9,6 +11,7 @@ type Props = {
   height: number;
   frame: number;
   hasMeasurement: boolean;
+  measurement?: ReferenceMeasurement | null;
 };
 /** Structured form edits the same JSON that is saved and validated by the builder. */
 export function ObservedAnnotationEditor({
@@ -19,6 +22,7 @@ export function ObservedAnnotationEditor({
   height,
   frame,
   hasMeasurement,
+  measurement,
 }: Props) {
   const [paint, setPaint] = useState('unknown');
   let draft: any = null;
@@ -309,10 +313,33 @@ export function ObservedAnnotationEditor({
                   onChange={(e) => setAction(i, key, number(e.target.value))}
                 />
                 {['pickupFrame', 'releaseFrame', 'clearFrame'].includes(key) && (
-                  <button disabled={!hasMeasurement} onClick={() => setAction(i, key, frame)}>
+                  <button
+                    disabled={
+                      !hasMeasurement ||
+                      !Number.isInteger(frame) ||
+                      frame < 0 ||
+                      (!!measurement && frame >= measurement.source.frameCount)
+                    }
+                    onClick={() => setAction(i, key, frame)}
+                  >
                     取所选帧
                   </button>
                 )}{' '}
+                {['pickupFrame', 'releaseFrame', 'clearFrame'].includes(key) &&
+                  measurement &&
+                  (() => {
+                    try {
+                      const position = observedFramePosition(measurement, a[key], draft.output.fps);
+                      return (
+                        <small>
+                          源 {position.seconds.toFixed(4)} 秒 → 校准输出帧 {position.outputFrame}
+                          。{' '}
+                        </small>
+                      );
+                    } catch {
+                      return <small>时间未确认或超出测量范围。 </small>;
+                    }
+                  })()}
               </label>
             ),
           )}

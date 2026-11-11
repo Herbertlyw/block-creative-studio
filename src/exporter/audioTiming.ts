@@ -6,17 +6,28 @@ import {
   Quality,
   type AudioCodec,
 } from 'mediabunny';
+import { addAudioBufferChunks } from './audioChunks';
 
 /** Measure this encoder/decoder pair with two independent broadband probes. Never assume a fixed AAC delay. */
 export async function measureAudioCodecDelay(
   codec: AudioCodec,
   sampleRate: number,
-  options: { numberOfChannels?: 1 | 2; bitrate?: number } = {},
+  options: { numberOfChannels?: 1 | 2; bitrate?: number; signal?: AbortSignal | undefined } = {},
 ): Promise<number> {
   const { numberOfChannels = 1, bitrate = 128_000 } = options;
+  const { signal } = options;
+  signal?.throwIfAborted();
   if (![1, 2].includes(numberOfChannels) || !Number.isInteger(bitrate) || bitrate <= 0)
     throw new Error('音频校准声道或码率无效。');
   const context = new AudioContext({ sampleRate });
+  let output: Output | undefined;
+  let finalized = false;
+  let addingAudio = false;
+  const cancel = () => {
+    if (!addingAudio) void output?.cancel().catch(() => {});
+    if (context.state !== 'closed') void context.close().catch(() => {});
+  };
+  signal?.addEventListener('abort', cancel, { once: true });
   try {
     if (context.sampleRate !== sampleRate) throw new Error('音频校准采样率不受支持。');
     const buffer = context.createBuffer(numberOfChannels, sampleRate, sampleRate);
@@ -35,15 +46,25 @@ export async function measureAudioCodecDelay(
     for (let channel = 0; channel < numberOfChannels; channel++)
       starts.forEach((start, index) => buffer.getChannelData(channel).set(patterns[index]!, start));
     const target = new BufferTarget();
-    const output = new Output({ format: new Mp4OutputFormat(), target });
+    output = new Output({ format: new Mp4OutputFormat(), target });
     const source = new AudioBufferSource({ codec, quality: new Quality({ bitrate }) });
     output.addAudioTrack(source);
     await output.start();
-    await source.add(buffer);
+    signal?.throwIfAborted();
+    addingAudio = true;
+    try {
+      await addAudioBufferChunks(source, buffer, signal);
+    } finally {
+      addingAudio = false;
+    }
+    signal?.throwIfAborted();
     source.close();
     await output.finalize();
+    finalized = true;
+    signal?.throwIfAborted();
     if (!target.buffer) throw new Error('音频编码器校准未产生数据。');
     const decoded = await context.decodeAudioData(target.buffer.slice(0));
+    signal?.throwIfAborted();
     if (decoded.sampleRate !== sampleRate) throw new Error('音频解码校准采样率不一致。');
     if (decoded.numberOfChannels !== numberOfChannels)
       throw new Error('音频解码校准声道数不一致。');
@@ -82,7 +103,14 @@ export async function measureAudioCodecDelay(
       throw new Error(`音频编码器校准结果不一致：${matches.join('、')} 采样。`);
     return matches[0]!;
   } finally {
-    await context.close();
+    signal?.removeEventListener('abort', cancel);
+    if (output && !finalized)
+      try {
+        await output.cancel();
+      } catch {
+        /* preserve the failure */
+      }
+    if (context.state !== 'closed') await context.close();
   }
 }
 

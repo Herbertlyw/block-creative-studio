@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { sourceDesignMap, type SourceDesignMap } from '../contracts/sourceDesignMap';
 import type { ReferenceMeasurement } from '../contracts/referenceMeasurement';
 import { measuredFrameSeconds } from '../contracts/referenceMeasurement';
+import { observedFramePosition } from '../contracts/observedDraftReview';
 
 type Props = {
   mapping: SourceDesignMap | null;
@@ -15,6 +16,7 @@ type Props = {
   frame: number;
   width: number;
   height: number;
+  onSelectFrame?: (frame: number) => void;
 };
 /** An explicit stretched source-to-design map matching the calibrated canvas. */
 export function ObservedGeometryEditor({
@@ -29,6 +31,7 @@ export function ObservedGeometryEditor({
   frame,
   width,
   height,
+  onSelectFrame,
 }: Props) {
   const [action, setAction] = useState(0),
     [point, setPoint] = useState(0),
@@ -73,6 +76,7 @@ export function ObservedGeometryEditor({
     Array.isArray(g.rackCenters);
   const current = valid ? g.motions[action] : null,
     p = current?.points?.[point];
+  const bindingValid = !!current && a?.actions?.[action]?.id === current.actionId;
   const pointerAction =
       a?.actions?.[action]?.id === current?.actionId && Array.isArray(a?.actions?.[action]?.path)
         ? a.actions[action]
@@ -102,6 +106,7 @@ export function ObservedGeometryEditor({
     e: PointerEvent<SVGElement>,
     kind: 'board' | 'size' | 'rack' | 'point' | 'pointer',
   ) {
+    if ((kind === 'point' || kind === 'pointer') && !bindingValid) return;
     e.preventDefault();
     drag.current = kind;
     (e.currentTarget.ownerSVGElement ?? e.currentTarget).setPointerCapture(e.pointerId);
@@ -281,6 +286,32 @@ export function ObservedGeometryEditor({
       )}
       {valid && (
         <>
+          {!bindingValid && (
+            <p role="alert">
+              当前方块轨迹的动作 ID 或顺序与结构化标注不匹配；轨迹保留，请核对绑定后再编辑或确认。
+            </p>
+          )}
+          {Array.isArray(a?.actions) &&
+            g.motions.length === a.actions.length &&
+            g.motions.every((motion: any) =>
+              a.actions.some((entry: any) => entry.id === motion.actionId),
+            ) &&
+            new Set(g.motions.map((motion: any) => motion.actionId)).size === g.motions.length &&
+            !bindingValid && (
+              <button
+                type="button"
+                onClick={() =>
+                  update((next) => {
+                    next.motions = a.actions.map((entry: any) =>
+                      next.motions.find((motion: any) => motion.actionId === entry.id),
+                    );
+                    reset(next, true);
+                  })
+                }
+              >
+                按动作 ID 重排并撤销轨迹确认
+              </button>
+            )}
           <div
             style={{
               position: 'relative',
@@ -370,6 +401,28 @@ export function ObservedGeometryEditor({
                 onPointerDown={(e) => begin(e, 'size')}
               />
               <line x1="0" y1={g.rackY} x2="1080" y2={g.rackY} stroke="#ffdf00" strokeWidth="5" />
+              {g.rackCenters.map((x: number, index: number) => (
+                <g key={index}>
+                  <rect
+                    x={x - g.rackCell}
+                    y={g.rackY - g.rackCell}
+                    width={g.rackCell * 2}
+                    height={g.rackCell * 2}
+                    fill="none"
+                    stroke="#ffdf00"
+                    strokeWidth="3"
+                  />
+                  <text
+                    x={x}
+                    y={g.rackY - g.rackCell - 12}
+                    textAnchor="middle"
+                    fill="#ffdf00"
+                    fontSize="28"
+                  >
+                    候选 {index}
+                  </text>
+                </g>
+              ))}
               <circle
                 aria-label="拖动候选纵向位置"
                 cx="540"
@@ -418,9 +471,52 @@ export function ObservedGeometryEditor({
                   />
                 </>
               )}
+              {current && (
+                <>
+                  <polyline
+                    aria-label="选中动作方块轨迹"
+                    pointerEvents="none"
+                    points={current.points.map((v: any) => `${v.x},${v.y}`).join(' ')}
+                    fill="none"
+                    stroke="#ff83ff"
+                    strokeWidth="5"
+                  />
+                  {current.points.map((v: any, index: number) => (
+                    <g
+                      key={index}
+                      onPointerDown={(event) => {
+                        setPoint(index);
+                        begin(event, 'point');
+                      }}
+                      onClick={() => setPoint(index)}
+                    >
+                      <circle
+                        cx={v.x}
+                        cy={v.y}
+                        r={index === point ? 16 : 10}
+                        fill={index === point ? '#fff' : '#ff83ff'}
+                      />
+                      <text
+                        pointerEvents="none"
+                        x={v.x + 18}
+                        y={v.y - 18}
+                        fill="#fff"
+                        stroke="#111"
+                        strokeWidth="1"
+                        fontSize="27"
+                      >
+                        {index + 1} · f{v.frame}
+                      </text>
+                    </g>
+                  ))}
+                </>
+              )}
             </svg>
           </div>
-          <p>三个候选横坐标使用 1080×1920 设计像素；修改后重新确认几何及各动作轨迹。</p>
+          <p>
+            三个候选横坐标使用 1080×1920
+            设计像素；黄色框只示意候选中心，真实形状仍由供给标注确认。修改后重新确认几何及各动作轨迹。
+          </p>
           {[0, 1, 2].map((index) => (
             <label key={index}>
               候选 {index + 1} 横坐标{' '}
@@ -475,6 +571,44 @@ export function ObservedGeometryEditor({
           </label>{' '}
           {p && (
             <>
+              <p aria-label="轨迹点绑定信息">
+                动作 {current.actionId} · 点 {point + 1} · 源帧 {p.frame}
+                {measurement &&
+                  (() => {
+                    try {
+                      const position = observedFramePosition(measurement, p.frame, a.output.fps);
+                      return ` · ${position.seconds.toFixed(6)} 秒 · 校准输出帧 ${position.outputFrame}`;
+                    } catch {
+                      return ' · 时间或输出帧率无效';
+                    }
+                  })()}{' '}
+                ·{' '}
+                {!bindingValid
+                  ? '绑定失效，须重新确认'
+                  : current.confirmed
+                    ? '作者已确认'
+                    : '待确认'}
+              </p>
+              {(['x', 'y'] as const).map((key) => (
+                <label key={key}>
+                  方块左上 {key}{' '}
+                  <input
+                    aria-label={`方块轨迹 ${key}`}
+                    type="number"
+                    step="any"
+                    value={p[key]}
+                    disabled={!bindingValid}
+                    onChange={(e) => {
+                      const value = e.target.valueAsNumber;
+                      if (Number.isFinite(value))
+                        update((next) => {
+                          next.motions[action].points[point][key] = value;
+                          reset(next);
+                        });
+                    }}
+                  />
+                </label>
+              ))}{' '}
               <label>
                 点的源帧{' '}
                 <input
@@ -505,6 +639,13 @@ export function ObservedGeometryEditor({
               </label>{' '}
               <button
                 type="button"
+                disabled={
+                  !bindingValid ||
+                  !measurement ||
+                  !Number.isInteger(frame) ||
+                  frame < 0 ||
+                  frame >= measurement.source.frameCount
+                }
                 onClick={() =>
                   update((n) => {
                     n.motions[action].points.splice(point + 1, 0, {
@@ -517,6 +658,18 @@ export function ObservedGeometryEditor({
                 }
               >
                 在所选源帧添加点
+              </button>{' '}
+              <button
+                type="button"
+                disabled={
+                  !measurement ||
+                  !Number.isInteger(p.frame) ||
+                  p.frame < 0 ||
+                  p.frame >= measurement.source.frameCount
+                }
+                onClick={() => onSelectFrame?.(p.frame)}
+              >
+                定位所选轨迹点（近似）
               </button>{' '}
               <button
                 type="button"
@@ -559,7 +712,8 @@ export function ObservedGeometryEditor({
                 data-action-id={current?.actionId}
                 type="checkbox"
                 aria-label="确认选中方块轨迹"
-                checked={current?.confirmed === true}
+                checked={bindingValid && current?.confirmed === true}
+                disabled={!bindingValid}
                 onChange={(e) =>
                   update((n) => {
                     n.motions[action].confirmed = e.target.checked;

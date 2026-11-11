@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -78,7 +79,7 @@ try {
     /bc-test-timeline/,
     'test must intercept audio preparation before running',
   );
-  browser = await chromium.launch({ channel: 'chrome', headless: true });
+  browser = await chromium.launch({ ...chromeOptions(), headless: true });
   page = await browser.newPage();
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('download', (download) => downloads.push(download.suggestedFilename()));
@@ -142,7 +143,7 @@ try {
   assert.equal((await snapshot()).exporting, true);
   assert.equal((await snapshot()).error, '');
   assert.equal((await snapshot()).exportError, '');
-  assert.equal((await snapshot()).progress, '准备素材与音频…');
+  assert.equal((await snapshot()).progress, '音频混音…');
   await page.evaluate(() => {
     bcTest.player.cancelExport();
     bcTest.exports[3].reject(new DOMException('cancelled', 'AbortError'));

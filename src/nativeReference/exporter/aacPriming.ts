@@ -71,20 +71,25 @@ export function compareAacPrimingEnvelopes(reference:number[],decoded:number[]){
   return best;
 }
 
-export async function measureAacOffset(blob:Blob,audio:{data:Float32Array;sampleRate:number;numberOfChannels:number}) {
+export async function measureAacOffset(blob:Blob,audio:{data:Float32Array;sampleRate:number;numberOfChannels:number},signal?:AbortSignal) {
+  signal?.throwIfAborted();
   const {data,sampleRate,numberOfChannels:channels}=audio;
   let first=0;while(first<data.length&&Math.abs(data[first]!)<.0001)first++;
   if(first===data.length)return {offsetSeconds:0,correlation:1,silent:true};
   const frames=Math.min(data.length/channels,Math.ceil((first/channels/sampleRate+2)*sampleRate));
   const decoded=new Float32Array(frames*channels),input=new Input({source:new BlobSource(blob),formats:[new Mp4InputFormat()]});
+  const cancel=()=>input.dispose();
+  signal?.addEventListener('abort',cancel,{once:true});
   try {
     const track=await input.getPrimaryAudioTrack();if(!track)throw new Error('AAC_PRIMING_TRACK_MISSING');
+    signal?.throwIfAborted();
     const sink=new AudioSampleSink(track);
     // An edit list can put AAC priming packets before zero. Decode them too:
     // seeking to zero cold-starts the decoder and can create a false extra delay.
     // The copy below still clips negative samples from the measured timeline.
     for await(const sample of sink.samples(undefined,frames/sampleRate)) {
       try {
+        signal?.throwIfAborted();
         if(sample.sampleRate!==sampleRate||sample.numberOfChannels!==channels)throw new Error('AAC_PRIMING_FORMAT_CHANGED');
         const values=new Float32Array(sample.numberOfFrames*channels);sample.copyTo(values,{format:'f32',planeIndex:0});
         const start=Math.round(sample.timestamp*sampleRate)*channels;
@@ -95,14 +100,16 @@ export async function measureAacOffset(blob:Blob,audio:{data:Float32Array;sample
     const match=compareAacPrimingEnvelopes(audioRmsEnvelope(data.subarray(0,frames*channels),sampleRate,channels,.001),audioRmsEnvelope(decoded,sampleRate,channels,.001));
     if(match.correlation<.94)throw new Error(`AAC_PRIMING_CALIBRATION_FAILED: ${match.correlation}`);
     return {offsetSeconds:match.offsetSeconds,correlation:match.correlation,silent:false};
-  } finally {input.dispose();}
+  } finally {signal?.removeEventListener('abort',cancel);input.dispose();}
 }
 
-export async function alignAacPriming(blob:Blob,audio:{data:Float32Array;sampleRate:number;numberOfChannels:number},durationSeconds:number) {
-  const measured=await measureAacOffset(blob,audio);
+export async function alignAacPriming(blob:Blob,audio:{data:Float32Array;sampleRate:number;numberOfChannels:number},durationSeconds:number,signal?:AbortSignal) {
+  const measured=await measureAacOffset(blob,audio,signal);
+  signal?.throwIfAborted();
   if(measured.offsetSeconds<-.001)throw new Error('AAC_PRIMING_UNEXPECTED_NEGATIVE_OFFSET');
   const aligned=measured.offsetSeconds>.001?new Blob([trimAacPriming(new Uint8Array(await blob.arrayBuffer()),measured.offsetSeconds,durationSeconds)],{type:'video/mp4'}):blob;
-  const after=await measureAacOffset(aligned,audio);
+  signal?.throwIfAborted();
+  const after=await measureAacOffset(aligned,audio,signal);
   if(Math.abs(after.offsetSeconds)>.01)throw new Error(`AAC_PRIMING_ALIGNMENT_FAILED: ${after.offsetSeconds}`);
   return {blob:aligned,verification:{measuredOffsetSeconds:measured.offsetSeconds,remainingOffsetSeconds:after.offsetSeconds,correlation:after.correlation,method:'measured-aac-edit-list' as const}};
 }

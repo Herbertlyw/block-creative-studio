@@ -4,7 +4,7 @@ import { attachBlockCrushDropRuntimeAssets } from '../../nativeReference/games/b
 import { BlockCrushDropReferenceScene } from '../../nativeReference/games/block-crush-drop/render/BlockCrushDropReferenceScene';
 import { blockCrushDropFrameFromPacket } from '../../nativeReference/games/block-crush-drop/presentation/presentationAdapter';
 import {
-  compileProductionAudio,
+  compileProductionAudioAsync,
   verifyProductionAudioAssets,
 } from '../../nativeReference/agent-director/audioMix';
 import { verifyRuntimeAgentImageBindings } from '../../nativeReference/agent-assets/storage';
@@ -66,14 +66,20 @@ export async function prepareBCScene(canvas: HTMLCanvasElement, playback: BCPlay
   };
 }
 
-export async function mixBCAudio(playback: BCPlayback) {
+export async function mixBCAudio(playback: BCPlayback, signal?: AbortSignal) {
   const audio = bcProduction(playback.project).audio;
   if (!audio) return null;
   await verifyProductionAudioAssets(audio);
-  const mix = compileProductionAudio(playback.source, audio, 48_000, {
-    startFrame: playback.start,
-    endFrame: playback.end,
-  });
+  const mix = await compileProductionAudioAsync(
+    playback.source,
+    audio,
+    48_000,
+    {
+      startFrame: playback.start,
+      endFrame: playback.end,
+    },
+    signal,
+  );
   if (mix.track.numberOfChannels !== 2) throw new Error('BC 混音声道与编码器不匹配。');
   return { ...mix, track: { ...mix.track, numberOfChannels: 2 as const } };
 }

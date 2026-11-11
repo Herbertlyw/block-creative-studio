@@ -2,14 +2,16 @@ import {
   AudioBufferSource,
   BufferTarget,
   CanvasSource,
-  getFirstEncodableAudioCodec,
   getFirstEncodableVideoCodec,
   Mp4OutputFormat,
   Output,
   Quality,
 } from 'mediabunny';
 import { alignAacPriming } from '../nativeReference/exporter/aacPriming';
+import { prepareAacEncoder } from './aacEncoder';
+import { addAudioBufferChunks } from './audioChunks';
 import { measureAudioCodecDelay, trimMp4AudioPresentation } from './audioTiming';
+import { exportFailure, type ExportPhase } from './exportStatus';
 
 /** Shared frame encoder: callers provide the exact already-warmed drawing surface. */
 export async function exportFrameVideo({
@@ -21,6 +23,7 @@ export async function exportFrameVideo({
   render,
   audio,
   onProgress,
+  onPhase,
   signal,
   bitrate = 8_000_000,
   shortAudioProbe = false,
@@ -33,6 +36,7 @@ export async function exportFrameVideo({
   render: (frame: number) => void;
   audio: { pcm: Float32Array; channels: 1 | 2 } | null;
   onProgress?: (frame: number, total: number) => void;
+  onPhase?: (phase: ExportPhase) => void;
   signal?: AbortSignal;
   bitrate?: number;
   /** Use the existing independent encoder probe when content is too short to correlate. */
@@ -63,23 +67,40 @@ export async function exportFrameVideo({
   if (![8_000_000, 14_000_000, 24_000_000].includes(bitrate))
     throw new Error('视频码率选项不支持。');
   let mux: Output | null = null;
+  let video: CanvasSource | null = null;
+  let track: AudioBufferSource | null = null;
+  let addingAudio = false;
+  let phase: ExportPhase = 'codec';
+  const report = (next: ExportPhase) => {
+    phase = next;
+    onPhase?.(next);
+  };
+  const cancelMux = () => {
+    if (mux && !addingAudio) void mux.cancel().catch(() => {});
+  };
+  signal?.addEventListener('abort', cancelMux, { once: true });
   try {
+    report('codec');
     const quality = new Quality({ bitrate }),
       codec = await getFirstEncodableVideoCodec(['avc'], { width, height, quality });
     if (codec !== 'avc') throw new Error('浏览器不能编码 AVC。');
     checkCancelled();
-    let track: AudioBufferSource | null = null,
-      buffer: AudioBuffer | null = null,
-      delay = 0;
+    let buffer: AudioBuffer | null = null,
+      delay = 0,
+      softwareAudio = false;
     if (audio) {
       const sampleRate = 48_000,
-        bitrate = audio.channels === 2 ? 192_000 : 128_000,
-        audioCodec = await getFirstEncodableAudioCodec(['aac'], {
-          numberOfChannels: audio.channels,
-          sampleRate,
-        });
-      if (audioCodec !== 'aac') throw new Error('浏览器不能编码 AAC。');
-      track = new AudioBufferSource({ codec: audioCodec, quality: new Quality({ bitrate }) });
+        bitrate = audio.channels === 2 ? 192_000 : 128_000;
+      softwareAudio =
+        (await prepareAacEncoder({
+          channels: audio.channels,
+          bitrate,
+          signal,
+          onPhase: report,
+        })) === 'software';
+      checkCancelled();
+      report('audio-encoding');
+      track = new AudioBufferSource({ codec: 'aac', quality: new Quality({ bitrate }) });
       const context = new AudioContext({ sampleRate });
       try {
         buffer = context.createBuffer(
@@ -94,11 +115,17 @@ export async function exportFrameVideo({
       } finally {
         await context.close();
       }
-      if (audio.channels === 1 || shortAudioProbe)
-        delay = await measureAudioCodecDelay(audioCodec, sampleRate, {
+      // The content envelope has a 1 ms grid. Use a fresh broadband probe for
+      // software AAC, so its edit list retains sample precision rather than rounding priming.
+      if (audio.channels === 1 || shortAudioProbe || softwareAudio) {
+        report('audio-timing');
+        delay = await measureAudioCodecDelay('aac', sampleRate, {
           numberOfChannels: audio.channels,
           bitrate,
+          signal,
         });
+        report('audio-encoding');
+      }
     }
     checkCancelled();
     const target = new BufferTarget();
@@ -106,31 +133,46 @@ export async function exportFrameVideo({
       format: new Mp4OutputFormat(audio ? { fastStart: false } : undefined),
       target,
     });
-    const video = new CanvasSource(canvas, { codec, quality });
+    video = new CanvasSource(canvas, { codec, quality });
     mux.addVideoTrack(video, { frameRate: fps });
     if (track) mux.addAudioTrack(track);
     await mux.start();
-    if (track && buffer) await track.add(buffer);
+    if (track && buffer) {
+      addingAudio = true;
+      try {
+        await addAudioBufferChunks(track, buffer, signal);
+      } finally {
+        addingAudio = false;
+      }
+    }
+    checkCancelled();
+    report('video-encoding');
     for (let frame = 0; frame < totalFrames; frame++) {
       checkCancelled();
       render(frame);
+      checkCancelled();
       await video.add(frame / fps, 1 / fps, { keyFrame: frame % (fps * 2) === 0 });
       if (frame % 12 === 0) {
         onProgress?.(frame + 1, totalFrames);
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
     }
+    onProgress?.(totalFrames, totalFrames);
     checkCancelled();
     video.close();
     track?.close();
+    report('muxing');
     await mux.finalize();
+    checkCancelled();
     if (!target.buffer) throw new Error('视频输出为空。');
     const duration = totalFrames / fps;
-    if (audio?.channels === 2 && !shortAudioProbe) {
+    if (audio) report('audio-timing');
+    if (audio?.channels === 2 && !shortAudioProbe && !softwareAudio) {
       const result = await alignAacPriming(
         new Blob([target.buffer], { type: 'video/mp4' }),
         { data: audio.pcm, sampleRate: 48_000, numberOfChannels: 2 },
         duration,
+        signal,
       );
       checkCancelled();
       return result.blob;
@@ -147,6 +189,19 @@ export async function exportFrameVideo({
       } catch {
         /* retain the original error */
       }
-    throw error;
+    checkCancelled();
+    throw exportFailure(error, phase);
+  } finally {
+    signal?.removeEventListener('abort', cancelMux);
+    try {
+      video?.close();
+    } catch {
+      /* already closed */
+    }
+    try {
+      track?.close();
+    } catch {
+      /* already closed */
+    }
   }
 }

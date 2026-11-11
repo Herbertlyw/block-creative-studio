@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import { prepareSyntheticReference } from './fixtures/syntheticReference.mjs';
 // Enter known synthetic observations through the browser form. This is scripted
 // UI input, not automatic video recognition or human visual approval.
@@ -29,7 +30,7 @@ try {
     headless: true,
     ...(process.env.BB_CHROME_PATH
       ? { executablePath: process.env.BB_CHROME_PATH }
-      : { channel: 'chrome' }),
+      : chromeOptions()),
     args: ['--no-sandbox'],
   });
   const page = await browser.newPage({
@@ -116,7 +117,11 @@ try {
   await movePoint(200, 1400, 205, 1395);
   await movePoint(205, 1395, 200, 1400);
   for (let i = 0; i < 3; i++) {
-    await page.getByLabel('几何动作').selectOption(String(i));
+    await page.getByLabel('几何动作').selectOption({ value: String(i) });
+    await page.waitForFunction(
+      (id) => document.querySelector('[aria-label="确认选中方块轨迹"]')?.dataset.actionId === id,
+      geometry.motions[i].actionId,
+    );
     await page.getByLabel('确认选中方块轨迹').check();
   }
   await page.getByLabel('确认棋盘候选几何').check();

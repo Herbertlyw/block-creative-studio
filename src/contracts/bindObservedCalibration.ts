@@ -66,35 +66,45 @@ export async function bindObservedCalibration(
       !Array.isArray(path.points) ||
       path.points.length < 2
     )
-      throw new Error(`第 ${index + 1} 步缺少匹配动作 ID 的已确认方块轨迹。`);
+      throw new Error(
+        `Take「observed-take」第 ${index + 1} 步 · ${a.id}：缺少匹配动作 ID 的已确认方块轨迹。`,
+      );
     const start = measuredFrameSeconds(m, a.pickupFrame),
       release = measuredFrameSeconds(m, a.releaseFrame);
     if (!a.clearRows.length && !a.clearCols.length && a.clearFrame !== a.releaseFrame)
-      throw new Error(`第 ${index + 1} 步没有消除，清除帧必须等于释放帧。`);
+      throw new Error(
+        `Take「observed-take」第 ${index + 1} 步 · ${a.id}：没有消除，清除帧必须等于释放帧。`,
+      );
     const clear = measuredFrameSeconds(m, a.clearFrame);
     let previous = -1;
     if (start < previousClear)
-      throw new Error(`第 ${index + 1} 步开始早于上一步消除完成，当前渲染器无法同时表达。`);
+      throw new Error(
+        `Take「observed-take」第 ${index + 1} 步 · ${a.id}：开始早于上一步消除完成，当前渲染器无法同时表达。`,
+      );
     if (
       Math.ceil(release * input.output.fps - 1e-7) >= Math.round(duration * input.output.fps) ||
       Math.ceil(clear * input.output.fps - 1e-7) >= Math.round(duration * input.output.fps)
     )
-      throw new Error(`第 ${index + 1} 步事件在输出帧范围之外。`);
+      throw new Error(`Take「observed-take」第 ${index + 1} 步 · ${a.id}：事件在输出帧范围之外。`);
     previousClear = clear;
     const motion = path.points.map((p: any) => {
       if (
         !keys(p, ['frame', 'x', 'y', 'cellSize']) ||
         ![p.x, p.y, p.cellSize].every(Number.isFinite)
       )
-        throw new Error(`第 ${index + 1} 步轨迹点缺少位置或尺寸。`);
+        throw new Error(
+          `Take「observed-take」第 ${index + 1} 步 · ${a.id}：轨迹点缺少位置或尺寸。`,
+        );
       const t = measuredFrameSeconds(m, p.frame);
       if (t < start || t > release || t <= previous)
-        throw new Error(`第 ${index + 1} 步方块轨迹时间无效。`);
+        throw new Error(`Take「observed-take」第 ${index + 1} 步 · ${a.id}：方块轨迹时间无效。`);
       previous = t;
       return [t, p.x, p.y, p.cellSize];
     });
     if (path.points[0].frame !== a.pickupFrame || path.points.at(-1).frame !== a.releaseFrame)
-      throw new Error(`第 ${index + 1} 步方块轨迹必须覆盖拾取和释放。`);
+      throw new Error(
+        `Take「observed-take」第 ${index + 1} 步 · ${a.id}：方块轨迹必须覆盖拾取和释放。`,
+      );
     const last = path.points.at(-1),
       [gx, gy, pitch] = g.board;
     if (
@@ -102,7 +112,9 @@ export async function bindObservedCalibration(
       Math.abs(last.y - (gy + a.row * pitch)) > 0.01 ||
       Math.abs(last.cellSize - pitch) > 0.01
     )
-      throw new Error(`第 ${index + 1} 步释放的方块左上角或单格尺寸与目标格不一致；不能自动吸附。`);
+      throw new Error(
+        `Take「observed-take」第 ${index + 1} 步 · ${a.id}：释放的方块左上角或单格尺寸与目标格不一致；不能自动吸附。`,
+      );
     return { actionId: a.id, start, release, clear, slot: a.slot, motion };
   });
   const result = structuredClone(built.document);

@@ -19,11 +19,12 @@ import { compileBCPlayback, prepareBCScene, mixBCAudio } from '../games/block-cr
 import { bcProduction } from '../games/block-crush/document';
 import { productionFromDocument } from '../nativeReference/agent-director/contracts';
 import {
-  compileProductionAudio,
+  compileProductionAudioAsync,
   verifyProductionAudioAssets,
 } from '../nativeReference/agent-director/audioMix';
 import { describeProductionMixWarnings } from '../contracts/nativeProductionAudio';
 import { exportFrameVideo } from '../exporter/exportFrameVideo';
+import { EXPORT_PHASE_LABELS } from '../exporter/exportStatus';
 import { mediaWindow, needsShortAudioProbe } from './mediaContract';
 
 let current: AbortController | null = null;
@@ -190,17 +191,23 @@ export async function run(
       let audio: { pcm: Float32Array; channels: 2 } | null = null;
       if ((options.audio ?? 'project') === 'project' && production?.audio) {
         if (game === 'block-crush-drop') {
-          const mix = await mixBCAudio(playback);
+          const mix = await mixBCAudio(playback, signal);
           if (mix) {
             audio = { pcm: mix.track.data, channels: 2 };
             warning = describeProductionMixWarnings(project, mix);
           }
         } else {
           await verifyProductionAudioAssets(production.audio);
-          const mix = compileProductionAudio(source, production.audio, 48_000, {
-            startFrame: window.startFrame,
-            endFrame: window.endFrame,
-          });
+          const mix = await compileProductionAudioAsync(
+            source,
+            production.audio,
+            48_000,
+            {
+              startFrame: window.startFrame,
+              endFrame: window.endFrame,
+            },
+            signal,
+          );
           audio = { pcm: mix.track.data, channels: 2 };
           warning = describeProductionMixWarnings(project, mix);
         }
@@ -222,6 +229,7 @@ export async function run(
         signal,
         render: (index) => stage!.draw(window.startFrame + index),
         onProgress: (done, total) => progress(`渲染和编码 ${done}/${total}`),
+        onPhase: (phase) => progress(EXPORT_PHASE_LABELS[phase]),
       });
     }
     signal.throwIfAborted();

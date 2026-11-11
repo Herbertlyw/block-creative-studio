@@ -62,6 +62,30 @@ export interface ProductionAudioCue {
   offsetSeconds?: number;
 }
 
+/** Speech is explicitly placed on one Take's seconds clock, independent of game rules. */
+export interface ProductionVoiceCue {
+  id: string;
+  takeId: string;
+  assetId: string;
+  startSeconds: number;
+  enabled?: boolean;
+  gain?: number;
+  sourceOffsetSeconds?: number;
+  fadeInSeconds?: number;
+  fadeOutSeconds?: number;
+}
+
+export interface ProductionAudioDucking {
+  enabled: boolean;
+  /** Linear gain multipliers while speech is active (0 = mute, 1 = unchanged). */
+  bgmGain: number;
+  sfxGain: number;
+  /** Only these cue event patterns are ducked; an empty array leaves all SFX unchanged. */
+  eventTypes: string[];
+  attackSeconds: number;
+  releaseSeconds: number;
+}
+
 export interface ProductionAudio {
   selectedPackId?: string;
   masterGain?: number;
@@ -71,6 +95,8 @@ export interface ProductionAudio {
   sfxGain?: number;
   bgm?: { assetId: string; enabled?: boolean; gain?: number; loop?: boolean; startSeconds?: number; sourceOffsetSeconds?: number; fadeInSeconds?: number; fadeOutSeconds?: number };
   cues?: ProductionAudioCue[];
+  voices?: ProductionVoiceCue[];
+  ducking?: ProductionAudioDucking;
   assets?: Record<string, ProductionAudioAsset>;
 }
 
@@ -241,7 +267,7 @@ export function parseProductionDirection(value: unknown): ProductionDirectionV1 
   }
   if (source.audio !== undefined) {
     const audio = object(source.audio, '$.audio');
-    exact(audio, ['selectedPackId', 'masterGain', 'mastering', 'sfxEnabled', 'sfxGain', 'bgm', 'cues', 'assets'], '$.audio');
+    exact(audio, ['selectedPackId', 'masterGain', 'mastering', 'sfxEnabled', 'sfxGain', 'bgm', 'cues', 'assets', 'voices', 'ducking'], '$.audio');
     if (audio.mastering !== undefined && audio.mastering !== 'soft-limit' && audio.mastering !== 'preserve-level') fail('$.audio.mastering','must be soft-limit or preserve-level');
     if(audio.sfxEnabled!==undefined&&typeof audio.sfxEnabled!=='boolean')fail('$.audio.sfxEnabled','must be a boolean');
     const assets = audio.assets === undefined ? undefined : Object.fromEntries(Object.entries(object(audio.assets, '$.audio.assets')).map(([key, asset]) => [key, parseAsset(asset, key)]));
@@ -265,6 +291,39 @@ export function parseProductionDirection(value: unknown): ProductionDirectionV1 
       });
     }
     result.audio = { ...(audio.selectedPackId === undefined ? {} : { selectedPackId: text(audio.selectedPackId, '$.audio.selectedPackId', 180) }), ...(audio.masterGain === undefined ? {} : { masterGain: finite(audio.masterGain, '$.audio.masterGain', 0, 2) }), ...(bgm ? { bgm } : {}), ...(cues ? { cues } : {}), ...(assets ? { assets } : {}) };
+    if (audio.voices !== undefined) {
+      if (!Array.isArray(audio.voices) || audio.voices.length > 100) fail('$.audio.voices', 'must be an array of at most 100 entries');
+      const ids = new Set<string>();
+      result.audio.voices = audio.voices.map((value, index) => {
+        const path = `$.audio.voices[${index}]`, raw = object(value, path);
+        exact(raw, ['id', 'takeId', 'assetId', 'startSeconds', 'enabled', 'gain', 'sourceOffsetSeconds', 'fadeInSeconds', 'fadeOutSeconds'], path);
+        const id = text(raw.id, `${path}.id`, 180);
+        if (ids.has(id)) fail(`${path}.id`, 'duplicate voice cue ID');
+        ids.add(id);
+        const voice: ProductionVoiceCue = { id, takeId: text(raw.takeId, `${path}.takeId`, 180), assetId: text(raw.assetId, `${path}.assetId`, 180), startSeconds: finite(raw.startSeconds, `${path}.startSeconds`, 0, 3600) };
+        if (raw.enabled !== undefined) {
+          if (typeof raw.enabled !== 'boolean') fail(`${path}.enabled`, 'must be a boolean');
+          voice.enabled = raw.enabled;
+        }
+        for (const key of ['gain', 'sourceOffsetSeconds', 'fadeInSeconds', 'fadeOutSeconds'] as const)
+          if (raw[key] !== undefined) voice[key] = finite(raw[key], `${path}.${key}`, 0, key === 'gain' ? 2 : key.startsWith('fade') ? 30 : 3600);
+        return voice;
+      });
+    }
+    if (audio.ducking !== undefined) {
+      const raw = object(audio.ducking, '$.audio.ducking');
+      exact(raw, ['enabled', 'bgmGain', 'sfxGain', 'eventTypes', 'attackSeconds', 'releaseSeconds'], '$.audio.ducking');
+      if (typeof raw.enabled !== 'boolean') fail('$.audio.ducking.enabled', 'must be a boolean');
+      if (!Array.isArray(raw.eventTypes) || raw.eventTypes.length > 100) fail('$.audio.ducking.eventTypes', 'must be an array of at most 100 patterns');
+      result.audio.ducking = {
+        enabled: raw.enabled,
+        bgmGain: finite(raw.bgmGain, '$.audio.ducking.bgmGain', 0, 1),
+        sfxGain: finite(raw.sfxGain, '$.audio.ducking.sfxGain', 0, 1),
+        eventTypes: raw.eventTypes.map((value, index) => text(value, `$.audio.ducking.eventTypes[${index}]`, 180)),
+        attackSeconds: finite(raw.attackSeconds, '$.audio.ducking.attackSeconds', 0, 10),
+        releaseSeconds: finite(raw.releaseSeconds, '$.audio.ducking.releaseSeconds', 0, 10),
+      };
+    }
     if(audio.sfxEnabled!==undefined)result.audio.sfxEnabled=audio.sfxEnabled;
     if(audio.mastering!==undefined)result.audio.mastering=audio.mastering as NonNullable<ProductionAudio['mastering']>;
     if(audio.sfxGain!==undefined)result.audio.sfxGain=finite(audio.sfxGain,'$.audio.sfxGain',0,2);

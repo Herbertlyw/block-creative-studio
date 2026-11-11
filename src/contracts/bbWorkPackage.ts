@@ -18,6 +18,7 @@ import { compileBBTimeline } from './compileBBTimeline';
 import { productionFromDocument } from '../nativeReference/agent-director/contracts';
 import {
   validateProductionAudioReferences,
+  validateProductionVoiceTakes,
   validateProductionAudioAsset,
   verifyProductionAudioAssets,
 } from '../nativeReference/agent-director/audioMix';
@@ -87,6 +88,10 @@ export async function openBBWorkPackage(value: unknown): Promise<BBWorkPackage> 
     for (const asset of Object.values(production.audio.assets ?? {}))
       validateProductionAudioAsset(asset);
     validateProductionAudioReferences(production.audio);
+    validateProductionVoiceTakes(
+      production.audio,
+      doc.takes.map((take: { takeId: string }) => take.takeId),
+    );
     for (const take of doc.takes) {
       if (!take.actions.length) continue;
       try {

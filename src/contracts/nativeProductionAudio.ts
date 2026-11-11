@@ -1,6 +1,6 @@
 import { productionFromDocument } from '../nativeReference/agent-director/contracts';
 import {
-  compileProductionAudio,
+  compileProductionAudioAsync,
   verifyProductionAudioAssets,
   type CompiledProductionAudio,
 } from '../nativeReference/agent-director/audioMix';
@@ -8,7 +8,11 @@ import type { CompiledFrameSource } from '../nativeReference/game-runtime/frameS
 import type { StudioProjectDocumentV2 } from '../nativeReference/game-runtime/projectEnvelope';
 
 /** Use the received production.audio contract and event mixer; caller retains original JSON. */
-export async function compileNativeProductionAudio(document: unknown, source: CompiledFrameSource) {
+export async function compileNativeProductionAudio(
+  document: unknown,
+  source: CompiledFrameSource,
+  signal?: AbortSignal,
+) {
   const production = productionFromDocument(document as StudioProjectDocumentV2);
   if (!production?.audio) throw new Error('工程没有 production.audio。');
   if (
@@ -23,7 +27,7 @@ export async function compileNativeProductionAudio(document: unknown, source: Co
     );
   }
   await verifyProductionAudioAssets(production.audio);
-  return compileProductionAudio(source, production.audio, 48_000);
+  return compileProductionAudioAsync(source, production.audio, 48_000, undefined, signal);
 }
 
 /** Surface authored cues that did not match this particular frame source. */
@@ -43,7 +47,16 @@ export function describeProductionMixWarnings(
   mix: CompiledProductionAudio,
 ): string {
   const warnings = [describeUnmatchedProductionCues(document, mix.diagnostics.unusedCueEventTypes)];
+  if (mix.diagnostics.unusedVoiceIds.length)
+    warnings.push(
+      `以下人声未进入本次视频窗口：${mix.diagnostics.unusedVoiceIds.join('、')}；请检查开始时间和 Take。`,
+    );
   const truncated = mix.scheduledCues.filter((cue) => cue.truncated);
+  const truncatedVoices = mix.scheduledVoices.filter((voice) => voice.truncated);
+  if (truncatedVoices.length)
+    warnings.push(
+      `人声超出视频窗口而被截断：${truncatedVoices.map((voice) => voice.id).join('、')}。`,
+    );
   if (truncated.length)
     warnings.push(
       `有 ${truncated.length} 个音效超出视频边界而被截断：${truncated.map((cue) => `${cue.eventType} (${cue.eventId})`).join('、')}。`,

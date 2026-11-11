@@ -12,6 +12,7 @@ import {
 } from '../contracts/nativeProductionAudio';
 import type { NativeRuntimeAudit } from '../contracts/inspectNativeRuntime';
 import { downloadBlob } from '../utils/download';
+import { describeExportFailure } from '../exporter/exportStatus';
 import {
   verifyObservedPointer,
   type PointerOverlay,
@@ -193,7 +194,7 @@ export function ObservedPreviewSettings({
         height: Math.max(1, Math.round(output.height * scale)),
       },
       audioEnabled: mode !== 'silent',
-      async audio() {
+      async audio(signal) {
         if (mode === 'silent') return null;
         if (mode === 'test') {
           const mix = prepared.testAudio
@@ -207,7 +208,7 @@ export function ObservedPreviewSettings({
         }
         if (source.takeId !== prepared.timelinePlan.takeId)
           throw new Error('工程音频与当前 Take 时间线不匹配。');
-        const mix = await compileNativeProductionAudio(resolved.document, source);
+        const mix = await compileNativeProductionAudio(resolved.document, source, signal);
         return {
           pcm: mix.track.data,
           channels: 2 as const,
@@ -240,9 +241,13 @@ export function ObservedPreviewSettings({
   async function exportVideo() {
     if (pointerState === 'error' || pointerState === 'loading') return;
     const result = await player.exportVideo();
-    if (!result) return;
-    downloadBlob(result.blob, `v2-${takeId}-calibrated-${mode}.mp4`);
-    setStatus(`视频已导出；工作台绘制不证明历史工程锁定版本一致。${result.warning}`);
+    if (!result || !result.isCurrent()) return;
+    try {
+      downloadBlob(result.blob, `v2-${takeId}-calibrated-${mode}.mp4`);
+      setStatus(`视频下载已发起；请检查浏览器下载是否完成。${result.warning}`);
+    } catch (error) {
+      setStatus(describeExportFailure(error, 'download'));
+    }
   }
   async function loadPointer(file: File | undefined) {
     if (!file) return;

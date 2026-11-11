@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import { preparePortableAssetWork } from './fixtures/portableAssetWork.mjs';
 import { prepareSyntheticReference } from './fixtures/syntheticReference.mjs';
 // Focused demo smoke: import references, resume a variant, reopen, preview and export once.
@@ -28,7 +29,7 @@ try {
     headless: true,
     ...(process.env.BB_CHROME_PATH
       ? { executablePath: process.env.BB_CHROME_PATH }
-      : { channel: 'chrome' }),
+      : chromeOptions()),
     args: ['--no-sandbox'],
   });
   page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, acceptDownloads: true });

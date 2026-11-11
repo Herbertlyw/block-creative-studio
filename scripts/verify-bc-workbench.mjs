@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
@@ -25,7 +26,7 @@ const server = await createServer({
 let browser;
 try {
   await server.listen();
-  browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--no-sandbox'] });
+  browser = await chromium.launch({ ...chromeOptions(), headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage({
     viewport: { width: 1360, height: 1000 },
     acceptDownloads: true,

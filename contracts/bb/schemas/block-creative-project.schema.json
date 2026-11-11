@@ -1386,6 +1386,16 @@
         },
         "assets": {
           "$ref": "#/$defs/Type_7c015043d0c8"
+        },
+        "voices": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/ProductionVoiceCue"
+          }
+        },
+        "ducking": {
+          "$ref": "#/$defs/ProductionAudioDucking"
         }
       },
       "additionalProperties": false
@@ -2089,6 +2099,102 @@
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/AgentImageBinding"
+      }
+    },
+    "ProductionVoiceCue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "takeId", "assetId", "startSeconds"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "takeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "assetId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "gain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "sourceOffsetSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "fadeInSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "fadeOutSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        }
+      }
+    },
+    "ProductionAudioDucking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "bgmGain",
+        "sfxGain",
+        "eventTypes",
+        "attackSeconds",
+        "releaseSeconds"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "bgmGain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sfxGain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "eventTypes": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          }
+        },
+        "attackSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "releaseSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        }
       }
     }
   }

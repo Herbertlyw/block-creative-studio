@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -20,7 +21,7 @@ let browser;
 const result = { checks: [] };
 try {
   await server.listen();
-  browser = await chromium.launch({ channel: 'chrome', headless: true });
+  browser = await chromium.launch({ ...chromeOptions(), headless: true });
   const page = await browser.newPage({
     acceptDownloads: true,
     viewport: { width: 1360, height: 1000 },

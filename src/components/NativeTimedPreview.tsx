@@ -41,6 +41,7 @@ import { BBPlaybackControls } from './BBPlaybackControls';
 import { readWorkbenchBackground } from '../contracts/workbenchBackground';
 import { BB_EXPORT_QUALITY, readBBExportQuality } from '../contracts/bbExportQuality';
 import { readBBTestAudio } from '../contracts/bbSyntheticAudio';
+import { describeExportFailure } from '../exporter/exportStatus';
 
 import { createAuthoredBBStage } from '../contracts/bbRenderStage';
 import { readBBFrame } from '../games/block-placement/planning/timelineFrameSource';
@@ -292,9 +293,9 @@ function AuthoredPreviewSettings({
       preview: previewSize,
       quality,
       audioEnabled: withProductionAudio || withTestAudio,
-      async audio() {
+      async audio(signal) {
         if (withProductionAudio) {
-          const mix = await compileNativeProductionAudio(embedded.document, frameSource);
+          const mix = await compileNativeProductionAudio(embedded.document, frameSource, signal);
           return {
             pcm: mix.track.data,
             channels: 2 as const,
@@ -352,17 +353,21 @@ function AuthoredPreviewSettings({
   }, [takeId, setPlaying, setFrame]);
   const exportVideo = async () => {
     const result = await player.exportVideo();
-    if (!result) return;
+    if (!result || !result.isCurrent()) return;
     const suffix = withProductionAudio
       ? 'production-audio'
       : withTestAudio
         ? 'test-audio'
         : 'silent';
-    downloadBlob(
-      result.blob,
-      `v2-${takeId}-${visualMode === '3d' ? 'three-3d' : 'procedural'}-${suffix}.mp4`,
-    );
-    setStatus(`视频已导出。${result.warning}`);
+    try {
+      downloadBlob(
+        result.blob,
+        `v2-${takeId}-${visualMode === '3d' ? 'three-3d' : 'procedural'}-${suffix}.mp4`,
+      );
+      setStatus(`视频下载已发起；请检查浏览器下载是否完成。${result.warning}`);
+    } catch (error) {
+      setStatus(describeExportFailure(error, 'download'));
+    }
   };
   return (
     <section className="native-preview">

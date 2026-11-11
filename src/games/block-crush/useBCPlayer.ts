@@ -5,6 +5,12 @@ import { exportFrameVideo } from '../../exporter/exportFrameVideo';
 import { downloadBlob } from '../../utils/download';
 import type { BCProject } from './document';
 import { compileBCPlayback, mixBCAudio, prepareBCScene } from './timeline';
+import {
+  describeExportFailure,
+  EXPORT_PHASE_LABELS,
+  isProjectMediaError,
+  type ExportPhase,
+} from '../../exporter/exportStatus';
 
 export function useBCPlayer(project: BCProject | null, takeId: string, full: boolean) {
   const canvas = useRef<HTMLCanvasElement>(null),
@@ -31,6 +37,20 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     }
   }, [project, takeId, full]);
   const playback = compiled.playback;
+  useEffect(() => {
+    const cancel = () => controller.current?.abort();
+    window.addEventListener('pagehide', cancel);
+    return () => window.removeEventListener('pagehide', cancel);
+  }, []);
+  useEffect(() => {
+    if (!exporting) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [exporting]);
   const previousView = useRef('');
   useFramePlayback({
     playing,
@@ -166,7 +186,7 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     pause();
     setExportError('');
     setExporting(true);
-    setProgress('准备素材与音频…');
+    setProgress('音频混音…');
     const abort = new AbortController();
     controller.current = abort;
     // Controls are locked during export. Reuse the prepared scene so large PNG
@@ -176,8 +196,9 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
     const ownsExport = () => controller.current === abort;
     let preparationFailed = true;
     let renderFailed = false;
+    let phase: ExportPhase = 'mixing';
     try {
-      const mix = await mixBCAudio(playback);
+      const mix = await mixBCAudio(playback, abort.signal);
       abort.signal.throwIfAborted();
       preparationFailed = false;
       const blob = await exportFrameVideo({
@@ -197,6 +218,10 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
         },
         audio: mix ? { pcm: mix.track.data, channels: mix.track.numberOfChannels } : null,
         signal: abort.signal,
+        onPhase: (next) => {
+          phase = next;
+          if (ownsExport() && !abort.signal.aborted) setProgress(`${EXPORT_PHASE_LABELS[next]}…`);
+        },
         onProgress: (done, total) => {
           if (ownsExport() && !abort.signal.aborted)
             setProgress(`${Math.round((done / total) * 100)}% · ${done}/${total} 帧`);
@@ -204,8 +229,10 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
       });
       abort.signal.throwIfAborted();
       if (!ownsExport()) return;
+      phase = 'download';
+      setProgress('准备下载…');
       downloadBlob(blob, `${playback.project.name.replace(/[\\/:*?"<>|]/g, '-')}-${takeId}.mp4`);
-      setProgress('视频下载已发起');
+      setProgress('视频下载已发起；请检查浏览器下载是否完成。');
     } catch (reason) {
       if (ownsExport()) {
         if (abort.signal.aborted) setProgress('已取消，可重新导出。');
@@ -213,8 +240,8 @@ export function useBCPlayer(project: BCProject | null, takeId: string, full: boo
           const detail = reason instanceof Error ? reason.message : String(reason);
           // Invalid audio/assets or frame rendering block the project. Encoder
           // failures are scoped to this attempt and can be retried unchanged.
-          if (preparationFailed || renderFailed) setError(detail);
-          else setExportError(`导出失败：${detail}。可重新点击导出重试。`);
+          if ((preparationFailed && isProjectMediaError(reason)) || renderFailed) setError(detail);
+          else setExportError(describeExportFailure(reason, phase));
           setProgress('');
         }
       }
