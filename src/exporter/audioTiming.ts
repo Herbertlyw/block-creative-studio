@@ -6,6 +6,7 @@ import {
   Quality,
   type AudioCodec,
 } from 'mediabunny';
+import { addAudioBufferChunks } from './audioChunks';
 
 /** Measure this encoder/decoder pair with two independent broadband probes. Never assume a fixed AAC delay. */
 export async function measureAudioCodecDelay(
@@ -21,8 +22,9 @@ export async function measureAudioCodecDelay(
   const context = new AudioContext({ sampleRate });
   let output: Output | undefined;
   let finalized = false;
+  let addingAudio = false;
   const cancel = () => {
-    void output?.cancel().catch(() => {});
+    if (!addingAudio) void output?.cancel().catch(() => {});
     if (context.state !== 'closed') void context.close().catch(() => {});
   };
   signal?.addEventListener('abort', cancel, { once: true });
@@ -49,7 +51,12 @@ export async function measureAudioCodecDelay(
     output.addAudioTrack(source);
     await output.start();
     signal?.throwIfAborted();
-    await source.add(buffer);
+    addingAudio = true;
+    try {
+      await addAudioBufferChunks(source, buffer, signal);
+    } finally {
+      addingAudio = false;
+    }
     signal?.throwIfAborted();
     source.close();
     await output.finalize();

@@ -51,7 +51,7 @@ npm run build
 npm run test:browser:preview-session
 ```
 
-本轮分轨混音、保存重开、观察编辑与媒体能力检查可运行 `npm run test:browser:improvements`；BB 导出异步生命周期检查为 `npm run test:browser:bb:lifecycle`。`npm run test:browser:export-endurance` 实际编码并完整解码 120 秒合成无声画面，不等同长 BB/BC 有声工程验收。Chrome 不在默认路径时设置 `BCS_CHROME_PATH`。具体证据与限制见 [开发记录](docs/WORKBENCH_IMPROVEMENTS.md)。
+本轮分轨混音、保存重开、观察编辑与实际 BB/BC 有声出片检查为 `npm run test:browser:improvements`（先 build，再设置 `BCS_TEST_PRODUCTION=1` 可检查生产构建）。原生 AAC 不可用时按需使用官方软件 AAC，故障/取消/同页重试检查为 `npm run test:browser:aac-fallback`。`npm run test:browser:game-audio-endurance -- <上一步生成的目录>` 实际检查 BB 126.9 秒和 BC 121.167 秒合成有声工程的取消、重试、完整解码和事件时间；不代表真实作品或全高清压力验收。`npm run test:browser:export-endurance` 是独立的 120 秒合成无声检查。Chrome 不在默认路径时设置 `BCS_CHROME_PATH`。具体证据与限制见 [开发记录](docs/WORKBENCH_IMPROVEMENTS.md)。
 
 浏览器检查额外需要本机 Chrome、FFmpeg 和 FFprobe。日常工程编辑只检查相关结果；开发测试与历史媒体全量验收分别进行。
 

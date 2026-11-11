@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { chromium } from 'playwright-core';
-import { createServer } from 'vite';
+import { createServer, preview } from 'vite';
 import { chromeOptions } from './fixtures/chrome.mjs';
 import { syntheticWav } from './fixtures/syntheticMedia.mjs';
 import { prepareSyntheticReference } from './fixtures/syntheticReference.mjs';
@@ -18,7 +18,7 @@ const server = await createServer({
 const checks = [],
   media = [],
   errors = [];
-let browser, page;
+let browser, page, productionServer;
 const voicePath = join(output, 'synthetic-voice.wav');
 // Generated speech, never a user recording or copyrighted soundtrack.
 execFileSync('ffmpeg', [
@@ -119,7 +119,9 @@ try {
   page.setDefaultTimeout(30_000);
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('dialog', (dialog) => dialog.accept());
-  const baseURL = `http://127.0.0.1:${server.httpServer.address().port}`;
+  if (process.env.BCS_TEST_PRODUCTION)
+    productionServer = await preview({ preview: { host: '127.0.0.1', port: 0 } });
+  const baseURL = `http://127.0.0.1:${(productionServer ?? server).httpServer.address().port}`;
   const download = async (button, name) => {
     const pending = page.waitForEvent('download', { timeout: 120_000 });
     void pending.catch(() => {});
@@ -147,7 +149,7 @@ try {
         framerate: 30,
       })
     ).supported,
-    aac: (
+    nativeAac: (
       await AudioEncoder.isConfigSupported({
         codec: 'mp4a.40.2',
         sampleRate: 48000,
@@ -205,26 +207,15 @@ try {
   );
   await page.screenshot({ path: join(output, 'bb-audio-editor.png'), fullPage: true });
 
-  // Browser has no AAC on some Linux hosts: verify the actual error and unchanged retry.
-  if (!capabilities.aac) {
-    const exportButton = page.getByRole('button', { name: '导出工程音频测试视频', exact: true });
-    for (let attempt = 0; attempt < 2; attempt++) {
-      await exportButton.click();
-      await page.getByText(/ENCODER_UNSUPPORTED.*不能编码 AAC/).waitFor();
-      await exportButton.waitFor({ state: 'visible' });
-      assert.equal(await exportButton.isEnabled(), true);
-    }
-    media.push(
-      'BB actual audible MP4 blocked: browser AAC encoder unsupported; unchanged retry reported the same specific error',
-    );
-  } else {
-    const path = await download(
+  // Require actual audible output, including the software fallback on hosts without native AAC.
+  inspect(
+    await download(
       page.getByRole('button', { name: '导出工程音频测试视频', exact: true }),
       'bb-audio.mp4',
-    );
-    inspect(path, true);
-  }
-  // Exercise the real shared encoder with the same game frames even without AAC.
+    ),
+    true,
+  );
+  // Explicit silent export must still work without activating any audio.
   await page.getByLabel('使用工程 production.audio（WAV）', { exact: true }).uncheck();
   const bbSilent = await download(
     page.getByRole('button', { name: '导出无声测试视频', exact: true }),
@@ -269,24 +260,10 @@ try {
   checks.push(
     'BC native project four-track editing, independent gameplay contract, save/reopen and actual WebAudio preview',
   );
-  if (capabilities.aac)
-    inspect(
-      await download(page.getByRole('button', { name: '导出当前范围 MP4' }), 'bc-audio.mp4'),
-      true,
-    );
-  else {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      await page.getByRole('button', { name: '导出当前范围 MP4' }).click();
-      await page
-        .getByRole('alert')
-        .filter({ hasText: /ENCODER_UNSUPPORTED.*不能编码 AAC/ })
-        .waitFor();
-      assert.equal(await page.getByRole('button', { name: '导出当前范围 MP4' }).isEnabled(), true);
-    }
-    media.push(
-      'BC actual audible MP4 blocked: browser AAC encoder unsupported; unchanged retry remained available',
-    );
-  }
+  inspect(
+    await download(page.getByRole('button', { name: '导出当前范围 MP4' }), 'bc-audio.mp4'),
+    true,
+  );
   const silentBC = structuredClone(bcSaved);
   delete silentBC.direction.production.audio;
   const silentBCPath = join(output, 'bc-silent.json');
@@ -412,7 +389,15 @@ try {
   await writeFile(
     join(output, 'result.json'),
     JSON.stringify(
-      { checks, media, capabilities, humanListening: false, longVideoVerified: false, output },
+      {
+        checks,
+        media,
+        capabilities,
+        productionBuild: !!productionServer,
+        humanListening: false,
+        longVideoVerified: false,
+        output,
+      },
       null,
       2,
     ),
@@ -433,6 +418,7 @@ try {
   throw reason;
 } finally {
   await browser?.close();
+  await productionServer?.close();
   await server.close();
 }
 

@@ -18,6 +18,9 @@
     "test:browser:bb:lifecycle": "node scripts/verify-bb-export-lifecycle.mjs",
     "test:browser:improvements": "node scripts/verify-workbench-improvements.mjs",
     "test:browser:export-endurance": "node scripts/verify-export-endurance.mjs",
+    "test:browser:game-audio-endurance": "node scripts/verify-game-audio-endurance.mjs",
+    "test:browser:aac-fallback": "node scripts/verify-aac-fallback.mjs",
+    "test:browser:export-navigation": "node scripts/verify-export-navigation.mjs",
     "test:browser:observation": "node scripts/verify-blank-observation.mjs",
     "test:watch": "vitest",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
@@ -43,6 +46,7 @@
     "test:cli:smoke": "node scripts/test-cli-smoke.mjs"
   },
   "dependencies": {
+    "@mediabunny/aac-encoder": "1.54.0",
     "ajv": "8.17.1",
     "mediabunny": "1.54.0",
     "react": "19.2.8",

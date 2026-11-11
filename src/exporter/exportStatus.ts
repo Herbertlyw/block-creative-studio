@@ -2,6 +2,7 @@ export type ExportPhase =
   | 'assets'
   | 'mixing'
   | 'codec'
+  | 'audio-fallback'
   | 'audio-encoding'
   | 'video-encoding'
   | 'muxing'
@@ -12,6 +13,7 @@ export const EXPORT_PHASE_LABELS: Record<ExportPhase, string> = {
   assets: '素材准备',
   mixing: '音频混音',
   codec: '检测 AVC/AAC 编码能力',
+  'audio-fallback': '准备软件 AAC 编码器',
   'audio-encoding': '音频编码',
   'video-encoding': '视频编码',
   muxing: 'MP4 封装',

@@ -41,19 +41,8 @@ for (const [game, prefix, takeId] of [
     spawnSync(process.execPath, args(options, target), { encoding: 'utf8', maxBuffer: 4_000_000 });
   const target = join(output, `${prefix}-retry.mp4`);
   const first = run(audible, target);
-  if (first.status === 1) {
-    assert.match(first.stdout, /ENCODER_UNSUPPORTED.*AAC/, first.stdout + first.stderr);
-    await assert.rejects(access(target));
-    await writeFile(join(output, `${prefix}-aac-unavailable.json`), first.stdout);
-    const retry = run(silent, target);
-    assert.equal(retry.status, 0, retry.stdout + retry.stderr);
-    checks.push(
-      `${prefix}: actual AAC unavailable error, no partial output, same-path explicit silent retry succeeded`,
-    );
-  } else {
-    assert.equal(first.status, 0, first.stdout + first.stderr);
-    checks.push(`${prefix}: actual browser H.264/AAC output succeeded`);
-  }
+  assert.equal(first.status, 0, first.stdout + first.stderr);
+  checks.push(`${prefix}: actual browser H.264/AAC output succeeded`);
   const videoHash = hash(await readFile(target)),
     collision = run(silent, target);
   assert.equal(collision.status, 1);
@@ -61,7 +50,7 @@ for (const [game, prefix, takeId] of [
   assert.equal(hash(await readFile(target)), videoHash);
   const cancelTarget = join(output, `${prefix}-cancel-retry.mp4`);
   const cancelled = await new Promise((resolveAttempt, reject) => {
-    const proc = spawn(process.execPath, args(silent, cancelTarget), {
+    const proc = spawn(process.execPath, args(audible, cancelTarget), {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '',
@@ -89,7 +78,7 @@ for (const [game, prefix, takeId] of [
   assert.ok(cancelled.sent);
   await assert.rejects(access(cancelTarget));
   await writeFile(join(output, `${prefix}-cancel-result.json`), JSON.stringify(cancelled, null, 2));
-  const afterCancel = run(silent, cancelTarget);
+  const afterCancel = run(audible, cancelTarget);
   assert.equal(afterCancel.status, 0, afterCancel.stdout + afterCancel.stderr);
   const report = JSON.parse(afterCancel.stdout).report;
   assert.match(afterCancel.stderr, /渲染和编码 1\//);
@@ -108,11 +97,12 @@ for (const [game, prefix, takeId] of [
     const track = probe.streams.find((stream) => stream.codec_type === 'video');
     assert.equal(track.codec_name, 'h264');
     assert.equal(Number(track.nb_read_frames), report.totalFrames);
+    assert.ok(probe.streams.some((stream) => stream.codec_name === 'aac' && stream.channels === 2));
     execFileSync('ffmpeg', ['-v', 'error', '-i', video, '-f', 'null', '-'], { stdio: 'pipe' });
   }
   assert.equal(hash(await readFile(input)), hash(before));
   checks.push(
-    `${prefix}: collision protection; SIGINT at real frame progress returned 130 with no partial file; same-path retry, FFprobe/full decode and unchanged input`,
+    `${prefix}: collision protection; audible export SIGINT at real frame progress returned 130 with no partial file; same-path audible retry, FFprobe/full decode and unchanged input`,
   );
 }
 await writeFile(join(output, 'result.json'), JSON.stringify({ checks, output }, null, 2));

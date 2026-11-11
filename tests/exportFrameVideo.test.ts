@@ -12,6 +12,7 @@ vi.mock('mediabunny', () => ({
   AudioBufferSource: class {},
   getFirstEncodableVideoCodec: async () => state.codec,
   getFirstEncodableAudioCodec: async () => 'aac',
+  canEncodeAudio: async () => true,
   BufferTarget: class {
     buffer = new ArrayBuffer(1);
   },

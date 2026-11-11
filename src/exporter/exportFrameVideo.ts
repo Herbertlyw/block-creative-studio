@@ -2,13 +2,14 @@ import {
   AudioBufferSource,
   BufferTarget,
   CanvasSource,
-  getFirstEncodableAudioCodec,
   getFirstEncodableVideoCodec,
   Mp4OutputFormat,
   Output,
   Quality,
 } from 'mediabunny';
 import { alignAacPriming } from '../nativeReference/exporter/aacPriming';
+import { prepareAacEncoder } from './aacEncoder';
+import { addAudioBufferChunks } from './audioChunks';
 import { measureAudioCodecDelay, trimMp4AudioPresentation } from './audioTiming';
 import { exportFailure, type ExportPhase } from './exportStatus';
 
@@ -68,13 +69,14 @@ export async function exportFrameVideo({
   let mux: Output | null = null;
   let video: CanvasSource | null = null;
   let track: AudioBufferSource | null = null;
+  let addingAudio = false;
   let phase: ExportPhase = 'codec';
   const report = (next: ExportPhase) => {
     phase = next;
     onPhase?.(next);
   };
   const cancelMux = () => {
-    if (mux) void mux.cancel().catch(() => {});
+    if (mux && !addingAudio) void mux.cancel().catch(() => {});
   };
   signal?.addEventListener('abort', cancelMux, { once: true });
   try {
@@ -84,18 +86,21 @@ export async function exportFrameVideo({
     if (codec !== 'avc') throw new Error('浏览器不能编码 AVC。');
     checkCancelled();
     let buffer: AudioBuffer | null = null,
-      delay = 0;
+      delay = 0,
+      softwareAudio = false;
     if (audio) {
       const sampleRate = 48_000,
-        bitrate = audio.channels === 2 ? 192_000 : 128_000,
-        audioCodec = await getFirstEncodableAudioCodec(['aac'], {
-          numberOfChannels: audio.channels,
-          sampleRate,
-        });
-      if (audioCodec !== 'aac') throw new Error('浏览器不能编码 AAC。');
+        bitrate = audio.channels === 2 ? 192_000 : 128_000;
+      softwareAudio =
+        (await prepareAacEncoder({
+          channels: audio.channels,
+          bitrate,
+          signal,
+          onPhase: report,
+        })) === 'software';
       checkCancelled();
       report('audio-encoding');
-      track = new AudioBufferSource({ codec: audioCodec, quality: new Quality({ bitrate }) });
+      track = new AudioBufferSource({ codec: 'aac', quality: new Quality({ bitrate }) });
       const context = new AudioContext({ sampleRate });
       try {
         buffer = context.createBuffer(
@@ -110,12 +115,17 @@ export async function exportFrameVideo({
       } finally {
         await context.close();
       }
-      if (audio.channels === 1 || shortAudioProbe)
-        delay = await measureAudioCodecDelay(audioCodec, sampleRate, {
+      // The content envelope has a 1 ms grid. Use a fresh broadband probe for
+      // software AAC, so its edit list retains sample precision rather than rounding priming.
+      if (audio.channels === 1 || shortAudioProbe || softwareAudio) {
+        report('audio-timing');
+        delay = await measureAudioCodecDelay('aac', sampleRate, {
           numberOfChannels: audio.channels,
           bitrate,
           signal,
         });
+        report('audio-encoding');
+      }
     }
     checkCancelled();
     const target = new BufferTarget();
@@ -127,7 +137,14 @@ export async function exportFrameVideo({
     mux.addVideoTrack(video, { frameRate: fps });
     if (track) mux.addAudioTrack(track);
     await mux.start();
-    if (track && buffer) await track.add(buffer);
+    if (track && buffer) {
+      addingAudio = true;
+      try {
+        await addAudioBufferChunks(track, buffer, signal);
+      } finally {
+        addingAudio = false;
+      }
+    }
     checkCancelled();
     report('video-encoding');
     for (let frame = 0; frame < totalFrames; frame++) {
@@ -149,8 +166,8 @@ export async function exportFrameVideo({
     checkCancelled();
     if (!target.buffer) throw new Error('视频输出为空。');
     const duration = totalFrames / fps;
-    if (audio?.channels === 2 && !shortAudioProbe) {
-      report('audio-timing');
+    if (audio) report('audio-timing');
+    if (audio?.channels === 2 && !shortAudioProbe && !softwareAudio) {
       const result = await alignAacPriming(
         new Blob([target.buffer], { type: 'video/mp4' }),
         { data: audio.pcm, sampleRate: 48_000, numberOfChannels: 2 },
