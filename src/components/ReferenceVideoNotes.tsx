@@ -14,6 +14,12 @@ import { sourceDesignMap, type SourceDesignMap } from '../contracts/sourceDesign
 import { createObservedSourceLink } from '../contracts/observedSourceLink';
 import { invalidateObservedGeometry } from '../contracts/observedGeometryDraft';
 import type { BBWorkPackage } from '../contracts/bbWorkPackage';
+import { downloadBlob } from '../utils/download';
+import {
+  invalidateObservedAnnotation,
+  observedDraftBlockers,
+  observedFramePosition,
+} from '../contracts/observedDraftReview';
 
 type Observation = {
   id: string;
@@ -47,6 +53,7 @@ export function ReferenceVideoNotes({
     [observations, setObservations] = useState<Observation[]>([]);
   const [measurement, setMeasurement] = useState<ReferenceMeasurement | null>(null),
     [frame, setFrame] = useState(0);
+  const [sourceTime, setSourceTime] = useState(0);
   const [structured, setStructured] = useState(''),
     [geometry, setGeometry] = useState(''),
     [buildStatus, setBuildStatus] = useState('');
@@ -84,6 +91,7 @@ export function ReferenceVideoNotes({
   const fileIdentity = (item: File | null) => item && [item.name, item.size, item.lastModified];
   const observationFingerprint = JSON.stringify({
     hash,
+    sourceName: file?.name,
     metadata,
     observations,
     structured,
@@ -129,6 +137,39 @@ export function ReferenceVideoNotes({
     latest: latestObservation,
     markSaved: setSavedObservation,
   } = useObservationDraft(observationFingerprint, hasObservationDraft, onDraftChange);
+  const blockers = observedDraftBlockers(structured, geometry, measurement, hash);
+  if (mapping && !mapping.confirmed)
+    blockers.push({ scope: 'calibration', message: '源画面映射待确认。' });
+  let frameRelation = '导入同源 CFR 测量后才能换算源帧与输出事件帧。';
+  try {
+    if (measurement) {
+      const fps = JSON.parse(structured).output.fps;
+      const position = observedFramePosition(measurement, frame, fps);
+      frameRelation = `源帧 ${frame} → 测量相对时间 ${position.seconds.toFixed(6)} 秒 → 校准事件输出帧 ${position.outputFrame}（${fps} fps，${position.outputSeconds.toFixed(6)} 秒）。普通玩法草稿尚不对齐绝对源时间。`;
+    }
+  } catch {
+    frameRelation = '所选源帧或标注输出帧率无效；请修正后再记录时间。';
+  }
+  useEffect(() => {
+    setCreatedWork(null);
+    setSourceLink(null);
+    setPointerLink(null);
+  }, [observationFingerprint]);
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!observationDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [observationDirty]);
   useEffect(() => {
     if (!file) {
       setUrl('');
@@ -229,24 +270,29 @@ export function ReferenceVideoNotes({
   }
   async function loadMeasurement(input: File | undefined) {
     if (!input || !video.current) return;
+    const ticket = ++generation.current;
+    const width = video.current.videoWidth,
+      height = video.current.videoHeight;
     try {
       const measured = validateReferenceMeasurement(
         JSON.parse(await input.text()),
         hash,
-        video.current.videoWidth,
-        video.current.videoHeight,
+        width,
+        height,
       );
+      if (ticket !== generation.current) return;
       setMeasurement(measured);
       setFrame(0);
       setError('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (ticket === generation.current) setError(e instanceof Error ? e.message : String(e));
     }
   }
   async function reopen(input: File | undefined) {
     if (!input) return;
     if (observationDirty && !window.confirm('重开记录会替换当前未保存的观察草稿，是否继续？'))
       return;
+    const ticket = ++generation.current;
     try {
       const raw = JSON.parse(await input.text());
       let data = raw;
@@ -373,7 +419,16 @@ export function ReferenceVideoNotes({
           new Set(images.map((x: any) => x.role)).size !== images.length)
       )
         throw new Error('保存的图片身份无效，原有记录未修改。');
+      if (ticket !== generation.current) return;
       rebaseObservation.current = true;
+      setBgm(restored?.sounds.bgm ?? null);
+      setPlacement(restored?.sounds.placement ?? null);
+      setClearCue(restored?.sounds.clear ?? null);
+      setBackground(restored?.images.background ?? null);
+      setTile(restored?.images.tile ?? null);
+      setWhite(restored?.images.white ?? null);
+      setCoral(restored?.images.coral ?? null);
+      setCyan(restored?.images.cyan ?? null);
       if (data.mapping) setMapping(data.mapping);
       if (images) {
         setSavedImages(images);
@@ -424,7 +479,7 @@ export function ReferenceVideoNotes({
       if (structuredEditor.current) structuredEditor.current.open = true;
       setError('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (ticket === generation.current) setError(e instanceof Error ? e.message : String(e));
     }
   }
   function updateStructured(value: string) {
@@ -432,7 +487,26 @@ export function ReferenceVideoNotes({
       setPointerConfirmed(false);
       if (geometry) setGeometry(invalidateObservedGeometry(geometry));
     }
-    setStructured(value);
+    setStructured(invalidateObservedAnnotation(structured, value));
+  }
+  async function verifySource(next: File | undefined) {
+    if (!next || !hash) return;
+    const ticket = ++generation.current;
+    try {
+      if (next.size > 512 * 1024 * 1024) throw new Error('视频超过 512 MiB。');
+      const digest = await crypto.subtle.digest('SHA-256', await next.arrayBuffer());
+      const actual = Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, '0'),
+      ).join('');
+      if (ticket !== generation.current) return;
+      if (actual !== hash) throw new Error('源视频 SHA-256 不匹配；已有视频、标注与草稿均保留。');
+      setFile(next);
+      setError('');
+      setBuildStatus('已重新核验同一源视频 SHA-256，观察记录保留。');
+    } catch (reason) {
+      if (ticket === generation.current)
+        setError(reason instanceof Error ? reason.message : String(reason));
+    }
   }
   async function audioIdentity(file: File) {
     if (file.size > 16 * 1024 * 1024) throw new Error('音频文件超过 16 MiB。');
@@ -502,25 +576,26 @@ export function ReferenceVideoNotes({
     const fingerprint = observationFingerprint;
     try {
       const payload = await observationPayload();
-      const link = document.createElement('a');
-      const blob = URL.createObjectURL(
+      downloadBlob(
         new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+        'reference-observations.json',
       );
-      link.href = blob;
-      link.download = 'reference-observations.json';
-      link.click();
       if (!note.trim() && !pointerConfirmed && pointerRadius === 20)
         setSavedObservation(fingerprint);
       else setBuildStatus('观察记录已发起下载；未添加的文字笔记或指针设置仍需另行保存到作品。');
-      setTimeout(() => URL.revokeObjectURL(blob), 1000);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
   async function build() {
+    const revision = generation.current,
+      fingerprint = observationFingerprint;
     try {
       if (!measurement || !video.current) throw new Error('请先导入同源测量。');
+      const pending = blockers.filter((item) => item.scope === 'gameplay');
+      if (pending.length)
+        throw new Error(`生成受阻：${pending.map((item) => item.message).join('；')}`);
       const { buildObservedTake } = await import('../contracts/buildObservedTake');
       const result = await buildObservedTake(
         JSON.parse(structured),
@@ -529,15 +604,13 @@ export function ReferenceVideoNotes({
         video.current.videoWidth,
         video.current.videoHeight,
       );
-      const url = URL.createObjectURL(
+      if (revision !== generation.current || fingerprint !== latestObservation.current)
+        throw new Error('观察草稿在生成期间已变化；旧玩法草稿未发布，请重新检查并生成。');
+      downloadBlob(
         new Blob([JSON.stringify(result.document, null, 2)], { type: 'application/json' }),
+        'observed-gameplay-draft.json',
       );
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'observed-gameplay-draft.json';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setBuildStatus(`已另存玩法草稿；${result.limitations.join('；')}`);
+      setBuildStatus(`玩法草稿下载已发起；${result.limitations.join('；')}`);
     } catch (e) {
       setBuildStatus(e instanceof Error ? e.message : String(e));
     }
@@ -552,6 +625,8 @@ export function ReferenceVideoNotes({
       fingerprint = observationFingerprint;
     try {
       if (!measurement || !video.current) throw new Error('请先导入同源测量。');
+      if (blockers.length)
+        throw new Error(`生成受阻：${blockers.map((item) => item.message).join('；')}`);
       if (mapping) {
         sourceDesignMap(mapping, video.current.videoWidth, video.current.videoHeight);
         if (!mapping.confirmed) throw new Error('请先确认源画面映射。');
@@ -678,17 +753,13 @@ export function ReferenceVideoNotes({
       setCreatedWork(work);
       setSourceLink(link);
       setPointerLink(pointer);
-      const url = URL.createObjectURL(
+      downloadBlob(
         new Blob([JSON.stringify(work, null, 2)], { type: 'application/json' }),
+        'bb-work.json',
       );
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'bb-work.json';
-      a.click();
       if (!note.trim()) setSavedObservation(fingerprint);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
       setBuildStatus(
-        `已另存完整作品包，包含工程、素材、声音、来源记录与${pointerConfirmed ? '圆环指针' : '无指针设置'}。${editTemplate ? '保留了当前作品名称和完整素材、混音配置。' : ''}${warning}参考视频仍需单独保管；可打开此作品继续预览、编辑和导出。`,
+        `完整作品包下载已发起，包含工程、素材、声音、来源记录与${pointerConfirmed ? '圆环指针' : '无指针设置'}。${editTemplate ? '保留了当前作品名称和完整素材、混音配置。' : ''}${warning}请检查下载是否完成；参考视频仍需单独保管，可打开此作品继续预览、编辑和导出。`,
       );
     } catch (e) {
       setBuildStatus(e instanceof Error ? e.message : String(e));
@@ -700,7 +771,7 @@ export function ReferenceVideoNotes({
     <details id="bb-reference-editor" className="native-preview">
       <summary>参考视频观察记录</summary>
       <p>
-        视频仅在本机读取。播放器时间用于定位；导入同一视频的恒帧率测量后可按精确帧记录。文字观察与结构化标注分别保存在同一记录中；生成使用结构化标注和经作者确认的几何。
+        视频仅在本机读取。播放器时间用于近似定位；同源恒帧率测量提供源帧编号和时间，浏览器画面仍需用独立解码提帧核对。文字观察与结构化标注分别保存；生成使用当前结构化标注和经作者确认的几何。
       </p>
       <label>
         选择参考视频{' '}
@@ -722,6 +793,18 @@ export function ReferenceVideoNotes({
             {file.name}；SHA-256：{hash}
           </p>
           <p>{metadata}</p>
+          <label>
+            重新核验源视频{' '}
+            <input
+              aria-label="重新核验源视频"
+              type="file"
+              accept="video/*"
+              onChange={(e) => {
+                void verifySource(e.currentTarget.files?.[0]);
+                e.currentTarget.value = '';
+              }}
+            />
+          </label>
           {url && (
             <video
               ref={video}
@@ -735,8 +818,12 @@ export function ReferenceVideoNotes({
                 );
               }}
               onError={() => setError('浏览器不能解码此视频。')}
+              onTimeUpdate={(e) => setSourceTime(e.currentTarget.currentTime)}
             />
           )}
+          <p role="status" aria-label="参考时间关系">
+            播放器近似时间 {sourceTime.toFixed(3)} 秒。{frameRelation}
+          </p>
           <p>
             <label>
               导入帧测量 JSON{' '}
@@ -766,6 +853,26 @@ export function ReferenceVideoNotes({
                 />
               </label>{' '}
               <button
+                disabled={!Number.isInteger(frame) || frame <= 0}
+                onClick={() => {
+                  const next = frame - 1;
+                  setFrame(next);
+                  video.current!.currentTime = measuredFrameSeconds(measurement, next);
+                }}
+              >
+                上一测量帧
+              </button>{' '}
+              <button
+                disabled={!Number.isInteger(frame) || frame >= measurement.source.frameCount - 1}
+                onClick={() => {
+                  const next = frame + 1;
+                  setFrame(next);
+                  video.current!.currentTime = measuredFrameSeconds(measurement, next);
+                }}
+              >
+                下一测量帧
+              </button>{' '}
+              <button
                 onClick={() => {
                   try {
                     video.current!.currentTime = measuredFrameSeconds(measurement, frame);
@@ -777,7 +884,9 @@ export function ReferenceVideoNotes({
               >
                 定位帧时间
               </button>{' '}
-              帧定位使用浏览器播放时钟；精确帧图像请使用独立提取结果。
+              帧定位使用浏览器播放时钟；精确帧图像请使用独立提取结果。 源帧率{' '}
+              {measurement.source.fps}；时间基 {measurement.source.timeBase}；首个时间戳{' '}
+              {measurement.source.firstTimestamp}。
             </p>
           )}
           <p>
@@ -859,6 +968,53 @@ export function ReferenceVideoNotes({
                 {item.frame === undefined ? '播放器时间' : `源帧 ${item.frame}`} ·{' '}
                 {item.seconds.toFixed(3)} 秒 · {item.kind} · {item.note} ·{' '}
                 {item.confirmed ? '作者已确认' : '待确认'}{' '}
+                <label>
+                  更正{item.frame === undefined ? '秒数' : '源帧'}{' '}
+                  <input
+                    aria-label={`观察 ${item.id} 时间`}
+                    type="number"
+                    step={item.frame === undefined ? 'any' : 1}
+                    value={item.frame ?? item.seconds}
+                    onChange={(e) => {
+                      const value = e.target.valueAsNumber;
+                      try {
+                        const seconds =
+                          item.frame === undefined
+                            ? value
+                            : measuredFrameSeconds(measurement!, value);
+                        if (
+                          !Number.isFinite(seconds) ||
+                          seconds < 0 ||
+                          seconds > (video.current?.duration ?? 0)
+                        )
+                          throw new Error('观察时间超出视频范围；原记录保留。');
+                        setObservations((old) =>
+                          old.map((entry) =>
+                            entry.id === item.id
+                              ? {
+                                  ...entry,
+                                  seconds,
+                                  ...(item.frame === undefined ? {} : { frame: value }),
+                                  confirmed: false,
+                                }
+                              : entry,
+                          ),
+                        );
+                        setError('');
+                      } catch (reason) {
+                        setError(reason instanceof Error ? reason.message : String(reason));
+                      }
+                    }}
+                  />
+                </label>{' '}
+                <button
+                  onClick={() => {
+                    if (video.current) video.current.currentTime = item.seconds;
+                    if (item.frame !== undefined) setFrame(item.frame);
+                  }}
+                >
+                  定位此记录（近似）
+                </button>{' '}
                 <button
                   onClick={() =>
                     setObservations((old) =>
@@ -882,6 +1038,23 @@ export function ReferenceVideoNotes({
             <p>
               确认初盘、固定供给、动作、测量帧和轨迹。玩法草稿与校准工程是两个独立入口；校准需要额外确认方块几何与轨迹。文字观察不会自动转成结构化标注，请核对并另存。
             </p>
+            <div aria-label="观察生成检查">
+              <strong>
+                {blockers.length
+                  ? `生成前还有 ${blockers.length} 项待处理`
+                  : '确认检查已通过；生成时仍会验证玩法、轨迹和来源。'}
+              </strong>
+              <ul>
+                {blockers.map((item, index) => (
+                  <li key={index}>
+                    {item.scope === 'gameplay' ? '玩法' : '校准'}：{item.message}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                文字笔记的确认不会代替结构化数据确认；非法放置、供给耗尽和消除不一致会由生成校验指出。
+              </p>
+            </div>
             <ObservedAnnotationEditor
               text={structured}
               setText={updateStructured}
@@ -890,6 +1063,7 @@ export function ReferenceVideoNotes({
               height={video.current?.videoHeight ?? 0}
               frame={frame}
               hasMeasurement={!!measurement}
+              measurement={measurement}
             />
             <p>
               顶层字段：version、sourceSha256、seed、board、supply、output、actions。board 包含
@@ -967,6 +1141,7 @@ export function ReferenceVideoNotes({
               frame={frame}
               width={video.current?.videoWidth ?? 0}
               height={video.current?.videoHeight ?? 0}
+              onSelectFrame={setFrame}
             />
             <p>
               <label>

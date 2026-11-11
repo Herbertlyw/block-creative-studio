@@ -20,32 +20,35 @@ npm run --silent bcs -- game block-crush-drop 'project validate' --input bc.json
 
 以下操作均通过 `game <游戏 ID> '<操作名>'` 调用。BB 的游戏 ID 为 `block-placement`；BC 为 `block-crush-drop`。有选项的操作使用 `--options-file`，写操作还需 `--out`。
 
-| 操作                                   | 选项 JSON                                            | 说明                                                                      |
-| -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- |
-| `project create`                       | 无                                                   | 创建 BB 作品包或 BC 可编辑示例                                            |
-| `project inspect` / `project validate` | 无                                                   | 验证并汇总工程或作品包                                                    |
-| `board edit`                           | `{"row":0,"column":0,"color":"coral"}`               | BB 初始棋盘单格；颜色可为 null                                            |
-| `action edit`（BB）                    | `{"takeId":"new","index":0,"row":0,"column":0}`      | 修改 BB 动作锚点并重验后续动作                                            |
-| `action edit`（BC）                    | `{"takeId":"demo","index":0,"column":5,"seconds":1}` | 修改 BC 列与秒数，沿用 30Hz 取整                                          |
-| `take list`                            | 无                                                   | 列出 Take、动作／交互数量、演员及依赖                                     |
-| `take inspect` / `take validate`       | `{"takeId":"new"}`                                   | 查询动作与交互，或验证真实回放                                            |
-| `take generate`                        | `{"takeId":"new","count":1}`                         | 新增机器 Take；BB 数量 1–100，BC 1–24；报告实际生成数量                   |
-| `take clone`                           | `{"takeId":"new","newTakeId":"copy"}`                | 复制语义动作与交互，不复制专属绑定                                        |
-| `take import`                          | `{"file":"replay.json"}`                             | 导入原生 replay，核对游戏、版本、初始哈希与回放；不改 ID                  |
-| `take delete`                          | `{"takeId":"new"}`                                   | 删除指定 Take；受引用或受保护时拒绝                                       |
-| `asset catalog`                        | 无                                                   | 列出本工程素材和本入口支持的图片槽                                        |
-| `asset inspect`                        | `{"assetId":"image"}`                                | 查询元数据、绑定和引用，不输出图片正文                                    |
-| `asset import`                         | `{"id":"image","file":"image.png"}`                  | 真实解码 PNG/JPEG 并内嵌；同 ID 异内容拒绝                                |
-| `asset bind`                           | `{"assetId":"image","slotId":"world.background"}`    | 绑定图片；可选 `fit`、`opacity`、`blendMode`、`inset`                     |
-| `asset unbind`                         | `{"slotId":"world.background"}`                      | 仅解除绑定，保留素材                                                      |
-| `asset prune`                          | 无                                                   | 保守删除没有引用的图片条目，不删除音频或磁盘文件                          |
-| `audio catalog` / `audio inspect`      | 无                                                   | 查询内置声音、预设、素材，或区分显式与生效设置                            |
-| `audio import`                         | `{"id":"music","file":"music.wav"}`                  | 导入 PCM WAV；仅导入，不自动绑定                                          |
-| `audio bgm edit`                       | `{"assetId":"music","gain":0.25,"loop":true}`        | 仅修改给出的 BGM 字段                                                     |
-| `audio sfx edit`                       | `{"index":0,"gain":0.4}`                             | 按 cue 索引编辑 `gain`、`offsetSeconds`、`assetId`；默认 cue 会先显式展开 |
-| `preview render`                       | `{"takeId":"demo","frame":30}`                       | 输出完整 Take 的绝对帧 PNG                                                |
-| `video render`                         | `{"takeId":"demo","scope":"take","audio":"project"}` | 输出完整 Take、范围或有效片段的 MP4                                       |
-| `audio edit`                           | `{"masterGain":0,"sfxEnabled":false}`                | 修改 `masterGain`、`sfxGain`、`sfxEnabled`、`mastering` 的指定字段        |
+| 操作                                   | 选项 JSON                                                                                                  | 说明                                                                      |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `project create`                       | 无                                                                                                         | 创建 BB 作品包或 BC 可编辑示例                                            |
+| `project inspect` / `project validate` | 无                                                                                                         | 验证并汇总工程或作品包                                                    |
+| `board edit`                           | `{"row":0,"column":0,"color":"coral"}`                                                                     | BB 初始棋盘单格；颜色可为 null                                            |
+| `action edit`（BB）                    | `{"takeId":"new","index":0,"row":0,"column":0}`                                                            | 修改 BB 动作锚点并重验后续动作                                            |
+| `action edit`（BC）                    | `{"takeId":"demo","index":0,"column":5,"seconds":1}`                                                       | 修改 BC 列与秒数，沿用 30Hz 取整                                          |
+| `take list`                            | 无                                                                                                         | 列出 Take、动作／交互数量、演员及依赖                                     |
+| `take inspect` / `take validate`       | `{"takeId":"new"}`                                                                                         | 查询动作与交互，或验证真实回放                                            |
+| `take generate`                        | `{"takeId":"new","count":1}`                                                                               | 新增机器 Take；BB 数量 1–100，BC 1–24；报告实际生成数量                   |
+| `take clone`                           | `{"takeId":"new","newTakeId":"copy"}`                                                                      | 复制语义动作与交互，不复制专属绑定                                        |
+| `take import`                          | `{"file":"replay.json"}`                                                                                   | 导入原生 replay，核对游戏、版本、初始哈希与回放；不改 ID                  |
+| `take delete`                          | `{"takeId":"new"}`                                                                                         | 删除指定 Take；受引用或受保护时拒绝                                       |
+| `asset catalog`                        | 无                                                                                                         | 列出本工程素材和本入口支持的图片槽                                        |
+| `asset inspect`                        | `{"assetId":"image"}`                                                                                      | 查询元数据、绑定和引用，不输出图片正文                                    |
+| `asset import`                         | `{"id":"image","file":"image.png"}`                                                                        | 真实解码 PNG/JPEG 并内嵌；同 ID 异内容拒绝                                |
+| `asset bind`                           | `{"assetId":"image","slotId":"world.background"}`                                                          | 绑定图片；可选 `fit`、`opacity`、`blendMode`、`inset`                     |
+| `asset unbind`                         | `{"slotId":"world.background"}`                                                                            | 仅解除绑定，保留素材                                                      |
+| `asset prune`                          | 无                                                                                                         | 保守删除没有引用的图片条目，不删除音频或磁盘文件                          |
+| `audio catalog` / `audio inspect`      | 无                                                                                                         | 查询内置声音、预设、素材，或区分显式与生效设置                            |
+| `audio import`                         | `{"id":"music","file":"music.wav"}`                                                                        | 导入 PCM WAV；仅导入，不自动绑定                                          |
+| `audio bgm edit`                       | `{"assetId":"music","gain":0.25,"loop":true}`                                                              | 仅修改给出的 BGM 字段                                                     |
+| `audio sfx edit`                       | `{"index":0,"gain":0.4}`                                                                                   | 按 cue 索引编辑 `gain`、`offsetSeconds`、`assetId`；默认 cue 会先显式展开 |
+| `preview render`                       | `{"takeId":"demo","frame":30}`                                                                             | 输出完整 Take 的绝对帧 PNG                                                |
+| `video render`                         | `{"takeId":"demo","scope":"take","audio":"project"}`                                                       | 输出完整 Take、范围或有效片段的 MP4                                       |
+| `audio edit`                           | `{"masterGain":0,"sfxEnabled":false}`                                                                      | 修改 `masterGain`、`sfxGain`、`sfxEnabled`、`mastering` 的指定字段        |
+| `audio voice edit`                     | `{"id":"speech-1","takeId":"demo","assetId":"speech","startSeconds":1.2}`                                  | 新增按 Take 秒数定位的人声；已有 ID 只修改给出的字段                      |
+| `audio voice delete`                   | `{"id":"speech-1"}`                                                                                        | 只删除该人声 cue，保留素材及其他声音                                      |
+| `audio ducking edit`                   | `{"enabled":true,"bgmGain":0.35,"sfxGain":0.6,"eventTypes":[],"attackSeconds":0.08,"releaseSeconds":0.25}` | 可选人声压低；默认关闭，空事件列表不压低音效                              |
 
 BGM 还支持 `enabled`、`startSeconds`、`sourceOffsetSeconds`、`fadeInSeconds`、`fadeOutSeconds`。合法的数字 0 会保留。更详细的范围与必填字段以 `games describe` 的 Schema 为准；例如：
 
@@ -56,6 +59,8 @@ BGM 还支持 `enabled`、`startSeconds`、`sourceOffsetSeconds`、`fadeInSecond
 ```sh
 npm run --silent bcs -- game block-crush-drop 'action edit' --input bc.json --options-file change.json --out bc-edited.json --json
 ```
+
+人声支持 `enabled`、`gain`、`sourceOffsetSeconds`、`fadeInSeconds`、`fadeOutSeconds`，独立于事件音效总线。删除被人声引用的 Take 会拒绝。压低、重叠和片段窗口的精确语义见 [声音混音](AUDIO_MIX.md)。这些字段由同一混音器实际消费，没有 CLI 专用的另一份时序。
 
 ## 素材、声音与保护
 
@@ -72,6 +77,8 @@ BB 含来源、指针或校准轨道时，不能直接修改玩法 Take；图片
 ## 定帧和视频渲染
 
 媒体命令需要本机已安装 Chrome，以及浏览器的 AVC 编码能力；含音轨时还需要 AAC 编码能力。CLI 启动只监听 `127.0.0.1` 的临时 Vite 服务和独立浏览器，直接使用工作台帧源、场景、工程混音与共享编码器。FFmpeg 和 FFprobe 仅用于外部检查，不是命令运行依赖。输入素材须已内嵌，BB 作品包中的指针随包读取。
+
+Chrome 不在默认安装位置时，可设置 `BCS_CHROME_PATH` 指向本机可执行文件，CLI 和浏览器验证脚本均支持。此设置不增加浏览器本来缺少的 AAC 编码能力。导出进度增加编码探测、音频编码、封装与 AAC 动态时序校准；stdout 仍只有最终 JSON。
 
 ```json
 { "takeId": "demo", "frame": 30 }
