@@ -3,6 +3,7 @@ import type { FixedFrameAudioTrack } from '../exporter/fixedFrameExporter';
 import type { CompiledFrameSource } from '../game-runtime/frameSource';
 import { requireInlineProductionAudio } from './contracts';
 import type { ProductionAudio, ProductionAudioAsset, ProductionAudioCue } from './contracts';
+import { voiceDuckingEnvelope } from './voiceDucking';
 
 export interface ProductionScheduledCue {
   eventType: string;
@@ -24,11 +25,12 @@ export interface CompiledProductionAudio {
   packId: string;
   pcmHash: string;
   scheduledCues: ProductionScheduledCue[];
+  scheduledVoices: Array<{ id: string; takeId: string; assetId: string; startSample: number; sourceOffsetSamples: number; durationSamples: number; truncated: boolean }>;
   peakBeforeLimit: number;
   peakAfterLimit: number;
   clippedSampleCount: number;
   sourceAssets: Array<{ id: string; sha256: string; mimeType: string }>;
-  diagnostics: { missingAssetIds: string[]; missingCueEventTypes: string[]; unusedCueEventTypes: string[]; truncatedCueCount: number; maximumAlignmentErrorSeconds: number };
+  diagnostics: { missingAssetIds: string[]; missingCueEventTypes: string[]; unusedCueEventTypes: string[]; unusedVoiceIds: string[]; truncatedCueCount: number; maximumAlignmentErrorSeconds: number };
 }
 
 const COMMON_CUES = [
@@ -79,7 +81,7 @@ export function productionDefaultCues(packId='arcade-clean-v1'):NonNullable<Prod
 
 export function productionBgm(audio:ProductionAudio):ProductionAudio['bgm'] { return audio.bgm ?? (audio.selectedPackId==='tense-pulse-v1'?{assetId:'builtin:bgm-tense',gain:.2,loop:true}:undefined); }
 
-export function productionAudioMuted(audio:ProductionAudio){const bgm=productionBgm(audio);return audio.masterGain===0||((audio.sfxEnabled===false||audio.sfxGain===0)&&(!bgm||bgm.enabled===false||bgm.gain===0));}
+export function productionAudioMuted(audio:ProductionAudio){const bgm=productionBgm(audio);return audio.masterGain===0||((audio.sfxEnabled===false||audio.sfxGain===0)&&(!bgm||bgm.enabled===false||bgm.gain===0)&&!(audio.voices??[]).some(voice=>voice.enabled!==false&&voice.gain!==0));}
 
 export function productionAudioCatalog() {
   return Object.entries(BUILTIN_PACKS).map(([id, value]) => ({
@@ -92,7 +94,7 @@ export function productionAudioCatalog() {
 /** Validate references without allocating or rendering a PCM track. */
 export function validateProductionAudioReferences(audio: ProductionAudio): void {
   productionDefaultCues(audio.selectedPackId);
-  const ids = [productionBgm(audio)?.assetId, ...(audio.cues ?? []).map(cue => cue.assetId)];
+  const ids = [productionBgm(audio)?.assetId, ...(audio.cues ?? []).map(cue => cue.assetId), ...(audio.voices ?? []).map(cue => cue.assetId)];
   for (const id of ids) {
     if (!id) continue;
     if (id.startsWith('builtin:') ? !BUILTIN_AUDIO_IDS.has(id) : !Object.hasOwn(audio.assets ?? {}, id))
@@ -100,17 +102,24 @@ export function validateProductionAudioReferences(audio: ProductionAudio): void 
   }
 }
 
+export function validateProductionVoiceTakes(audio: ProductionAudio, takeIds: readonly string[]): void {
+  for (const voice of audio.voices ?? [])
+    if (!takeIds.includes(voice.takeId)) throw new Error(`AUDIO_VOICE_TAKE_UNKNOWN: ${voice.id}; Take ${voice.takeId}`);
+}
+
 export async function verifyProductionAudioAssets(audio: ProductionAudio): Promise<void> {
   for (const asset of Object.values(audio.assets ?? {})) {
-    const bytes = base64Bytes(requireInlineProductionAudio(asset).data);
+    const bytes = base64Bytes(requireInlineProductionAudio(asset).data, asset.id);
     const digest = await crypto.subtle.digest('SHA-256', bytes);
     const actual = [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, '0')).join('');
     if (actual !== asset.sha256) throw new Error(`AUDIO_ASSET_HASH_MISMATCH: ${asset.id}`);
   }
 }
 
-function base64Bytes(data: string): Uint8Array {
-  const decoded = atob(data);
+function base64Bytes(data: string, assetId: string): Uint8Array {
+  let decoded: string;
+  try { decoded = atob(data); }
+  catch { throw new Error(`AUDIO_BASE64_INVALID: ${assetId}`); }
   const result = new Uint8Array(decoded.length);
   for (let index = 0; index < decoded.length; index += 1) result[index] = decoded.charCodeAt(index);
   return result;
@@ -123,7 +132,7 @@ function readAscii(view: DataView, offset: number, length: number): string {
 export interface AudioSample { data: Float32Array; sampleRate: number; channels: 1 | 2 }
 
 export function decodeWav(asset: ProductionAudioAsset): AudioSample {
-  const bytes = base64Bytes(requireInlineProductionAudio(asset).data), view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const bytes = base64Bytes(requireInlineProductionAudio(asset).data, asset.id), view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (bytes.byteLength < 44 || readAscii(view, 0, 4) !== 'RIFF' || readAscii(view, 8, 4) !== 'WAVE') throw new Error(`AUDIO_WAV_INVALID: ${asset.id}`);
   let offset = 12, format: { encoding: number; channels: number; sampleRate: number; bits: number } | undefined, dataOffset = -1, dataLength = 0;
   while (offset + 8 <= view.byteLength) {
@@ -200,7 +209,35 @@ function hashPcm(data: Float32Array): string {
   return `pcm-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-export function compileProductionAudio(frameSource: CompiledFrameSource, audio: ProductionAudio, sampleRate = 48_000, frameWindow?: { startFrame: number; endFrame: number }): CompiledProductionAudio {
+type AudioFrameWindow = { startFrame: number; endFrame: number };
+
+/** Synchronous API retained for validation and Node callers. */
+export function compileProductionAudio(frameSource: CompiledFrameSource, audio: ProductionAudio, sampleRate = 48_000, frameWindow?: AudioFrameWindow): CompiledProductionAudio {
+  const steps = compileProductionAudioSteps(frameSource, audio, sampleRate, frameWindow);
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+}
+
+/** Cooperatively yield so long mixes can report progress and accept cancellation. */
+export async function compileProductionAudioAsync(frameSource: CompiledFrameSource, audio: ProductionAudio, sampleRate = 48_000, frameWindow?: AudioFrameWindow, signal?: AbortSignal): Promise<CompiledProductionAudio> {
+  signal?.throwIfAborted();
+  const steps = compileProductionAudioSteps(frameSource, audio, sampleRate, frameWindow);
+  let deadline = performance.now() + 12;
+  try {
+    for (;;) {
+      signal?.throwIfAborted();
+      const step = steps.next();
+      if (step.done) return step.value;
+      if (performance.now() >= deadline) {
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        deadline = performance.now() + 12;
+      }
+    }
+  } finally { steps.return(undefined as never); }
+}
+
+function* compileProductionAudioSteps(frameSource: CompiledFrameSource, audio: ProductionAudio, sampleRate: number, frameWindow?: AudioFrameWindow): Generator<void, CompiledProductionAudio, void> {
   validateProductionAudioReferences(audio);
   const firstFrame = frameWindow?.startFrame ?? 0;
   const lastFrame = frameWindow?.endFrame ?? frameSource.totalFrames - 1;
@@ -222,13 +259,27 @@ export function compileProductionAudio(frameSource: CompiledFrameSource, audio: 
     const source: AudioSample = assetId.startsWith('builtin:') ? { data: synthesizeProductionSound(assetId, sampleRate, duration), sampleRate, channels: 1 } : decodeWav(assets[assetId] ?? (() => { throw new Error(`AUDIO_ASSET_UNKNOWN: ${assetId}`); })());
     decoded.set(assetId, source); return source;
   };
-  const mix = (source: AudioSample, start: number, gain: number, loop: boolean, sourceOffsetSamples = 0, envelope?:(index:number)=>number): number => {
+  const voices = (audio.voices ?? []).filter(voice => voice.takeId === frameSource.takeId && voice.enabled !== false).map(voice => {
+    const source = sourceFor(voice.assetId);
+    const offset = Math.round((voice.sourceOffsetSeconds ?? 0) * sampleRate);
+    const sourceFrames = Math.round(source.data.length / source.channels * sampleRate / source.sampleRate);
+    if (offset >= sourceFrames) throw new Error(`AUDIO_VOICE_OFFSET_OUT_OF_RANGE: ${voice.id}`);
+    return { voice, source, offset, length: sourceFrames - offset, start: Math.round(voice.startSeconds * sampleRate) };
+  });
+  const duck = audio.ducking;
+  const envelope = duck?.enabled ? voiceDuckingEnvelope(
+    voices.filter(({ voice }) => voice.gain !== 0).map(({ start, length }) => ({ start, end: start + length })),
+    Math.round(duck.attackSeconds * sampleRate), Math.round(duck.releaseSeconds * sampleRate), windowStartSample, durationSamples,
+  ) : null;
+  const duckGain = (sample: number, target: number) => 1 - (1 - target) * (envelope?.[sample] ?? 0);
+  const mix = function* (source: AudioSample, start: number, gain: number, loop: boolean, sourceOffsetSamples = 0, envelope?:(index:number)=>number): Generator<void, number, void> {
     const skipped = Math.max(0, -start);
     start = Math.max(0, start);
     sourceOffsetSamples += skipped;
     const available = durationSamples - start;
     let written = 0;
     for (let index = 0; index < available; index += 1) {
+      if (index % 65536 === 0) yield;
       const sourceFrames = Math.max(1, Math.round(source.data.length / source.channels * sampleRate / source.sampleRate));
       const sourcePosition = sourceOffsetSamples + index;
       if (!loop && sourcePosition >= sourceFrames) break;
@@ -242,11 +293,12 @@ export function compileProductionAudio(frameSource: CompiledFrameSource, audio: 
   if (bgm&&bgm.enabled!==false) {
     const start=Math.round((bgm.startSeconds??0)*sampleRate),source=sourceFor(bgm.assetId),offset=Math.round((bgm.sourceOffsetSeconds??0)*sampleRate),loop=bgm.loop??true;
     const sourceFrames=Math.round(source.data.length/source.channels*sampleRate/source.sampleRate),length=Math.max(0,Math.min(fullDurationSamples-start,loop?Infinity:sourceFrames-offset)),fadeIn=(bgm.fadeInSeconds??.15)*sampleRate,fadeOut=(bgm.fadeOutSeconds??.3)*sampleRate;
-    mix(source,start-windowStartSample,bgm.gain??.2,loop,offset,i=>Math.min(1,fadeIn?i/fadeIn:1,fadeOut?(length-1-i)/fadeOut:1));
+    yield* mix(source,start-windowStartSample,bgm.gain??.2,loop,offset,i=>Math.min(1,fadeIn?i/fadeIn:1,fadeOut?(length-1-i)/fadeOut:1)*duckGain(start-windowStartSample+i,duck?.bgmGain??1));
   }
   const seenIds = new Set<string>();
   let matchedCueIndexes = new Set<number>();
   for (let frame = 0; frame < frameSource.totalFrames; frame += 1) {
+    if (frame % 60 === 0) yield;
     const packet = frameSource.evaluate(frame);
     for (const event of packet.semanticEvents) {
       if (seenIds.has(event.id)||!soundEventAudible(event)) continue;
@@ -261,16 +313,28 @@ export function compileProductionAudio(frameSource: CompiledFrameSource, audio: 
         const offset = Math.round((cue.offsetSeconds ?? 0) * sampleRate), unclampedStartSample = Math.round(frame / frameSource.fps * sampleRate) + offset - windowStartSample, startSample = Math.max(0, unclampedStartSample), sourceOffsetSamples = Math.max(0, -unclampedStartSample);
         const source = sourceFor(cue.assetId), sourceDurationSamples = Math.max(1, Math.round(source.data.length / source.channels * sampleRate / source.sampleRate));
         if (frameWindow && (startSample >= durationSamples || sourceOffsetSamples >= sourceDurationSamples)) continue;
-        const writtenSamples = mix(source, startSample, (cue.gain ?? 1)*(audio.sfxGain??1), false, sourceOffsetSamples);
+        const target = duck?.eventTypes.some(pattern => matches(pattern, event.type)) ? duck.sfxGain : 1;
+        const writtenSamples = yield* mix(source, startSample, (cue.gain ?? 1)*(audio.sfxGain??1), false, sourceOffsetSamples, i => duckGain(startSample + i, target));
         const idealStart = (frame - firstFrame) / frameSource.fps + (cue.offsetSeconds ?? 0);
         scheduledCues.push({ eventType: event.type, eventId: event.id, assetId: cue.assetId, frameIndex: frame - firstFrame, startSample, sourceOffsetSamples, sourceSha256: cue.assetId.startsWith('builtin:') ? `builtin:${cue.assetId}` : assets[cue.assetId]!.sha256, durationSamples: writtenSamples, sourceDurationSamples, truncated: sourceOffsetSamples > 0 || sourceOffsetSamples + writtenSamples < sourceDurationSamples, alignmentErrorSeconds: startSample / sampleRate - Math.max(0, idealStart) });
       }
     }
 
   }
+  const scheduledVoices: CompiledProductionAudio['scheduledVoices'] = [];
+  for (const { voice, source, start, offset, length } of voices) {
+    const relative = start - windowStartSample;
+    const skipped = Math.max(0, -relative);
+    if (relative >= durationSamples || skipped >= length) continue;
+    const fadeIn = (voice.fadeInSeconds ?? 0) * sampleRate, fadeOut = (voice.fadeOutSeconds ?? 0) * sampleRate;
+    const written = yield* mix(source, relative, voice.gain ?? 1, false, offset,
+      i => Math.min(1, fadeIn ? i / fadeIn : 1, fadeOut ? (length - 1 - i) / fadeOut : 1));
+    scheduledVoices.push({ id: voice.id, takeId: voice.takeId, assetId: voice.assetId, startSample: Math.max(0, relative), sourceOffsetSamples: offset + skipped, durationSamples: written, truncated: skipped > 0 || skipped + written < length });
+  }
   const master = audio.masterGain ?? 1;
   let peakBeforeLimit = 0, peakAfterLimit = 0, clippedSampleCount = 0;
   for (let index = 0; index < stereo.length; index += 1) {
+    if (index % 131072 === 0) yield;
     const raw = stereo[index]! * master; peakBeforeLimit = Math.max(peakBeforeLimit, Math.abs(raw));
     const preserve = audio.mastering === 'preserve-level';
     if (Math.abs(raw) > (preserve ? 1 : 0.96)) clippedSampleCount += 1;
@@ -283,6 +347,7 @@ export function compileProductionAudio(frameSource: CompiledFrameSource, audio: 
     packId: selectedPackId,
     pcmHash: hashPcm(stereo),
     scheduledCues,
+    scheduledVoices,
     peakBeforeLimit,
     peakAfterLimit,
     clippedSampleCount,
@@ -291,6 +356,7 @@ export function compileProductionAudio(frameSource: CompiledFrameSource, audio: 
       missingAssetIds: [],
       missingCueEventTypes: [],
       unusedCueEventTypes: [...new Set(cues.filter((_, index) => !matchedCueIndexes.has(index)).map((cue) => cue.eventType))],
+      unusedVoiceIds: voices.filter(({ voice }) => voice.gain !== 0 && !scheduledVoices.some(scheduled => scheduled.id === voice.id)).map(({ voice }) => voice.id),
       truncatedCueCount: scheduledCues.filter((cue) => cue.truncated).length,
       maximumAlignmentErrorSeconds: Math.max(0, ...scheduledCues.map((cue) => Math.abs(cue.alignmentErrorSeconds))),
     },

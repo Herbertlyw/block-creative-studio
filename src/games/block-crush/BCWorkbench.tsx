@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ProductionAudioEditor } from '../../components/ProductionAudioEditor';
+import { editBCProductionAudio } from '../../contracts/editProductionAudio';
+import { productionBgm } from '../../nativeReference/agent-director/audioMix';
 import type { BrowserAssetSources } from '../../contracts/browserAssetReferences';
 import { createWavAsset } from '../../contracts/audioAsset';
 import {
@@ -79,6 +82,17 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener('beforeunload', warn);
   }, [drafts]);
   const markDraft = (key: string) => setDrafts((current) => new Set([...current, key]));
+  const reportMixDraft = useCallback(
+    (dirty: boolean) =>
+      setDrafts((current) => {
+        if (current.has('audio-mix') === dirty) return current;
+        const next = new Set(current);
+        if (dirty) next.add('audio-mix');
+        else next.delete('audio-mix');
+        return next;
+      }),
+    [],
+  );
   const allow = (consumed?: string, leaving = false) => {
     const pending = [...drafts].filter((key) => key !== consumed);
     if (
@@ -144,13 +158,15 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
     await run(async (base) => {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const asset = await createWavAsset(bytes, 'bc-edited-bgm', file.name);
+      asset.id = `bc-audio-${asset.sha256}`;
       return editBCProject(base, (draft) => {
         const production = bcProduction(draft),
           audio = production.audio ?? {};
         production.audio = {
           ...audio,
+          ...(production.audio ? {} : { sfxEnabled: false }),
           assets: { ...audio.assets, [asset.id]: asset },
-          bgm: { ...audio.bgm, assetId: asset.id, enabled: true },
+          bgm: { ...productionBgm(audio), assetId: asset.id, enabled: true },
         };
         setBCProduction(draft, production);
       });
@@ -539,6 +555,17 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
               </section>
               <section className="bc-card">
                 <h2>音乐与音效</h2>
+                <ProductionAudioEditor
+                  audio={bcProduction(project).audio}
+                  game="block-crush-drop"
+                  takeIds={project.takes.map((take) => take.takeId)}
+                  disabled={locked}
+                  revision={project}
+                  onDraftChange={reportMixDraft}
+                  onApply={(audio) =>
+                    run((base) => editBCProductionAudio(base, audio), 'audio-mix')
+                  }
+                />
                 <label>
                   替换 BGM（PCM WAV）
                   <input
@@ -557,14 +584,15 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
                     min={0}
                     max={2}
                     step={0.05}
-                    value={bcProduction(project).audio?.bgm?.gain ?? 1}
-                    disabled={locked || !bcProduction(project).audio?.bgm}
+                    value={productionBgm(bcProduction(project).audio ?? {})?.gain ?? 0.2}
+                    disabled={locked || !productionBgm(bcProduction(project).audio ?? {})}
                     onChange={(event) => {
                       const gain = Number(event.target.value);
                       void run((base) =>
                         editBCProject(base, (draft) => {
                           const p = bcProduction(draft);
-                          if (p.audio?.bgm) p.audio.bgm.gain = gain;
+                          const bgm = productionBgm(p.audio ?? {});
+                          if (p.audio && bgm) p.audio.bgm = { ...bgm, gain };
                           setBCProduction(draft, p);
                         }),
                       );

@@ -236,6 +236,92 @@ try {
     assert.equal(projectOf(direct).direction.production.audio.sfxEnabled, false);
     assert.equal(mix(direct).scheduledCues.length, 0);
     assert.ok(mix(direct).track.data.some((value) => value !== 0));
+    const takeId = source.takeId;
+    await option('voice.json', {
+      id: 'speech',
+      takeId,
+      assetId: 'unused-music',
+      startSeconds: 0.1,
+      gain: 0.6,
+      sourceOffsetSeconds: 0.01,
+      fadeInSeconds: 0.01,
+      fadeOutSeconds: 0.02,
+    });
+    edit(game, 'audio voice edit', `${prefix}-only-bgm.json`, 'voice.json', `${prefix}-voice.json`);
+    await option('duck.json', {
+      enabled: true,
+      bgmGain: 0.3,
+      sfxGain: 0.5,
+      eventTypes: [],
+      attackSeconds: 0.05,
+      releaseSeconds: 0.2,
+    });
+    edit(game, 'audio ducking edit', `${prefix}-voice.json`, 'duck.json', `${prefix}-duck.json`);
+    const voiced = JSON.parse(await readFile(path(`${prefix}-duck.json`), 'utf8'));
+    assert.equal(mix(voiced).scheduledVoices[0].id, 'speech');
+    assert.equal(mix(voiced).scheduledCues.length, 0, 'adding speech never activates SFX');
+    assert.deepEqual(projectOf(voiced).takes, silentProject.takes);
+    assert.deepEqual(
+      projectOf(voiced).direction.production.audio.bgm,
+      projectOf(JSON.parse(await readFile(path(`${prefix}-only-bgm.json`), 'utf8'))).direction
+        .production.audio.bgm,
+    );
+    await option('voice-gain.json', { id: 'speech', gain: 0 });
+    edit(
+      game,
+      'audio voice edit',
+      `${prefix}-duck.json`,
+      'voice-gain.json',
+      `${prefix}-voice-muted.json`,
+    );
+    const voiceInspection = run([
+      'game',
+      game,
+      'audio inspect',
+      '--input',
+      path(`${prefix}-voice-muted.json`),
+    ]);
+    assert.equal(voiceInspection.report.effective.voices[0].gain, 0);
+    assert.equal(voiceInspection.report.effective.ducking.bgmGain, 0.3);
+    await option('delete-voiced-take.json', { takeId });
+    const deletion = edit(
+      game,
+      'take delete',
+      `${prefix}-duck.json`,
+      'delete-voiced-take.json',
+      `${prefix}-must-not-delete.json`,
+      1,
+    );
+    assert.match(deletion.report.error.message, /TAKE_REFERENCED.*speech/);
+    await option('voice-delete.json', { id: 'speech' });
+    edit(
+      game,
+      'audio voice delete',
+      `${prefix}-duck.json`,
+      'voice-delete.json',
+      `${prefix}-voice-deleted.json`,
+    );
+    const deleted = JSON.parse(await readFile(path(`${prefix}-voice-deleted.json`), 'utf8'));
+    assert.deepEqual(projectOf(deleted).direction.production.audio.voices, []);
+    assert.deepEqual(
+      projectOf(deleted).direction.production.audio.assets,
+      projectOf(voiced).direction.production.audio.assets,
+    );
+    await option('bad-voice.json', {
+      id: 'bad-speech',
+      takeId: 'absent',
+      assetId: 'unused-music',
+      startSeconds: 0,
+    });
+    const badVoice = edit(
+      game,
+      'audio voice edit',
+      `${prefix}-only-bgm.json`,
+      'bad-voice.json',
+      `${prefix}-bad-voice.json`,
+      1,
+    );
+    assert.match(badVoice.report.error.message, /AUDIO_VOICE_TAKE_UNKNOWN/);
   }
   console.log('CLI audio workflows passed');
 } finally {

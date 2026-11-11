@@ -9,6 +9,7 @@ import {
   validateProductionAudioAsset,
   validateProductionAudioReferences,
   verifyProductionAudioAssets,
+  validateProductionVoiceTakes,
 } from '../nativeReference/agent-director/audioMix';
 import { updateBBWorkPackageProject, type BBWorkPackage } from '../contracts/bbWorkPackage';
 import { editBCProject, type BCProject } from '../games/block-crush/document';
@@ -83,6 +84,49 @@ export function audioOperations() {
       '按索引编辑已有或默认 cue。',
     ),
     make(
+      'audio voice edit',
+      'edit',
+      schema(
+        ['id'],
+        {
+          id: string,
+          takeId: string,
+          assetId: string,
+          startSeconds: seconds,
+          enabled: { type: 'boolean' },
+          gain,
+          sourceOffsetSeconds: seconds,
+          fadeInSeconds: { type: 'number', minimum: 0, maximum: 30 },
+          fadeOutSeconds: { type: 'number', minimum: 0, maximum: 30 },
+        },
+        2,
+      ),
+      '添加或局部修改按 Take 秒数定位的人声 cue；新 cue 需要 takeId、assetId 和 startSeconds。',
+    ),
+    make(
+      'audio voice delete',
+      'edit',
+      schema(['id'], { id: string }),
+      '删除指定人声 cue，保留素材和其他声音。',
+    ),
+    make(
+      'audio ducking edit',
+      'edit',
+      schema(
+        [],
+        {
+          enabled: { type: 'boolean' },
+          bgmGain: { type: 'number', minimum: 0, maximum: 1 },
+          sfxGain: { type: 'number', minimum: 0, maximum: 1 },
+          eventTypes: { type: 'array', maxItems: 100, items: string },
+          attackSeconds: { type: 'number', minimum: 0, maximum: 10 },
+          releaseSeconds: { type: 'number', minimum: 0, maximum: 10 },
+        },
+        1,
+      ),
+      '修改人声压低配置；只压低显式选择的事件模式。',
+    ),
+    make(
       'audio edit',
       'edit',
       schema(
@@ -134,6 +178,8 @@ export async function runAudio(game: Game, operation: string, work: Work, option
           sfxGain: audio.sfxGain ?? null,
           sfxEnabled: audio.sfxEnabled ?? null,
           mastering: audio.mastering ?? null,
+          voices: audio.voices ?? null,
+          ducking: audio.ducking ?? null,
         },
         effective: {
           selectedPackId: audio.selectedPackId ?? 'arcade-clean-v1',
@@ -143,6 +189,8 @@ export async function runAudio(game: Game, operation: string, work: Work, option
           sfxGain: audio.sfxGain ?? 1,
           sfxEnabled: audio.sfxEnabled ?? true,
           mastering: audio.mastering ?? 'soft-limit',
+          voices: audio.voices ?? [],
+          ducking: audio.ducking ?? { enabled: false },
         },
       },
     };
@@ -150,7 +198,10 @@ export async function runAudio(game: Game, operation: string, work: Work, option
   // the mixer's default SFX. Existing audio keeps its original default semantics.
   if (
     originalAudio === undefined &&
-    (operation === 'audio import' || operation === 'audio bgm edit')
+    (operation === 'audio import' ||
+      operation === 'audio bgm edit' ||
+      operation === 'audio voice edit' ||
+      operation === 'audio ducking edit')
   )
     audio.sfxEnabled = false;
   let changes: Record<string, unknown> = {};
@@ -179,11 +230,38 @@ export async function runAudio(game: Game, operation: string, work: Work, option
     cues[index] = { ...cues[index], ...patch };
     audio.cues = cues;
     changes = { cueIndex: index, eventType: cues[index].eventType };
+  } else if (operation === 'audio voice edit') {
+    audio.voices ??= [];
+    const index = audio.voices.findIndex((voice: any) => voice.id === options.id);
+    if (index < 0) audio.voices.push({ ...options });
+    else Object.assign(audio.voices[index], options);
+    changes = { voiceId: options.id };
+  } else if (operation === 'audio voice delete') {
+    if (!(audio.voices ?? []).some((voice: any) => voice.id === options.id))
+      throw new Error(`AUDIO_VOICE_NOT_FOUND: ${options.id}`);
+    audio.voices = audio.voices.filter((voice: any) => voice.id !== options.id);
+    changes = { deletedVoiceId: options.id };
+  } else if (operation === 'audio ducking edit') {
+    audio.ducking = {
+      enabled: false,
+      bgmGain: 0.35,
+      sfxGain: 0.6,
+      eventTypes: [],
+      attackSeconds: 0.08,
+      releaseSeconds: 0.25,
+      ...audio.ducking,
+      ...options,
+    };
+    changes = { ducking: true };
   } else if (operation === 'audio edit') {
     Object.assign(audio, options);
     changes = { fields: Object.keys(options) };
   } else throw new Error(`AUDIO_OPERATION_UNSUPPORTED: ${operation}`);
   validateProductionAudioReferences(audio);
+  validateProductionVoiceTakes(
+    audio,
+    project.takes.map((take: any) => take.takeId),
+  );
   await verifyProductionAudioAssets(audio);
   for (const asset of Object.values(audio.assets ?? {})) validateProductionAudioAsset(asset as any);
   const apply = (draft: any) => {

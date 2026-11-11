@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { ProductionAudioEditor } from './ProductionAudioEditor';
+import { productionFromDocument } from '../nativeReference/agent-director/contracts';
+import type { StudioProjectDocumentV2 } from '../nativeReference/game-runtime/projectEnvelope';
+import { editBBProductionAudio } from '../contracts/editProductionAudio';
 import type { BBWorkPackage } from '../contracts/bbWorkPackage';
 type RunOperation = (
   operation: () => Promise<BBWorkPackage>,
@@ -35,6 +39,10 @@ export function NativeMediaEditor({
   const [replacementAudio, setReplacementAudio] = useState<File | null>(null),
     [audioRole, setAudioRole] = useState<'bgm' | 'placement' | 'clear'>('bgm');
   const draft = !!image || !!bgm || !!placement || !!clear || !!replacementAudio;
+  const reportMixDraft = useCallback(
+    (dirty: boolean) => onDraftChange?.('audio-mix', dirty),
+    [onDraftChange],
+  );
   useEffect(() => {
     onDraftChange?.('media-form', draft);
   }, [onDraftChange, draft]);
@@ -67,6 +75,15 @@ export function NativeMediaEditor({
   }
   return (
     <>
+      <ProductionAudioEditor
+        audio={productionFromDocument(work.project as StudioProjectDocumentV2)?.audio}
+        game="block-placement"
+        takeIds={(work.project as StudioProjectDocumentV2).takes.map((take) => take.takeId)}
+        disabled={busy}
+        revision={work.project}
+        onDraftChange={reportMixDraft}
+        onApply={(audio) => run(() => editBBProductionAudio(work, audio))}
+      />
       <details>
         <summary>绑定作品图片</summary>
         <p>
@@ -152,7 +169,7 @@ export function NativeMediaEditor({
         <summary>添加或替换工程音频</summary>
         <p>
           仅替换选定角色；原有音量、起点、源偏移、循环、其他音效及玩法会保留。缺少该角色时会新增绑定；只支持
-          PCM16 WAV。
+          PCM16 或 float32 WAV。
         </p>
         <label>
           音频角色{' '}

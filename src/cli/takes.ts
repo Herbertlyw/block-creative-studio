@@ -113,6 +113,9 @@ function dependencies(project: any, id: string, work?: Work) {
   return {
     clips,
     effects,
+    voices: (project.direction?.production?.audio?.voices ?? [])
+      .filter((voice: any) => voice.takeId === id)
+      .map((voice: any) => voice.id),
     calibration,
     source: bb?.source ? 'project-bound' : null,
     pointerActions,
@@ -181,6 +184,10 @@ export async function runTake(game: Game, operation: string, work: Work, options
     work,
     operation === 'take delete' || operation === 'action edit' ? id : undefined,
   );
+  if (operation === 'take delete' && dependencies(project, id).voices.length)
+    throw new Error(
+      `TAKE_REFERENCED: ${id}；人声 ${dependencies(project, id).voices.join(',')}，请先处理引用。`,
+    );
   let result: Work;
   if (operation === 'take generate') {
     unique(project, id);
