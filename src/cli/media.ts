@@ -84,9 +84,10 @@ export async function runMedia(
   if (isCancelled()) cancelled = true;
   const progress = (value: string) => {
     const now = Date.now();
-    if (!value.startsWith('渲染和编码 ') || now - lastProgress > 1000) {
+    const frames = /^渲染和编码 (\d+)\/(\d+)$/.exec(value);
+    if (!frames || frames[1] === '1' || frames[1] === frames[2] || now - lastProgress > 1000) {
       process.stderr.write(`${value}\n`);
-      lastProgress = now;
+      if (frames) lastProgress = now;
     }
   };
   try {
@@ -101,7 +102,13 @@ export async function runMedia(
     if (cancelled) throw new MediaCancelled();
     await server.listen();
     try {
-      browser = await chromium.launch({ channel: 'chrome', headless: true, handleSIGINT: false });
+      browser = await chromium.launch({
+        ...(process.env.BCS_CHROME_PATH
+          ? { executablePath: process.env.BCS_CHROME_PATH }
+          : { channel: 'chrome' }),
+        headless: true,
+        handleSIGINT: false,
+      });
     } catch (error) {
       throw new Error(
         `CHROME_UNAVAILABLE: 无法启动本机 Chrome：${error instanceof Error ? error.message : String(error)}`,

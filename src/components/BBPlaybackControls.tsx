@@ -88,6 +88,11 @@ export function BBPlaybackControls({
       >
         {exportLabel}
       </button>
+      {player.exporting && (
+        <button className="button-secondary" onClick={player.cancelExport}>
+          取消导出
+        </button>
+      )}
     </>
   );
 }

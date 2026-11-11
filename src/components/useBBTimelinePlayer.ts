@@ -3,6 +3,11 @@ import { exportFrameVideo } from '../exporter/exportFrameVideo';
 import { startPreviewAudio } from '../contracts/previewAudio';
 import type { CompiledFrameSource } from '../nativeReference/game-runtime/frameSource';
 import { useFramePlayback, type PlaybackAudio } from './useFramePlayback';
+import {
+  describeExportFailure,
+  EXPORT_PHASE_LABELS,
+  type ExportPhase,
+} from '../exporter/exportStatus';
 
 export interface BBPreviewAudio {
   pcm: Float32Array;
@@ -19,7 +24,7 @@ export interface BBPreviewConfiguration {
   preview: { width: number; height: number };
   quality: { bitrate: number; scale: number };
   audioEnabled: boolean;
-  audio(): Promise<BBPreviewAudio | null>;
+  audio(signal?: AbortSignal): Promise<BBPreviewAudio | null>;
   createStage(
     canvas: HTMLCanvasElement,
     width: number,
@@ -44,13 +49,31 @@ export function useBBTimelinePlayer(config: BBPreviewConfiguration | null) {
   const audio = useRef<PlaybackAudio | null>(null),
     generation = useRef(0),
     exportAbort = useRef<AbortController | null>(null);
+  const configRef = useRef(config);
+  configRef.current = config;
   frameRef.current = frame;
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    setExporting(false);
+    setStatus('');
+    return () => {
       exportAbort.current?.abort();
-    },
-    [config],
-  );
+      exportAbort.current = null;
+    };
+  }, [config]);
+  useEffect(() => {
+    const cancel = () => exportAbort.current?.abort();
+    window.addEventListener('pagehide', cancel);
+    return () => window.removeEventListener('pagehide', cancel);
+  }, []);
+  useEffect(() => {
+    if (!exporting) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [exporting]);
   useEffect(() => {
     if (!config || !canvas.current) {
       setReady(false);
@@ -157,20 +180,34 @@ export function useBBTimelinePlayer(config: BBPreviewConfiguration | null) {
       setPreparing(false);
     }
   };
-  const exportVideo = async (): Promise<{ blob: Blob; warning: string } | null> => {
-    if (!config || !ready || preparing || exporting) return null;
+  const exportVideo = async (): Promise<{
+    blob: Blob;
+    warning: string;
+    isCurrent: () => boolean;
+  } | null> => {
+    if (!config || !ready || preparing || exporting || exportAbort.current) return null;
     setPlaying(false);
     setExporting(true);
-    setStatus('准备视频…');
+    setStatus('素材准备…');
     const controller = new AbortController();
     exportAbort.current = controller;
+    const ownsExport = () => exportAbort.current === controller && configRef.current === config;
+    const isCurrent = () => !controller.signal.aborted && configRef.current === config;
+    let phase: ExportPhase = 'assets';
+    const report = (next: ExportPhase) => {
+      phase = next;
+      if (ownsExport() && isCurrent()) setStatus(`${EXPORT_PHASE_LABELS[next]}…`);
+    };
     let drawing: BBPreviewStage | null = null;
     try {
       const target = document.createElement('canvas'),
         { width, height } = config.output;
       drawing = await config.createStage(target, width, height, 'export', 0, config.quality.scale);
-      const track = await config.audio(),
+      controller.signal.throwIfAborted();
+      report('mixing');
+      const track = await config.audio(controller.signal),
         active = drawing;
+      controller.signal.throwIfAborted();
       const blob = await exportFrameVideo({
         canvas: target,
         width,
@@ -181,17 +218,26 @@ export function useBBTimelinePlayer(config: BBPreviewConfiguration | null) {
         audio: track ? { pcm: track.pcm, channels: track.channels } : null,
         signal: controller.signal,
         render: (index) => active.draw(index),
-        onProgress: (index, total) => setStatus(`视频 ${index} / ${total} 帧`),
+        onPhase: report,
+        onProgress: (index, total) => {
+          if (ownsExport() && isCurrent()) setStatus(`视频编码 ${index}/${total} 帧`);
+        },
       });
-      if (controller.signal.aborted) throw new Error('作品或预览设置已更改，已取消旧导出。');
-      return { blob, warning: track?.warning ?? '' };
+      controller.signal.throwIfAborted();
+      if (!ownsExport()) return null;
+      return { blob, warning: track?.warning ?? '', isCurrent };
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : String(error));
+      if (ownsExport())
+        setStatus(
+          controller.signal.aborted ? '已取消，可重新导出。' : describeExportFailure(error, phase),
+        );
       return null;
     } finally {
-      if (exportAbort.current === controller) exportAbort.current = null;
       drawing?.dispose();
-      setExporting(false);
+      if (ownsExport()) {
+        exportAbort.current = null;
+        setExporting(false);
+      }
     }
   };
   return {
@@ -208,5 +254,6 @@ export function useBBTimelinePlayer(config: BBPreviewConfiguration | null) {
     setStatus,
     start,
     exportVideo,
+    cancelExport: () => exportAbort.current?.abort(),
   };
 }

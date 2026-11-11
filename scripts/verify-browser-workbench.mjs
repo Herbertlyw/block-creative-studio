@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import { syntheticPng, syntheticWav } from './fixtures/syntheticMedia.mjs';
 import { prepareSyntheticReference } from './fixtures/syntheticReference.mjs';
 // Browser smoke test for real pointer input, persistence, common frame
@@ -105,7 +106,7 @@ try {
     headless: true,
     ...(process.env.BB_CHROME_PATH
       ? { executablePath: process.env.BB_CHROME_PATH }
-      : { channel: 'chrome' }),
+      : chromeOptions()),
     args: ['--no-sandbox'],
   });
   const width = Number(process.env.BB_TEST_VIEWPORT_WIDTH ?? 1200),

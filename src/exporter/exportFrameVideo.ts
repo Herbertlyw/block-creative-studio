@@ -10,6 +10,7 @@ import {
 } from 'mediabunny';
 import { alignAacPriming } from '../nativeReference/exporter/aacPriming';
 import { measureAudioCodecDelay, trimMp4AudioPresentation } from './audioTiming';
+import { exportFailure, type ExportPhase } from './exportStatus';
 
 /** Shared frame encoder: callers provide the exact already-warmed drawing surface. */
 export async function exportFrameVideo({
@@ -21,6 +22,7 @@ export async function exportFrameVideo({
   render,
   audio,
   onProgress,
+  onPhase,
   signal,
   bitrate = 8_000_000,
   shortAudioProbe = false,
@@ -33,6 +35,7 @@ export async function exportFrameVideo({
   render: (frame: number) => void;
   audio: { pcm: Float32Array; channels: 1 | 2 } | null;
   onProgress?: (frame: number, total: number) => void;
+  onPhase?: (phase: ExportPhase) => void;
   signal?: AbortSignal;
   bitrate?: number;
   /** Use the existing independent encoder probe when content is too short to correlate. */
@@ -63,13 +66,24 @@ export async function exportFrameVideo({
   if (![8_000_000, 14_000_000, 24_000_000].includes(bitrate))
     throw new Error('视频码率选项不支持。');
   let mux: Output | null = null;
+  let video: CanvasSource | null = null;
+  let track: AudioBufferSource | null = null;
+  let phase: ExportPhase = 'codec';
+  const report = (next: ExportPhase) => {
+    phase = next;
+    onPhase?.(next);
+  };
+  const cancelMux = () => {
+    if (mux) void mux.cancel().catch(() => {});
+  };
+  signal?.addEventListener('abort', cancelMux, { once: true });
   try {
+    report('codec');
     const quality = new Quality({ bitrate }),
       codec = await getFirstEncodableVideoCodec(['avc'], { width, height, quality });
     if (codec !== 'avc') throw new Error('浏览器不能编码 AVC。');
     checkCancelled();
-    let track: AudioBufferSource | null = null,
-      buffer: AudioBuffer | null = null,
+    let buffer: AudioBuffer | null = null,
       delay = 0;
     if (audio) {
       const sampleRate = 48_000,
@@ -79,6 +93,8 @@ export async function exportFrameVideo({
           sampleRate,
         });
       if (audioCodec !== 'aac') throw new Error('浏览器不能编码 AAC。');
+      checkCancelled();
+      report('audio-encoding');
       track = new AudioBufferSource({ codec: audioCodec, quality: new Quality({ bitrate }) });
       const context = new AudioContext({ sampleRate });
       try {
@@ -98,6 +114,7 @@ export async function exportFrameVideo({
         delay = await measureAudioCodecDelay(audioCodec, sampleRate, {
           numberOfChannels: audio.channels,
           bitrate,
+          signal,
         });
     }
     checkCancelled();
@@ -106,31 +123,39 @@ export async function exportFrameVideo({
       format: new Mp4OutputFormat(audio ? { fastStart: false } : undefined),
       target,
     });
-    const video = new CanvasSource(canvas, { codec, quality });
+    video = new CanvasSource(canvas, { codec, quality });
     mux.addVideoTrack(video, { frameRate: fps });
     if (track) mux.addAudioTrack(track);
     await mux.start();
     if (track && buffer) await track.add(buffer);
+    checkCancelled();
+    report('video-encoding');
     for (let frame = 0; frame < totalFrames; frame++) {
       checkCancelled();
       render(frame);
+      checkCancelled();
       await video.add(frame / fps, 1 / fps, { keyFrame: frame % (fps * 2) === 0 });
       if (frame % 12 === 0) {
         onProgress?.(frame + 1, totalFrames);
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
     }
+    onProgress?.(totalFrames, totalFrames);
     checkCancelled();
     video.close();
     track?.close();
+    report('muxing');
     await mux.finalize();
+    checkCancelled();
     if (!target.buffer) throw new Error('视频输出为空。');
     const duration = totalFrames / fps;
     if (audio?.channels === 2 && !shortAudioProbe) {
+      report('audio-timing');
       const result = await alignAacPriming(
         new Blob([target.buffer], { type: 'video/mp4' }),
         { data: audio.pcm, sampleRate: 48_000, numberOfChannels: 2 },
         duration,
+        signal,
       );
       checkCancelled();
       return result.blob;
@@ -147,6 +172,19 @@ export async function exportFrameVideo({
       } catch {
         /* retain the original error */
       }
-    throw error;
+    checkCancelled();
+    throw exportFailure(error, phase);
+  } finally {
+    signal?.removeEventListener('abort', cancelMux);
+    try {
+      video?.close();
+    } catch {
+      /* already closed */
+    }
+    try {
+      track?.close();
+    } catch {
+      /* already closed */
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -335,7 +336,7 @@ try {
     await step('audio sfx edit', { index: 0, gain: 0.4 }, 'final');
     cli(['game', game, 'project validate', '--input', path(current)]);
   }
-  browser = await chromium.launch({ channel: 'chrome', headless: true });
+  browser = await chromium.launch({ ...chromeOptions(), headless: true });
   const page = await browser.newPage({ acceptDownloads: true });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));

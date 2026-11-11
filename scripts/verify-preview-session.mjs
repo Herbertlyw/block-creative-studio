@@ -1,3 +1,4 @@
+import { chromeOptions } from './fixtures/chrome.mjs';
 // Browser regression using a generated work, not historical handoff fixtures.
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
@@ -74,7 +75,7 @@ try {
   work = await updateBBWorkPackageProject(work, initial);
   const input = join(output, 'input.json');
   await writeFile(input, JSON.stringify(work));
-  browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--no-sandbox'] });
+  browser = await chromium.launch({ ...chromeOptions(), headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage({ acceptDownloads: true });
   page.setDefaultTimeout(30000);
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/`);
