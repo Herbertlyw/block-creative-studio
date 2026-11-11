@@ -53,6 +53,9 @@ try {
     clear: syntheticWav(1120, 0.3),
   }))
     assets[id] = await createWavAsset(bytes, id, `synthetic-${id}.wav`);
+  const importedBytes = syntheticWav(660, 0.25);
+  const importedAsset = await createWavAsset(importedBytes, 'pending', 'imported-tone.wav');
+  importedAsset.id = `audio-${importedAsset.sha256}`;
   const makeAudio = (game, takeId) => ({
     assets,
     masterGain: 1,
@@ -156,6 +159,19 @@ try {
   await writeFile(join(output, 'codec-capabilities.json'), JSON.stringify(capabilities, null, 2));
   await openBB(join(output, 'bb-four-tracks.json'));
   await page.getByText('分轨混音与人声', { exact: true }).click();
+  await page
+    .getByLabel('混音导入 WAV', { exact: true })
+    .setInputFiles({ name: 'imported-tone.wav', mimeType: 'audio/wav', buffer: importedBytes });
+  await page.waitForFunction(
+    (id) =>
+      [...document.querySelector('[aria-label="混音 BGM 素材"]').options].some(
+        (option) => option.value === id,
+      ),
+    importedAsset.id,
+  );
+  await page
+    .getByLabel('混音导入 WAV', { exact: true })
+    .setInputFiles({ name: 'renamed-identical.wav', mimeType: 'audio/wav', buffer: importedBytes });
   await page.getByLabel('混音 BGM 增益', { exact: true }).fill('.12');
   await page.getByLabel('人声 1 增益', { exact: true }).fill('.55');
   await page.getByLabel('音效 1 偏移秒', { exact: true }).fill('.04');
@@ -171,7 +187,10 @@ try {
   assert.equal(bbAudio.voices[0].gain, 0.55);
   assert.equal(bbAudio.cues[0].offsetSeconds, 0.04);
   assert.equal(bbAudio.cues[1].gain, 0.33);
-  assert.deepEqual(bbAudio.assets, assets);
+  assert.deepEqual(bbAudio.assets, { ...assets, [importedAsset.id]: importedAsset });
+  checks.push(
+    'real WAV imported twice without rebinding any role; same bytes retained the original asset metadata',
+  );
   await page.reload();
   await openBB(bbSavedPath);
   await page.getByText('分轨混音与人声', { exact: true }).click();

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { createWavAsset } from '../contracts/audioAsset';
+import { createWavAsset, mergeProductionAudioAsset } from '../contracts/audioAsset';
 import {
   productionSoundLibrary,
   productionAudioCatalog,
@@ -211,10 +211,8 @@ export async function runAudio(game: Game, operation: string, work: Work, option
       throw new Error('AUDIO_SIZE_INVALID: WAV 为空或超过 16 MiB。');
     const id = options.id as string;
     const asset = await createWavAsset(bytes, id, basename(options.file as string));
-    const old = audio.assets?.[id];
-    if (old && (old.sha256 !== asset.sha256 || old.data !== asset.data))
-      throw new Error(`AUDIO_ASSET_ID_CONFLICT: ${id}`);
-    audio.assets = { ...audio.assets, [id]: old ?? asset };
+    const old = audio.assets && Object.hasOwn(audio.assets, id) ? audio.assets[id] : undefined;
+    audio.assets = mergeProductionAudioAsset(audio.assets, asset);
     changes = { addedAssetIds: old ? [] : [id] };
   } else if (operation === 'audio bgm edit') {
     const currentBgm = audio.bgm ?? productionBgm(audio);

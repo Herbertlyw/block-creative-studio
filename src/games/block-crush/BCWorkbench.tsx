@@ -3,7 +3,7 @@ import { ProductionAudioEditor } from '../../components/ProductionAudioEditor';
 import { editBCProductionAudio } from '../../contracts/editProductionAudio';
 import { productionBgm } from '../../nativeReference/agent-director/audioMix';
 import type { BrowserAssetSources } from '../../contracts/browserAssetReferences';
-import { createWavAsset } from '../../contracts/audioAsset';
+import { createWavAsset, mergeProductionAudioAsset } from '../../contracts/audioAsset';
 import {
   bcCalibration,
   bcColours,
@@ -156,6 +156,7 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
   }
   async function uploadBgm(file: File) {
     await run(async (base) => {
+      if (!file.size || file.size > 16 * 1024 * 1024) throw new Error('WAV 为空或超过 16 MiB。');
       const bytes = new Uint8Array(await file.arrayBuffer());
       const asset = await createWavAsset(bytes, 'bc-edited-bgm', file.name);
       asset.id = `bc-audio-${asset.sha256}`;
@@ -165,7 +166,7 @@ export function BCWorkbench({ onExit }: { onExit: () => void }) {
         production.audio = {
           ...audio,
           ...(production.audio ? {} : { sfxEnabled: false }),
-          assets: { ...audio.assets, [asset.id]: asset },
+          assets: mergeProductionAudioAsset(audio.assets, asset),
           bgm: { ...productionBgm(audio), assetId: asset.id, enabled: true },
         };
         setBCProduction(draft, production);

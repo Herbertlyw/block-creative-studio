@@ -12,7 +12,7 @@ import {
   validateProductionVoiceTakes,
   verifyProductionAudioAssets,
 } from '../nativeReference/agent-director/audioMix';
-import { createWavAsset } from '../contracts/audioAsset';
+import { createWavAsset, mergeProductionAudioAsset } from '../contracts/audioAsset';
 
 const emptyAudio = (): ProductionAudio => ({ sfxEnabled: false, cues: [], assets: {} });
 const numberValue = (value: number | undefined, fallback = 0) =>
@@ -123,8 +123,9 @@ export function ProductionAudioEditor({
       const asset = await createWavAsset(bytes, 'pending', file.name);
       if (ticket !== generation.current) return;
       asset.id = `audio-${asset.sha256}`;
+      const assets = mergeProductionAudioAsset(draft.assets, asset);
       change((next) => {
-        next.assets = { ...next.assets, [asset.id]: asset };
+        next.assets = assets;
       });
     } catch (reason) {
       if (ticket === generation.current)

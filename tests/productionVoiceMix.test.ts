@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWavAsset } from '../src/contracts/audioAsset';
+import { createWavAsset, mergeProductionAudioAsset } from '../src/contracts/audioAsset';
 import { compileNativeTake } from '../src/contracts/compileNativeTake';
 import {
   compileProductionAudio,
@@ -200,6 +200,22 @@ describe('Take speech and shared ducking semantics', () => {
   });
   it('strictly preserves supported fields and rejects duplicate IDs, unknown fields and corrupt assets', async () => {
     const audio = await fixture();
+    const originalAsset = {
+      ...audio.assets!.voice!,
+      provenance: { sourceRef: 'synthetic-original' },
+      sourceName: 'original.wav',
+    };
+    const originalAssets = { voice: originalAsset };
+    expect(mergeProductionAudioAsset(originalAssets, audio.assets!.voice!).voice).toBe(
+      originalAsset,
+    );
+    expect(() =>
+      mergeProductionAudioAsset(originalAssets, { ...audio.assets!.music!, id: 'voice' }),
+    ).toThrow(/AUDIO_ASSET_ID_CONFLICT: voice/);
+    expect(originalAssets.voice).toBe(originalAsset);
+    expect(
+      mergeProductionAudioAsset({}, { ...audio.assets!.voice!, id: 'constructor' }).constructor,
+    ).toMatchObject({ id: 'constructor' });
     expect(parseProductionDirection({ version: '1.0.0', audio }).audio).toEqual(audio);
     expect(() =>
       parseProductionDirection({

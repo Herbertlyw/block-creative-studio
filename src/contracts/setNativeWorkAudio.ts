@@ -11,6 +11,7 @@ import type {
 import { openBBWorkPackage, updateBBWorkPackageProject, type BBWorkPackage } from './bbWorkPackage';
 import { hasReferenceCalibration } from './hasReferenceCalibration';
 import { pruneSupersededAssets } from './pruneSupersededAssets';
+import { mergeProductionAudioAsset } from './audioAsset';
 
 export type AudioRole = 'bgm' | 'placement' | 'clear';
 export const BB_AUDIO_EVENTS = {
@@ -61,15 +62,7 @@ export async function setNativeWorkAudio(
     data: encodeBase64Bytes(bytes),
   };
   validateProductionAudioAsset(asset);
-  const assets = audio.assets ?? {};
-  const existing = assets[id];
-  if (
-    existing &&
-    (existing.sha256 !== sha256 || existing.encoding !== 'base64' || existing.data !== asset.data)
-  )
-    throw new Error(`音频素材标识冲突：${id}。`);
-  assets[id] = asset;
-  audio.assets = assets;
+  audio.assets = mergeProductionAudioAsset(audio.assets, asset);
   if (role === 'bgm') {
     if (audio.bgm) oldIds.add(audio.bgm.assetId);
     audio.bgm = audio.bgm
