@@ -3,7 +3,9 @@
 [![CI](https://github.com/Herbertlyw/block-creative-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Herbertlyw/block-creative-studio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**在浏览器中制作可编辑的方块游戏视频。**
+**让休闲游戏视频素材持续产出，降低重复制作成本。**
+
+制作拖消、落消等方块类休闲游戏素材时，不必每次都从零开始。基于同一套可编辑工程，你可以调整玩法、画面、声音和节奏，持续制作不同的视频变体，减少重复制作所需的时间和人力。
 
 Block Creative Studio 是一个本地运行的创作工作台，支持 BB 拖消和 BC 落消。你可以从示例或已有工程开始，编辑棋盘、动作和画面，再调整图片、音乐与效果，预览并导出视频。工程可以保存和重新打开，方便继续制作变体。
 
